@@ -83,7 +83,7 @@ public void OnPluginStart() {
 	hKillAmmoPack = CreateConVar("gp_killammopack", "1", "删除子弹堆.", FCVAR_PROTECTED, true, 0.0, false);
 	
 	hZeusX27Enabled = CreateConVar("gp_zx27nabled", "1", "电击枪开关", FCVAR_PROTECTED, true, 0.0, false, 0.0);
-	hZeusX27Weapon = CreateConVar("gp_zx27weapon", "weapon_melee", "附加电击枪的武器", FCVAR_PROTECTED, true, 0.0, false, 0.0);
+	hZeusX27Weapon = CreateConVar("gp_zx27weapon", "weapon_melee, weapon_pistol_magnum, weapon_pistol, weapon_dual_pistols", "附加电击枪的武器，支持多武器，逗号分隔", FCVAR_PROTECTED, true, 0.0, false, 0.0);
 	hZeusX27Range = CreateConVar("gp_zx27range", "300", "电击枪的最大距离", FCVAR_PROTECTED, true, 0.0, false, 0.0);
 	hZeusX27Damage = CreateConVar("gp_zx27damage", "600", "电击枪的伤害", FCVAR_PROTECTED, true, 0.0, false, 0.0);
 	hZeusX27Frequency = CreateConVar("gp_zx27freq", "1", "可使用电击枪次数", FCVAR_PROTECTED, true, 0.0, false, 0.0);
@@ -313,16 +313,13 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 		return;
 	}
 
-	if (bIsSurvior(client) && zx27[client] < GetConVarInt(hZeusX27Frequency) && buttons & IN_ZOOM)
-	{
-		char clientWeapon[64];
-		char zeusX27Weapon[64];
-		GetClientWeapon(client, clientWeapon, 64);
-		GetConVarString(hZeusX27Weapon, zeusX27Weapon, 64);
+	if (bIsSurvior(client) && zx27[client] < GetConVarInt(hZeusX27Frequency) && buttons & IN_ZOOM) {
+		char clientWeapon[32];
+		char zeusX27Weapon[256];
+		GetClientWeapon(client, clientWeapon, sizeof(clientWeapon));
+		GetConVarString(hZeusX27Weapon, zeusX27Weapon, sizeof(zeusX27Weapon));
 
-		// 这里可以把字符串拆分下，允许多种武器
-		if (StrEqual(clientWeapon, zeusX27Weapon, false))
-		{
+		if (StrContains(zeusX27Weapon, clientWeapon, false)) {
 			int target = GetClientAimTarget(client, true);
 			if (bIsInfected(target))
 			{
