@@ -372,7 +372,7 @@ void ShowParticle(float vPos[3], float vAng[3], char[] particlename, float time)
 	}
 }
 
-public Action DeleteParticles(Handle timer, int particle)
+Action DeleteParticles(Handle timer, int particle)
 {
 	if (IsValidEntity(particle))
 	{
