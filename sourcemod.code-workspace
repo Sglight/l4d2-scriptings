@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "..\\..\\..\\..\\..\\L4D2-Competitive-Rework\\addons\\sourcemod\\scripting"
+		}
+	],
+	"settings": {
+		"sourcepawnLanguageServer.sourcemod_home": "C:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\include",
+		"explorer.sortOrder": "modified",
+		"sourcepawn.outputDirectoryPath": "C:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\compiled/",
+		"sourcepawn.SourcemodHome": "C:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\include",
+		"sourcepawn.SpcompPath": "C:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\spcomp",
+		"sourcepawn.MainPath": "c:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\jointeam_nst.sp"
+	}
+}

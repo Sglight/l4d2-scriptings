@@ -1,0 +1,56 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile plugin",
+            "type": "shell",
+
+            "presentation": {
+                "panel": "shared"
+            },
+
+            "windows":{
+                "command": "C:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\spcomp.exe",
+
+                "args": [
+                    "${file}",
+                    "-O2", // Optimization level (0=none, 2=full)
+                    "-v2",// Verbosity level; 0=quiet, 1=normal, 2=verbose
+                    "-iC:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\include", // All other 3rd-party-includes
+                    "-oC:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\compiled\\${fileBasenameNoExtension}.smx" // Output path for the compiled smx file
+                ],
+            },
+
+            "linux":{
+                "command": "/home/me/Public/L4D2/scripting/spcomp",
+
+                "args": [
+                    "${file}",
+                    "-O2", // Optimization level (0=none, 2=full)
+                    "-v2",// Verbosity level; 0=quiet, 1=normal, 2=verbose
+                    "-i/home/me/Public/L4D2/scripting/include", // All other 3rd-party-includes
+                    "-o/home/me/Public/L4D2/scripting/compiled/${fileBasenameNoExtension}.smx" // Output path for the compiled smx file
+                ],
+            },
+
+            "problemMatcher": {
+                "owner": "sp",
+                "fileLocation": "absolute",
+                "pattern": {
+                    "regexp": "^(.*)\\((.+)\\)\\s:\\s(((warning|error|fatal error)\\s\\d+):\\s.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "severity": 5,
+                    "message": 3
+                }
+            },
+
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
