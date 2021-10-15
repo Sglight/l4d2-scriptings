@@ -51,6 +51,8 @@
 #endif
 #define _l4dh_included
 
+#include <left4dhooks_anim>
+
 
 
 public SharedPlugin __pl_l4dh = 
@@ -75,12 +77,19 @@ public void __pl_l4dh_SetNTVOptional()
 	MarkNativeAsOptional("AnimGetActivity");
 	MarkNativeAsOptional("AnimGetFromActivity");
 
+	MarkNativeAsOptional("L4D_GetGameModeType");
 	MarkNativeAsOptional("L4D_Deafen");
+	MarkNativeAsOptional("L4D_GetTempHealth");
+	MarkNativeAsOptional("L4D_SetTempHealth");
+	MarkNativeAsOptional("L4D_PlayMusic");
+	MarkNativeAsOptional("L4D_StopMusic");
 	MarkNativeAsOptional("L4D_Dissolve");
 	MarkNativeAsOptional("L4D_OnITExpired");
 	MarkNativeAsOptional("L4D_AngularVelocity");
 	MarkNativeAsOptional("L4D_GetRandomPZSpawnPosition");
 	MarkNativeAsOptional("L4D_GetNearestNavArea");
+	MarkNativeAsOptional("L4D_GetLastKnownArea");
+	MarkNativeAsOptional("L4D2_GetFurthestSurvivorFlow");
 	MarkNativeAsOptional("L4D_FindRandomSpot");
 	MarkNativeAsOptional("L4D_HasAnySurvivorLeftSafeArea");
 	MarkNativeAsOptional("L4D_IsAnySurvivorInStartArea");
@@ -88,15 +97,45 @@ public void __pl_l4dh_SetNTVOptional()
 	MarkNativeAsOptional("L4D_IsInFirstCheckpoint");
 	MarkNativeAsOptional("L4D_IsInLastCheckpoint");
 	MarkNativeAsOptional("L4D2_IsReachable");
+	MarkNativeAsOptional("L4D_HasPlayerControlledZombies");
 	MarkNativeAsOptional("L4D_PipeBombPrj");
+	MarkNativeAsOptional("L4D_MolotovPrj");
+	MarkNativeAsOptional("L4D2_VomitJarPrj");
+	MarkNativeAsOptional("L4D2_GrenadeLauncherPrj");
 
+	MarkNativeAsOptional("L4D2_ExecVScriptCode");
 	MarkNativeAsOptional("L4D2_GetVScriptOutput");
 	MarkNativeAsOptional("L4D2_SpitterPrj");
+	MarkNativeAsOptional("L4D2_UseAdrenaline");
+	MarkNativeAsOptional("L4D_RespawnPlayer");
+	MarkNativeAsOptional("L4D_SetHumanSpec");
+	MarkNativeAsOptional("L4D_TakeOverBot");
+	MarkNativeAsOptional("L4D_CanBecomeGhost");
+	MarkNativeAsOptional("L4D2_AreWanderersAllowed");
 	MarkNativeAsOptional("L4D2_GetCurrentFinaleStage");
 	MarkNativeAsOptional("L4D2_ForceNextStage");
 	MarkNativeAsOptional("L4D2_IsTankInPlay");
-	MarkNativeAsOptional("L4D2_GetFurthestSurvivorFlow");
 	MarkNativeAsOptional("L4D2_GetScriptValueInt");
+	MarkNativeAsOptional("L4D2_NavAreaTravelDistance");
+	MarkNativeAsOptional("L4D2_HasConfigurableDifficultySetting");
+	MarkNativeAsOptional("L4D2_IsGenericCooperativeMode");
+	MarkNativeAsOptional("L4D_IsCoopMode");
+	MarkNativeAsOptional("L4D2_IsRealismMode");
+	MarkNativeAsOptional("L4D_IsSurvivalMode");
+	MarkNativeAsOptional("L4D2_IsScavengeMode");
+	MarkNativeAsOptional("L4D_IsVersusMode");
+
+	MarkNativeAsOptional("L4D2_VScriptWrapper_GetMapNumber");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_HasEverBeenInjured");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_GetAliveDuration");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_IsDead");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_IsDying");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_UseAdrenaline");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_ReviveByDefib");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_ReviveFromIncap");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_GetSenseFlags");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_NavAreaBuildPath");
+	MarkNativeAsOptional("L4D2_VScriptWrapper_NavAreaTravelDistance");
 
 
 
@@ -115,6 +154,8 @@ public void __pl_l4dh_SetNTVOptional()
 	MarkNativeAsOptional("L4D2_SpawnWitch");
 	MarkNativeAsOptional("L4D2_GetTankCount");
 	MarkNativeAsOptional("L4D2_GetWitchCount");
+	MarkNativeAsOptional("L4D_GetCurrentChapter");
+	MarkNativeAsOptional("L4D_GetMaxChapters");
 
 	MarkNativeAsOptional("L4D_ScavengeBeginRoundSetupTime");
 	MarkNativeAsOptional("L4D_ResetMobTimer");
@@ -191,6 +232,9 @@ public void __pl_l4dh_SetNTVOptional()
 	MarkNativeAsOptional("L4D2Direct_TryOfferingTankBot");
 	MarkNativeAsOptional("L4D2Direct_GetFlowDistance");
 	MarkNativeAsOptional("L4D2Direct_DoAnimationEvent");
+	MarkNativeAsOptional("L4DDirect_GetSurvivorHealthBonus");
+	MarkNativeAsOptional("L4DDirect_SetSurvivorHealthBonus");
+	MarkNativeAsOptional("L4DDirect_RecomputeTeamScores");
 
 	MarkNativeAsOptional("L4D2Direct_GetTankCount");
 	MarkNativeAsOptional("L4D2Direct_GetMobSpawnTimer");
@@ -274,8 +318,43 @@ public void __pl_l4dh_SetNTVOptional()
 
 
 // ====================================================================================================
+// VARIOUS ENUMS
+// ====================================================================================================
+// For the game mode native and forward.
+enum
+{
+	GAMEMODE_UNKNOWN	= 0,
+	GAMEMODE_COOP		= 1,
+	GAMEMODE_VERSUS		= 2,
+	GAMEMODE_SURVIVAL	= 4,
+	GAMEMODE_SCAVENGE	= 8
+}
+
+// Provided by "BHaType":
+// For the "L4D_State_Transition" native.
+// X -> Y (means X state will become Y state on next frame or some seconds later)
+enum
+{
+    STATE_ACTIVE = 0,
+    STATE_WELCOME,				// -> STATE_PICKING_TEAM
+    STATE_PICKING_TEAM,
+    STATE_PICKINGCLASS,			// -> STATE_ACTIVE
+    STATE_DEATH_ANIM,			// -> STATE_DEATH_WAIT_FOR_KEY
+    STATE_DEATH_WAIT_FOR_KEY,	// -> STATE_OBSERVER_MODE
+    STATE_OBSERVER_MODE,
+    STATE_WAITING_FOR_RESCUE,
+    STATE_GHOST,
+    STATE_INTRO_CAMERA
+}
+
+
+
+
+
+// ====================================================================================================
 // ANIMATION HOOK
 // ====================================================================================================
+/* The PRE hook can utilize the "ACT_*" enum defines from the "include/left4dhooks_anim.inc" include file. */
 typeset AnimHookCallback
 {
 	/**
@@ -295,7 +374,7 @@ typeset AnimHookCallback
  *
  * @param client			The client to hook
  * @param callback			Callback function for your pre-hook (uses "ACT_*" activity numbers) or INVALID_FUNCTION to not use.
- * @param callbackPost		Callback function for your post-hook (uses "m_nSequence" animation numbers) or INVALID_FUNCTION to not use.
+ * @param callbackPost		Callback function for your post-hook (uses "m_nSequence" sequence numbers) or INVALID_FUNCTION to not use.
  *
  * @return					True on success, false if client invalid.
  */
@@ -307,7 +386,7 @@ native bool AnimHookEnable(int client, AnimHookCallback callback, AnimHookCallba
  *
  * @param client			The client to hook
  * @param callback			Callback function for your pre-hook (uses "ACT_*" activity numbers) or INVALID_FUNCTION if not used.
- * @param callbackPost		Callback function for your post-hook (uses "m_nSequence" animation numbers) or INVALID_FUNCTION if not used.
+ * @param callbackPost		Callback function for your post-hook (uses "m_nSequence" sequence numbers) or INVALID_FUNCTION if not used.
  *
  * @return					True on success, false if client invalid.
  */
@@ -315,9 +394,10 @@ native bool AnimHookDisable(int client, AnimHookCallback callback, AnimHookCallb
 
 /**
  * @brief Retrieves the activity string from it's relative activity number.
- * @remarks activity numbers are different from a models "m_nSequence" animation numbers.
- * @remarks The ACT_* list and values are for Survivors and differ from other models. Use the "m_nSequence" value in a post hook for Special Infected.
- * @remarks The "m_nSequence" values for each model can be found using Left4Dead Authoring Tools > Model Viewer.
+ * @remarks activity numbers are different from a models "m_nSequence" sequence numbers.
+ * @remarks The ACT_* list and values are for Survivor models and differ from other models. Use the "m_nSequence" sequence value in a post hook for Special Infected.
+ * @remarks The "m_nSequence" sequence values for each model can be found using Left4Dead Authoring Tools > Model Viewer.
+ * @remarks The PRE hook can utilize the "ACT_*" enum defines from the "include/left4dhooks_anim.inc" include file instead of using this method of converting them.
  *
  * @param sequence			Activity number to retrieve from
  * @param activity			Destination string to store the activity
@@ -422,6 +502,17 @@ forward Action L4D_OnSpawnITMob(int &amount);
  * @return				Plugin_Handled to block, Plugin_Changed to use overwritten values from plugin, Plugin_Continue otherwise
  */
 forward Action L4D_OnSpawnMob(int &amount);
+
+/**
+ * @brief Called whenever CTerrorPlayer::OnEnterGhostState(CTerrorPlayer*) is invoked
+ * @remarks This happens when a player enters ghost mode (or in finales auto-materialized)
+ * @remarks This forward triggers before the player enters ghost state allowing it to be blocked
+ *
+ * @param client		the client that has entered ghost mode
+ *
+ * @return				Plugin_Handled to block, Plugin_Continue otherwise
+ */
+forward Action L4D_OnEnterGhostStatePre(int client);
 
 /**
  * @brief Called whenever CTerrorPlayer::OnEnterGhostState(CTerrorPlayer*) is invoked
@@ -712,6 +803,15 @@ forward Action L4D2_OnChangeFinaleStage(int &finaleType, const char[] arg);
 forward Action L4D2_OnEndVersusModeRound(bool countSurvivors);
 
 /**
+ * @brief Called whenever CTerrorPlayer:RecalculateVersusScore(void) is invoked
+ * @remarks Calculates an individual survivors health bonus from their current health and status.
+ *
+ * @return		Plugin_Handled to block health bonus from being calculated.
+*/
+// L4D1 only.
+forward Action L4D_OnRecalculateVersusScore(int client);
+
+/**
  * @brief Called after CDirectorVersusMode::EndVersusModeRound(bool)
  * @remarks Called after all score calculations are complete and the scoreboard shows
  * @remarks Called after all score calculations inside CDirectorVersusMode::EndVersusModeRound(bool). This good forward to replace standard "round_end" hook.
@@ -834,9 +934,52 @@ forward Action L4D2_OnFindScavengeItem(int client, int &item);
  * @param specialInfected	the SI entity index
  * @param curTarget			the survivor player index who is chosen victim
  *
- * @return			Plugin_Handled to block, Plugin_Changed to use overwritten values from plugin, Plugin_Continue otherwise
+ * @return					Plugin_Handled to block, Plugin_Changed to use overwritten values from plugin, Plugin_Continue otherwise
  */
 forward Action L4D2_OnChooseVictim(int specialInfected, int &curTarget);
+
+/**
+ * @brief Called whenever CTerrorPlayer::MaterializeFromGhost is invoked
+ * @remarks Called when a Special Infected spawns out of ghost mode.
+ *
+ * @param victim			the client who spawned
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+forward Action L4D_OnMaterializeFromGhostPre(int client);
+
+/**
+ * @brief Called whenever CTerrorPlayer::MaterializeFromGhost is invoked
+ * @remarks Called when a Special Infected spawns out of ghost mode.
+ *
+ * @param victim			the client who spawned
+ *
+ * @noreturn
+ */
+forward Action L4D_OnMaterializeFromGhost(int client);
+
+/**
+ * @brief Called whenever CTerrorPlayer::OnVomitedUpon is invoked
+ * @remarks Called when a Survivor player is covered in Boomer bile, or when using "Bile the World" plugin by "AtomicStryker"
+ *
+ * @param victim			the client who's now it
+ * @param attacker			the attacker who caused the vomit
+ *
+ * @return					Plugin_Handled to block, Plugin_Changed to use overwritten values from plugin, Plugin_Continue otherwise
+ */
+forward Action L4D_OnVomitedUpon(int victim, int &attacker, bool &boomerExplosion);
+
+/**
+ * @brief Called whenever CTerrorPlayer::OnHitByVomitJar is invoked
+ * @remarks Called a Special Infected is hit from a Bilejar explosion
+ *
+ * @param victim			the client who's now it
+ * @param attacker			the attacker who caused the vomit
+ * @param boomerExplosion	true if triggered by a boommer explosion
+ *
+ * @return					Plugin_Handled to block, Plugin_Changed to use overwritten values from plugin, Plugin_Continue otherwise
+ */
+forward Action L4D2_OnHitByVomitJar(int victim, int &attacker);
 
 /**
  * @brief Called when the client's material system is expecting instructions from the server in regards to addons
@@ -877,15 +1020,73 @@ forward void L4D2_OnWaterMove(int client);
 // FORWARDS - Silvers
 // ====================================================================================================
 /**
+ * @brief Returns the current game mode type when it changes. 0=Unknown or error. 1=Coop. 2=Survival. 4=Versus. 8=Scavenge (L4D2).
+ * @remarks You can use the "GAMEMODE_*" enums provided above to match the mode.
+ * @remarks Only triggers when the server starts and after when the game mode changes.
+ *
+ * @return	Current game mode.
+ */
+forward Action L4D_OnGameModeChange(int gamemode);
+
+/**
+ * @brief Called when CTerrorPlayer::Fling(Vector const&, PlayerAnimEvent_t, CBaseCombatCharacter*, float) is invoked.
+ * @remarks Called when a player is flung to the ground.
+ *
+ * @param client		Client index of the player.
+ * @param attacker		Client index of the attacker.
+ * @param vecDir		Vector direction of the fling.
+ *
+ * @return				Plugin_Handled to block fling, Plugin_Continue to allow.
+ **/
+// L4D2 only.
+forward Action L4D2_OnPlayerFling(int client, int attacker, float vecDir[3]);
+
+/**
+ * @brief Called when CDeathFallCamera::Enable(CBasePlayer*) is invoked.
+ * @remarks Called when a player is falling in a fatal zone.
+ * @remarks Does not trigger for all cases when someone is fatally falling. 
+ * @remarks Use this forward to check if the current map has death fall cameras (fatal falls).
+ *
+ * @param client		Client index of the player.
+ *
+ * @return				Plugin_Handled to block the death fall camera, Plugin_Continue to allow.
+ **/
+forward Action L4D_OnFatalFalling(int client, int camera);
+
+/**
+ * @brief Called when CTerrorPlayer::OnFalling() is invoked.
+ * @remarks Called when a player is falling.
+ *
+ * @param client		Client index of the player.
+ **/
+forward void L4D_OnFalling(int client);
+
+/**
+ * @brief Called when Tank::EnterStasis() is invoked.
+ * @remarks Called when a Tank enters stasis mode in Versus mode.
+ *
+ * @param tank			Client index of the Tank.
+ **/
+forward void L4D_OnEnterStasis(int tank);
+
+/**
+ * @brief Called when Tank::LeaveStasis() is invoked.
+ * @remarks Called when a Tank leaves stasis mode in Versus mode.
+ *
+ * @param tank				Client index of the Tank.
+ **/
+forward void L4D_OnLeaveStasis(int tank);
+
+/**
  * @brief Called whenever ZombieManager::GetRandomPZSpawnPosition is invoked
  * @remarks Attempts to find a valid position to spawn Special Infected
  *
  * @param client			Client id to find an area near this player
  * @param zombieClass		Special Infected class to search for a spawn position for
  * @param attempts			How many tries to find a valid location
- * @param vecPos			The vector location. Sometimes is 0,0,0. Use post hook for real selected position.
+ * @param vecPos			The vector location. Sometimes is 0,0,0. Use post hook for real selected position
  *
- * @return					Plugin_Changed to change any values, Plugin_Continue otherwise.
+ * @return					Plugin_Changed to change any values, Plugin_Continue otherwise
  */
 #pragma deprecated Removed because it spawns specials at 0,0,0 when modifying any value.
 forward Action L4D_OnGetRandomPZSpawnPosition(int &client, int &zombieClass, int &attempts, float vecPos[3]);
@@ -897,6 +1098,19 @@ forward Action L4D_OnGetRandomPZSpawnPosition(int &client, int &zombieClass, int
 // ====================================================================================================
 // NATIVES - Silvers
 // ====================================================================================================
+/**
+* @brief Runs a specified VScript code.
+* @remarks Saves having to create an entity. The entity can remain alive and used again...
+* @remarks unless the core plugins define KILL_VSCRIPT is changed and the plugin recompiled.
+*
+* @param	code			The VScript code to execute. Maximum length seems to be 1006 characters.
+*
+* @return	True on success, false otherwise.
+* @error	Invalid code or failed to create logic_script.
+*/
+// L4D2 only.
+native bool L4D2_ExecVScriptCode(char[] code);
+
 /**
 * @brief Runs a specified VScript code and returns values from it.
 * @remarks Can execute several code blocks on a single line separating them with ; as standard coding practice.
@@ -915,7 +1129,15 @@ forward Action L4D_OnGetRandomPZSpawnPosition(int &client, int &zombieClass, int
 native bool L4D2_GetVScriptOutput(char[] code, char[] buffer, int maxlength);
 
 /**
- * @brief Deafens a player with a high pitch ringing sound for a few seconds
+ * @brief Returns the current game mode type. 0=Unknown or error. 1=Coop. 2=Survival. 4=Versus. 8=Scavenge (L4D2).
+ * @remarks You can use the "GAMEMODE_*" enums provided above to match the mode.
+ *
+ * @return	Current game mode.
+ */
+native int L4D_GetGameModeType();
+
+/**
+ * @brief Deafens a player with a high pitch ringing sound for a few seconds.
  * @remarks Used in the "Prototype Grenades" plugin by Silvers
  *
  * @param client	Client id of the player to deafen
@@ -925,7 +1147,56 @@ native bool L4D2_GetVScriptOutput(char[] code, char[] buffer, int maxlength);
 native int L4D_Deafen(int client);
 
 /**
- * @brief Creates the dissolve effect on common infected, players or objects
+ * @brief Returns a Survivors current temporary health buffer HP.
+ *
+ * @param client	Client id of the Survivor player
+ *
+ * @return			Temp health value
+ */
+native float L4D_GetTempHealth(int client);
+
+/**
+ * @brief Sets a Survivors temporary health buffer HP.
+ *
+ * @param client	Client id of the Survivor player
+ * @param health	Health value to set
+ *
+ * @noreturn
+ */
+native int L4D_SetTempHealth(int client, float health);
+
+/**
+ * @brief Plays specified music string name on the music channel to a client.
+ * @remarks Music strings such as "Event.BleedingOut"
+ * @remarks List of strings can be found inside the games VPK files here: scripts\game_sounds_music.txt
+ *
+ * @param client		Client id of the Survivor player
+ * @param music_str		Music string name to play
+ * @param source_ent	Source entity to play from (can be 0)
+ * @param one_float		Unknown, maybe duration? Please report what this is when using.
+ * @param one_bool		Unknown. Please report what this is when using.
+ * @param two_bool		Unknown. Please report what this is when using.
+ *
+ * @noreturn
+ */
+native void L4D_PlayMusic(int client, const char[] music_str, int source_ent = 0, float one_float, bool one_bool, bool two_bool);
+
+/**
+ * @brief Stops playing the specified music_str to the client.
+ * @remarks Music strings such as "Event.BleedingOut"
+ * @remarks List of strings can be found inside the games VPK files here: scripts\game_sounds_music.txt
+ *
+ * @param client		Client id of the Survivor player
+ * @param music_str		Music string name to stop playing
+ * @param one_float		Unknown, maybe duration? Please report what this is when using.
+ * @param one_bool		Unknown. Please report what this is when using.
+ *
+ * @noreturn
+ */
+native void L4D_StopMusic(int client, const char[] music_str, float one_float = 0.0, bool one_bool = false);
+
+/**
+ * @brief Creates the dissolve effect on common infected, players or objects.
  * @remarks You must handle the fading or killing of an entity as required
  * @remarks Used in the "Dissolve Infected" plugin by Silvers
  *
@@ -936,17 +1207,16 @@ native int L4D_Deafen(int client);
 native int L4D_Dissolve(int entity);
 
 /**
- * @brief Removes the boomer vomit effect from a player
+ * @brief Removes the boomer vomit effect from a player.
  *
  * @param client	Client id of the player to remove the effect from
- * @param vecAng	Angular velocity vector, director to spin the projectile
  *
  * @noreturn
  */
 native void L4D_OnITExpired(int client);
 
 /**
- * @brief Sets a physics entity angular velocity vector
+ * @brief Sets a physics entity angular velocity vector.
  * @remarks Spins an entity, for example used in "Throwable Melee Weapons" plugin by Silvers
  * @remarks See the "left4dhooks_test" plugin for an example on spinning the entity top over or sideways
  *
@@ -958,11 +1228,11 @@ native void L4D_OnITExpired(int client);
 native int L4D_AngularVelocity(int entity, const float vecAng[3]);
 
 /**
- * @brief Attempts to find a random valid position to spawn a Special Infected
+ * @brief Attempts to find a random valid position to spawn a Special Infected.
  * @remarks The zombieClass does not matter but different values yield different results:
  * @remarks Using the Tank zombieClass probably searches for a larger area that's clear of objects
  *
- * @param client			Client id to find an area near this player
+ * @param client			Client id to find an area near this player. Accepts 0 to find a random area instead
  * @param zombieClass		Special Infected class to search for a spawn position for
  * @param attempts			How many tries to find a valid location
  * @param vecPos			The vector array to store the valid location on success
@@ -980,6 +1250,23 @@ native bool L4D_GetRandomPZSpawnPosition(int client, int zombieClass, int attemp
  * @return					The NavArea value, or 0 on failure probably
  */
 native int L4D_GetNearestNavArea(const float vecPos[3]);
+
+/**
+ * @brief Returns the nav address of the last known area.
+ *
+ * @param client			The client to check
+ *
+ * @return					The nav area adress or 0 on fail
+ */
+native int L4D_GetLastKnownArea(int client);
+
+/**
+ * @brief Gets the maximum flow distance any survivor has achieved.
+ *
+ * @return			Returns the maximum flow distance any survivor has achieved.
+ */
+// L4D2 only.
+native float L4D2_GetFurthestSurvivorFlow();
 
 /**
  * @brief Given a nav area value, returns a randomly selected position for spawning.
@@ -1032,8 +1319,9 @@ native bool L4D_IsInFirstCheckpoint(int client);
 native bool L4D_IsInLastCheckpoint(int client);
 
 /**
- * @brief Checks if a world position is accessible to a player.
- * @remarks You can pass any client index into this (real or fake players, survivors or special infected).
+ * @brief Checks if a world position is accessible to a Survivor bot.
+ * @remarks You must pass a survivor bots client index into this, otherwise the plugin will attempt to find a bot or throw an error otherwise.
+ * @remarks It appears the server will sometimes crash when passing a real players client index.
  * @remarks If the clients flow distance is too far away from the position to test it will return false.
  *
  * @param client	Client id to use for testing
@@ -1045,7 +1333,14 @@ native bool L4D_IsInLastCheckpoint(int client);
 native bool L4D2_IsReachable(int client, const float vecPos[3]);
 
 /**
- * @brief Creates an activated PipeBomb projectile
+ * @brief Returns if players can control infected.
+ *
+ * @return			True if players can control infected, false otherwise
+ */
+native bool L4D_HasPlayerControlledZombies();
+
+/**
+ * @brief Creates an activated PipeBomb projectile.
  * @remarks Does not attach the "Fuse" or "Light" particles, see the "left4dhooks_test" plugin for example on attaching these
  * @remarks Also used in the "PipeBomb Shove" plugin by Silvers
  *
@@ -1058,7 +1353,42 @@ native bool L4D2_IsReachable(int client, const float vecPos[3]);
 native int L4D_PipeBombPrj(int client, const float vecPos[3], const float vecAng[3]);
 
 /**
- * @brief Creates a Spitter goo projectile
+ * @brief Creates an activated Molotov projectile.
+ *
+ * @param client	Client id to attribute the projectile to for damage credit
+ * @param vecPos	Vector coordinate of the projectile on creation
+ * @param vecAng	Vector velocity and direction of the projectile
+ *
+ * @return			Entity index of the projectile
+ */
+native int L4D_MolotovPrj(int client, const float vecPos[3], const float vecAng[3]);
+
+/**
+ * @brief Creates an activated VomitJar projectile.
+ *
+ * @param client	Client id to attribute the projectile to for damage credit
+ * @param vecPos	Vector coordinate of the projectile on creation
+ * @param vecAng	Vector velocity and direction of the projectile
+ *
+ * @return			Entity index of the projectile
+ */
+// L4D2 Only.
+native int L4D2_VomitJarPrj(int client, const float vecPos[3], const float vecAng[3]);
+
+/**
+ * @brief Creates an activated Grenade Launcher projectile.
+ *
+ * @param client	Client id to attribute the projectile to for damage credit
+ * @param vecPos	Vector coordinate of the projectile on creation
+ * @param vecAng	Vector velocity and direction of the projectile
+ *
+ * @return			Entity index of the projectile
+ */
+// L4D2 Only.
+native int L4D2_GrenadeLauncherPrj(int client, const float vecPos[3], const float vecAng[3]);
+
+/**
+ * @brief Creates a Spitter goo projectile.
  *
  * @param client	Client id to attribute the projectile to for damage credit
  * @param vecPos	Vector coordinate of the projectile on creation
@@ -1068,6 +1398,65 @@ native int L4D_PipeBombPrj(int client, const float vecPos[3], const float vecAng
  */
 // L4D2 only.
 native int L4D2_SpitterPrj(int client, const float vecPos[3], const float vecAng[3]);
+
+/**
+ * @brief Gives the player adrenaline effect and health benefits.
+ *
+ * @param client	Client id to affect
+ * @param fTime		Duration of screen effects (game default: 15.0 - Cvar: "adrenaline_duration")
+ * @param heal		True = give health benefits and fire "adrenaline_used" event. False = only screen effects.
+ *
+ * @return			True on success, false otherwise
+ */
+// L4D2 only.
+native void L4D2_UseAdrenaline(int client, float fTime = 15.0, bool heal = true);
+
+/**
+ * @brief Respawns a player from dead state.
+ * @remarks Resets players stats for kills etc.
+ * @remarks To preserve stats please view the code in "[L4D1 & L4D2] SM Respawn Improved" plugin by "Dragokas": https://forums.alliedmods.net/showthread.php?t=323220
+ *
+ * @param client			Client ID of the person to affect
+ *
+ * @noreturn
+ */
+native void L4D_RespawnPlayer(int client);
+
+/**
+ * @brief To takeover a Survivor bot. First use "ChangeClientTeam" and change them to 0. Then call "L4D_SetHumanSpec" then call "L4D_TakeOverBot".
+ *
+ * @return			True or false
+ */
+native int L4D_SetHumanSpec(int bot, int client);
+
+/**
+ * @brief To takeover a Survivor bot. First use "ChangeClientTeam" and change them to 0. Then call "L4D_SetHumanSpec" then call "L4D_TakeOverBot".
+ *
+ * @return			True or false
+ */
+native int L4D_TakeOverBot(int client);
+
+/**
+ * @brief Returns true when the "You will enter Spawn Mode in X seconds" text appears on the screen.
+ *
+ * @return			True or false
+ */
+native bool L4D_CanBecomeGhost(int client);
+
+/**
+ * @brief Returns if Wandering Witches are allowed.
+ *
+ * @return			True or false
+ */
+ // L4D2 only.
+native bool L4D2_AreWanderersAllowed();
+
+/**
+ * @brief Returns true when the rescue vehicle is leaving until the screen fades and credits start.
+ *
+ * @return			True or false
+ */
+native bool L4D_IsFinaleEscapeInProgress();
 
 /**
  * @brief Returns the current Finale stage type.
@@ -1096,15 +1485,7 @@ native void L4D2_ForceNextStage();
 native bool L4D2_IsTankInPlay();
 
 /**
- * @brief Gets the maximum flow distance any survivor has achieved.
- *
- * @return			Returns the maximum flow distance any survivor has achieved.
- */
-// L4D2 only.
-native float L4D2_GetFurthestSurvivorFlow();
-	
-/**
- * @brief Returns the value of the specified Director Variable key
+ * @brief Returns the value of the specified Director Variable key.
  *
  * @param key		Director variable key name to search for
  * @param value		Default value to use when the variable is not found
@@ -1114,11 +1495,191 @@ native float L4D2_GetFurthestSurvivorFlow();
 // L4D2 only.
 native int L4D2_GetScriptValueInt(const char[] key, int value);
 
+/**
+ * @brief Returns the nav distance between two areas. Does not account for out-of-bounds areas.
+ *
+ * @param startArea				NavArea address
+ * @param endArea				NavArea address
+ * @param ignoreNavBlockers		Bool to ignore blocked areas while checking (does not seem to work as expected)
+ *
+ * @return						Distance between the areas, 0.0 if the same area or -1.0 on failure.
+ */
+// L4D2 only.
+native float L4D2_NavAreaTravelDistance(float startPos[3], float endPos[3], bool ignoreNavBlockers);
+
+/**
+ * @brief Returns if there is a configurable difficulty setting.
+ * @brief Returns true for Coop/Realism modes.
+ *
+ * @return				True if there is a configurable difficulty setting, false otherwise.
+ **/
+// L4D2 only.
+native bool L4D2_HasConfigurableDifficultySetting();
+
+/**
+ * @brief Returns if the current game mode is Coop/Realism mode.
+ *
+ * @return				True if the current game mode is Coop/Realism mode, false otherwise.
+ **/
+// L4D2 only.
+native bool L4D2_IsGenericCooperativeMode();
+
+/**
+ * @brief Returns if the current game mode is Coop mode.
+ *
+ * @return				True if the current game mode is Coop mode, false otherwise.
+ **/
+native bool L4D_IsCoopMode();
+
+/**
+ * @brief Returns if the current game mode is Realism mode.
+ *
+ * @return				True if the current game mode is Realism mode, false otherwise.
+ **/
+// L4D2 only.
+native bool L4D2_IsRealismMode();
+
+/**
+ * @brief Returns if the current game mode is Survival mode.
+ *
+ * @return				True if the current game mode is Survival mode, false otherwise.
+ **/
+native bool L4D_IsSurvivalMode();
+
+/**
+ * @brief Returns if the current game mode is Scavenge mode.
+ *
+ * @return				True if the current game mode is Scavenge mode, false otherwise.
+ **/
+// L4D2 only.
+native bool L4D2_IsScavengeMode();
+
+/**
+ * @brief Returns if the current game mode is Versus mode.
+ *
+ * @return				True if the current game mode is Versus mode, false otherwise.
+ **/
+native bool L4D_IsVersusMode();
+
+
+
 // // Only returns default value provided.
 // native float L4D2_GetScriptValueFloat(const char[] key, float value);
 
 // Not implemented, request if really required.
 // native void L4D2_GetScriptValueString(const char[] key, const char[] value, char[] retValue, int maxlength);
+
+
+
+
+// ====================================================================================================
+// NATIVES - Silvers - VSCRIPT WRAPPERS
+// ====================================================================================================
+// These natives are using VScripts to call functions - this is much slower than native SDKCalls.
+// Popular VScript functions will be converted to standard native SDKCalls. Please tell me.
+// Recommend not using these too often, instead request proper native SDKCalls.
+
+/**
+ * @brief Returns the number of maps played since a new campaign (not the current chapter).
+ *
+ * @return		Number of maps played
+ */
+// L4D2 only.
+native int L4D2_VScriptWrapper_GetMapNumber();
+
+/**
+ * @brief Returns true if the character has ever been injured by a member of the given team.
+ * @remarks Team 3 returns true when hurt by Common Infected.
+ *
+ * @param client		Client to test
+ *
+ * @return				Number of maps played
+ */
+// L4D2 only.
+native bool L4D2_VScriptWrapper_HasEverBeenInjured(int client, int team);
+
+/**
+ * @brief Returns the time the character has been alive (only valid when alive).
+ *
+ * @return				Client to test
+ */
+// L4D2 only.
+native float L4D2_VScriptWrapper_GetAliveDuration(int client);
+
+/**
+ * @brief Returns true when a player is dead and can spectate others.
+ *
+ * @return				True if dead, false if not or script error.
+ */
+// L4D2 only.
+native bool L4D2_VScriptWrapper_IsDead(int client);
+
+/**
+ * @brief Returns true when a player is dead, but cannot spectate others yet.
+ *
+ * @param client		Client to test
+ *
+ * @return				True if dying, false if not or script error.
+ */
+// L4D2 only.
+native bool L4D2_VScriptWrapper_IsDying(int client);
+
+/**
+ * @brief Causes Adrenaline's speed and visual effect, no change to health.
+ *
+ * @param client		Client to affect
+ *
+ * @return				True on success (does not guarantee effect turned on), false on script error.
+ */
+// L4D2 only.
+native bool L4D2_VScriptWrapper_UseAdrenaline(int client, float time);
+
+/**
+ * @brief Revive a dead player by defib.
+ *
+ * @param client		Client to revive
+ *
+ * @return				True on success (does not guarantee they were revived), false on script error.
+ */
+// L4D2 only.
+native bool L4D2_VScriptWrapper_ReviveByDefib(int client);
+
+/**
+ * @brief Revive an incapacitated player.
+ *
+ * @param client		Client to revive
+ *
+ * @return				True on success (does not guarantee they were revived), false on script error.
+ */
+// L4D2 only.
+native bool L4D2_VScriptWrapper_ReviveFromIncap(int client);
+
+/**
+ * @brief Get the current bits for the bot sense flags: BOT_CANT_SEE, BOT_CANT_HEAR, BOT_CANT_FEEL.
+ *
+ * @param client		Bot to check
+ *
+ * @return				Current sense flags
+ */
+// L4D2 only.
+native int L4D2_VScriptWrapper_GetSenseFlags(int client);
+
+/**
+ * @brief Test two vector positions if they can be reached (only returns false if a location has no valid NavArea, out-of-bounds can be valid).
+ *
+ * @return		Returns true if a path exists, false if not or on script error.
+ */
+// L4D2 only.
+native bool L4D2_VScriptWrapper_NavAreaBuildPath(float startPos[3], float endPos[3], float flMaxPathLength, bool checkLOS, bool checkGround, int teamID, bool ignoreNavBlockers);
+
+/**
+ * @brief Compute distance between two areas.
+ *
+ * @return		-1 if can't reach 'endArea' from 'startArea'. 
+ */
+// L4D2 only.
+// Added as a demonstration and test, SDKCall is available, use "L4D2_NavAreaTravelDistance" instead.
+native float L4D2_VScriptWrapper_NavAreaTravelDistance(float startPos[3], float endPos[3], float flMaxPathLength, bool checkLOS, bool checkGround);
 
 
 
@@ -1170,7 +1731,6 @@ native int L4D_RestartScenarioFromVote(const char[] map);
  *
  * @return			The map's max completion distance (map distance score)
  */
-// L4D2 only.
 native int L4D_GetVersusMaxCompletionScore();
 
 /**
@@ -1180,7 +1740,6 @@ native int L4D_GetVersusMaxCompletionScore();
  *
  * @param score		The versus max completion score to set for the round
  */
-// L4D2 only.
 native int L4D_SetVersusMaxCompletionScore(int score);
 
 /**
@@ -1191,14 +1750,13 @@ native int L4D_SetVersusMaxCompletionScore(int score);
  * @deprecated This function can be called through SDKTools using CTerrorGameRules,
  *			and so you should switch off to using SDKTools instead of this native.
  *
- * @param logical_team		0 for A, 1 for B
+ * @param logical_team		L4D1: 1 for A, 2 for B. L4D1: 1-6 (Maybe something like: 1: Your team 1. 2: Enemy team. 3: Survivor completion percentage. 4: Health bonus. 5: Completion percentage. 6: Total score at round end.)
  * @param campaign_score	true to get campaign score instead of map score
  *
  * @return			the logical team's map score
  *					or -1 if the team hasn't played the round yet,
  *					or the team's campaign score if campaign_score = true
  */
-// L4D2 only.
 native int L4D_GetTeamScore(int logical_team, bool campaign_score=false);
 
 /**
@@ -1383,6 +1941,20 @@ native int L4D2_GetTankCount();
  * @return			Current Witch count
  */
 native int L4D2_GetWitchCount();
+
+/**
+ * @brief Returns the current map chapter number of the campaign
+ *
+ * @return			Map chapter
+ */
+native int L4D_GetCurrentChapter();
+
+/**
+ * @brief Returns the maximum number of chapters for the current game mode
+ *
+ * @return			Max chapters
+ */
+native int L4D_GetMaxChapters();
 
 /**
  * @brief Gets the campaign scores stored in the Versus Director
@@ -1632,14 +2204,14 @@ native float L4D2_ITimerGetElapsedTime(L4D2IntervalTimer timer);
 /*
  * 2020 Update1: Use the "Info Editor" plugin by Silvers to edit the weapon scripts and increase clip size.
  * 2020 Update2: Now works in Left4DHooks. Glitchy animation bug when reloading an already full weapon.
- * Fix plugin coming soon. Maybe full plugin to modify maximum clip size with all fixes handled.
+ * 2021 Update3: Fix plugin for modified ammo clips found here: https://forums.alliedmods.net/showthread.php?t=327105
 
 A note regarding Clipsize: Any nonstandard value will NOT be in effect at weapon pickup, which means the client
 has to reload once to achieve the modified value. To fix this, add a weapon pickup hook in your plugin (eg "player_use")
 and use something like this with a small timer delay of 0.1 seconds or more (dont you love this engine).
 
-	new weapon = GetPlayerWeaponSlot(client, 0);
-	if (weapon == INVALID_ENT_REFERENCE) return;
+	int weapon = GetPlayerWeaponSlot(client, 0);
+	if( weapon == INVALID_ENT_REFERENCE ) return;
 	char class[56];
 	GetEdictClassname(weapon, class, sizeof(class));
 	SetEntProp(weapon, Prop_Send, "m_iClip1", L4D2_GetIntWeaponAttribute(class, L4D2IWA_ClipSize));
@@ -1761,12 +2333,13 @@ native void L4D2_SetFloatWeaponAttribute(const char[] weaponName, L4D2FloatWeapo
 
 
 /**
- * @brief Retrieve the index for a given melee weapon from the Melee Weapon Database
- * @remarks returns -1 if no match is found
+ * @brief Retrieve the index for a given melee weapon from the Melee Weapon Database.
+ * @remarks Index updated on OnMapStart - suggest using RequestFrame to find index.
+ * @remarks Index can change depending on available melee weapons each map.
  *
  * @param weaponName 	Weapon to lookup index id for
  *
- * @return				The index id
+ * @return				The index id. Returns -1 if no match is found or melee unavailable.
  */
 // L4D2 only.
 native int L4D2_GetMeleeWeaponIndex(const char[] weaponName);
@@ -1875,7 +2448,6 @@ enum IntervalTimer
  * @return			The current number of tanks in play.
  * @error			Director address not found.
  */
-// L4D2 only.
 native int L4D2Direct_GetTankCount();
 
 /**
@@ -1902,7 +2474,6 @@ native void L4D2Direct_SetPendingMobCount(int count);
  *
  * @return				CountdownTimer reference to the timer, or CTimer_Null on lookup failure.
  */
-// L4D2 only.
 native CountdownTimer L4D2Direct_GetMobSpawnTimer();
 
 /**
@@ -2354,6 +2925,42 @@ native float L4D2Direct_GetFlowDistance(int client);
  * @noreturn
  */
 native void L4D2Direct_DoAnimationEvent(int client, int event);
+
+/**
+ * Get the clients health bonus.
+ *
+ * @note Survivors health bonuses are 0 until CTerrorPlayer:RecalculateVersusScore(void) calculates it.
+ *
+ * @param client		Client id whose health bonus is to be returned.
+ * @return				Int value of the survivors health bonus.
+*/
+// L4D1 only.
+native int L4DDirect_GetSurvivorHealthBonus(int client);
+
+/**
+ * Sets the clients health bonus.
+ *
+ * @note Keep in mind the individual survivors health bonus will be recalculate again when CTerrorPlayer:RecalculateVersusScore(void) is invoked.
+ * @note L4D_OnRecalculateVersusScore(client) forward (left4downtown exts) can block health bonus from being calculated to store your own value with this function.
+ *
+ * @param client		Client id to set the health bonus for
+ * @param health		Number of health bonus
+ * @param recompute		If true, L4DDirect_RecomputeTeamScores() is called after the health bonus has been set
+ * @noreturn
+ * @error				Invalid client.
+*/
+// L4D1 only.
+native void L4DDirect_SetSurvivorHealthBonus(int client, int health, bool recompute = true);
+
+/**
+ * Compute the scores on the scoreboard
+ *
+ * @noparam
+ * @return					False on error otherwise true
+ * @error					SDK call preparation failed
+ */
+// L4D1 only.
+native void L4DDirect_RecomputeTeamScores();
 
 
 
