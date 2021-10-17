@@ -462,7 +462,7 @@ public int Menu_SIDamageHandler(Handle menu, MenuAction action, int client, int 
 public void ResetSettings()
 {
 	SetConVarInt(FindConVar("vs_tank_damage"), 24);
-	SetConVarInt(FindConVar("ammo_m60_max"), 1);
+	SetConVarInt(FindConVar("ast_sitimer"), 1);
 	SetConVarBool(hRehealth, false);
 	ServerCommand("sm_reloadscript");
 }
@@ -530,16 +530,16 @@ public Action OnTongueRelease(Handle event, const char[] name, bool dontBroadcas
 		bIsUsingAbility[client] = false;
 }
 
-public int OnTongueCut(int survivor, int smoker)
+public void OnTongueCut(int survivor, int smoker)
 {
 	if ( GetConVarBool(hDmgModifyEnable) ) {
 		ForcePlayerSuicide(smoker);
 
 		char weapon[32];
 		GetClientWeapon(survivor, weapon, sizeof(weapon));
+		ReplaceString(weapon, sizeof(weapon), "weapon_", "", false);
 		SendDeathMessage(survivor, smoker, weapon, true);
 	}
-	return 0;
 }
 
 void SendDeathMessage(int attacker, int victim, const char[] weapon, bool headshot)
@@ -573,7 +573,9 @@ public Action OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 		int tHP = GetClientHealth(attacker);
 		int addHP = 0;
 		switch (zombie) {
-			case 1: {} 		// Smoker
+			case 1: {
+				addHP++;
+			} 		// Smoker
 			case 2: {} 		// Boomer
 			case 3: { 		// Hunter
 				if (strcmp(weapon, "pistol_magnum", false) == 0 || strcmp(weapon, "pistol", false) == 0|| strcmp(weapon, "smg",false) == 0 || strcmp(weapon, "smg_silenced", false) == 0)

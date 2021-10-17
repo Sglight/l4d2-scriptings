@@ -1,2 +1,3 @@
 *.zip
 sourcemod.code-workspace
+.vscode

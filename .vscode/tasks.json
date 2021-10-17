@@ -30,8 +30,8 @@
                     "${file}",
                     "-O2", // Optimization level (0=none, 2=full)
                     "-v2",// Verbosity level; 0=quiet, 1=normal, 2=verbose
-                    "-i/home/me/Public/L4D2/scripting/include", // All other 3rd-party-includes
-                    "-o/home/me/Public/L4D2/scripting/compiled/${fileBasenameNoExtension}.smx" // Output path for the compiled smx file
+                    "-i/home/me/Public/L4D2/l4d2-scriptings/include", // All other 3rd-party-includes
+                    "-o/home/me/Public/L4D2/l4d2-scriptings/compiled/${fileBasenameNoExtension}.smx" // Output path for the compiled smx file
                 ],
             },
 

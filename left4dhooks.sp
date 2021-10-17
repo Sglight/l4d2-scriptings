@@ -1,6 +1,6 @@
 /*
 *	Left 4 DHooks Direct
-*	Copyright (C) 2020 Silvers
+*	Copyright (C) 2021 Silvers
 *
 *	This program is free software: you can redistribute it and/or modify
 *	it under the terms of the GNU General Public License as published by
@@ -18,13 +18,17 @@
 
 
 
-#define PLUGIN_VERSION		"1.21"
+#define PLUGIN_VERSION		"1.63"
 
 #define DEBUG				0
 // #define DEBUG			1	// Prints addresses + detour info (only use for debugging, slows server down)
 
 #define DETOUR_ALL			0	// Only enable required detours, for public release.
 // #define DETOUR_ALL		1	// Enable all detours, for testing.
+
+#define KILL_VSCRIPT		0	// 0=Keep VScript entity after using for "GetVScriptOutput". 1=Kill the entity after use (more resourceful to keep recreating, use if you're maxing out entities and reaching the limit regularly).
+
+
 
 /*======================================================================================
 	Plugin Info:
@@ -37,6 +41,325 @@
 
 ========================================================================================
 	Change Log:
+
+1.63 (15-Oct-2021)
+	- Changed all projectile natives to allow passing 0 (world) instead of a client index. Thanks to "BHaType" for reporting.
+	- Changed forward "L4D_OnGameModeChange" from "Action" type to "Void". Thanks to "Psyk0tik" for reporting.
+	- Fixed commands "sm_l4dd_detours" and "sm_l4dhooks_detours" not showing all forwards when they have pre and post hooks.
+
+	- Added 11 new forwards to L4D1 and L4D2. Thanks to "Psyk0tik" for the suggestions, signatures and detour functions.
+		- "L4D_TankClaw_DoSwing_Pre" - When a tank is swinging to punch.
+		- "L4D_TankClaw_DoSwing_Post" - When a tank is swinging to punch.
+		- "L4D_TankClaw_GroundPound_Pre" - When an tank punches the ground.
+		- "L4D_TankClaw_GroundPound_Post" - When an tank punches the ground.
+		- "L4D_TankClaw_OnPlayerHit_Pre" - When a tank swings and punches a player.
+		- "L4D_TankClaw_OnPlayerHit_Post" - When a tank swings and punches a player.
+		- "L4D_TankRock_OnDetonate" - When a tank rock hits something.
+		- "L4D_TankRock_OnRelease" - When a tank rock is thrown.
+		- "L4D_PlayerExtinguish" - When a player is about to be extinguished.
+		- "L4D_PipeBombProjectile_Pre" - When a PipeBomb projectile is being created.
+		- "L4D_PipeBombProjectile_Post" - After a PipeBomb projectile is created.
+
+	- Added 1 new forward to L4D2. Thanks to "Lux" for the suggestion, signature and detour functions.
+		- "L4D2_MeleeGetDamageForVictim" - When calculating melee damage to inflict on something.
+
+	- GameData files, include file and plugins updated.
+
+1.62 (08-Oct-2021)
+	- L4D1 Linux: Update thanks to "Forgetest" for writing.
+	- L4D1 Linux: Fixed issues with the forwards "L4D_OnShovedBySurvivor" and "L4D2_OnStagger". Thanks "HarryPotter" for reporting.
+
+	- L4D1 GameData file and plugin updated.
+
+1.61 (05-Oct-2021)
+	- Added natives "L4D_GetTempHealth" and "L4D_SetTempHealth" to handle Survivors temporary health buffer.
+	- Added natives "L4D_PlayMusic" to play a specified music string to a client. Thanks to "DeathChaos25" and "Shadowysn" for "Dynamic Soundtrack Sets" plugin.
+	- Added natives "L4D_StopMusic" to stop playing a specified music string to a client. Thanks to "DeathChaos25" and "Shadowysn" for "Dynamic Soundtrack Sets" plugin.
+	- Moved the animation ACT_* enums from "include/left4dhooks.inc" to "include/left4dhooks_anim.inc". Suggested by "Accelerator". No plugin changes required.
+
+	- Thanks to "Psyk0tik" for requesting the following forwards and natives and their signatures found here: https://github.com/Psykotikism/L4D1-2_Signatures
+
+	- Added natives:
+		- "L4D2_HasConfigurableDifficultySetting" - Returns if there is a configurable difficulty setting.
+		- "L4D2_IsGenericCooperativeMode" - Returns if the current game mode is Coop/Realism mode.
+		- "L4D_IsCoopMode" - Returns if the current game mode is Coop mode.
+		- "L4D2_IsRealismMode" - Returns if the current game mode is Realism mode.
+		- "L4D2_IsScavengeMode" - Returns if the current game mode is Scavenge mode.
+		- "L4D_IsSurvivalMode" - Returns if the current game mode is Survival mode.
+		- "L4D_IsVersusMode" - Returns if the current game mode is Versus mode.
+
+	- Added forwards:
+		- "L4D_OnFalling" - Called when a player is falling.
+		- "L4D_OnFatalFalling" - Called when a player is falling in a fatal zone.
+		- "L4D2_OnPlayerFling" - Called when a player is flung to the ground.
+		- "L4D_OnEnterStasis" - Called when a Tank enters stasis mode in Versus mode.
+		- "L4D_OnLeaveStasis" - Called when a Tank leaves stasis mode in Versus mode.
+
+	- GameData files, include file and plugins updated.
+
+1.60 (29-Sep-2021)
+	- Added native "L4D2_GrenadeLauncherPrj" to create an activated Grenade Launcher projectile which detonates on impact. L4D2 only.
+	- Fixed L4D1 Linux "MolotovProjectile_Create" signature. Thanks to "Ja-Forces" for reporting.
+
+1.59 (29-Sep-2021)
+	- HotFix: Fix Linux not loading the last 2 natives.
+
+1.58 (29-Sep-2021)
+	- Added native "L4D_MolotovPrj" to create an activated Molotov projectile which detonates on impact.
+	- Added native "L4D2_VomitJarPrj" to create an activated VomitJar projectile which detonates on impact. L4D2 only.
+	- Added "STATE_*" enums to the include file for use with the "L4D_State_Transition" native. Thanks to "BHaType" for providing.
+	- Fixed some incorrect information in the include file. Thanks to "jackz" for reporting.
+
+	- GameData files, include file and plugins updated.
+
+1.57 (18-Sep-2021)
+	- Changed the method for getting the current GameMode. Should have no more issues. Thanks to "ddd123" for reporting.
+	- L4D2: Wildcarded the "CTerrorPlayer::Fling" signature for compatibility with being detoured. Thanks to "ddd123" for reporting.
+
+	- L4D2 GameData file and plugin updated.
+
+1.56 (15-Sep-2021)
+	- Fixed spawning an entity directly OnMapStart (can cause crashes), delayed by a frame to fix errors. Thanks to "fdxx" for reporting.
+
+1.55 (12-Sep-2021)
+	- Fixed native "L4D2Direct_TryOfferingTankBot" not working for L4D1 Linux due to the last update. Thanks to "Forgetest" for reporting.
+	- L4D1 gamedata file updated only.
+
+1.54 (12-Sep-2021)
+	- Big thanks to "Forgetest" and "HarryPotter" for helping fix and test this release.
+
+	- Added forward "L4D_OnGameModeChange" to notify plugins when the mode has changed to Coop, Versus, Survival and Scavenge (L4D2).
+	- Added native "L4D_GetGameModeType" to return if the current game mode is Coop, Versus, Survival or Scavenge (L4D2).
+
+	- Update for L4D1:
+
+	- Fixed on Linux forward "L4D_OnSpawnWitch" from not triggering for some Witch spawns. Thanks to "Forgetest" for fixing.
+	- Fixed on Linux forward "L4D_OnTryOfferingTankBot" from not triggering on the first tank. Thanks to "Forgetest" for fixing.
+	- Unlocked native "L4D2Direct_GetMobSpawnTimer" for usage in L4D1. Thanks to "HarryPotter" for reporting functionality.
+	- Unlocked native "L4D2Direct_GetTankCount" for usage in L4D1. Missed this from the last update.
+
+	- L4D1 GameData file, include file and plugins updated.
+
+1.53 (09-Sep-2021)
+	- Update for L4D1:
+
+	- Added forward "L4D_OnRecalculateVersusScore" from "raziEiL"'s port of "L4D Direct".
+	- Added natives "L4DDirect_GetSurvivorHealthBonus", "L4DDirect_SetSurvivorHealthBonus" and "L4DDirect_RecomputeTeamScores" from "raziEiL"'s port of "L4D Direct".
+	- Changed native "L4D2_GetTankCount" to use the directors variable instead of counting entities. Thanks to "Forgetest" for the offsets.
+	- Unblocked native "L4D_GetTeamScore" for usage in L4D1. Accepts logical_team params 1-6.
+	- Fixed forward "L4D_OnFirstSurvivorLeftSafeArea" not blocking correctly. Thanks to "Forgetest" for the solution.
+	- Various fixes and additions thanks to "HarryPotter" for requesting and testing.
+
+	- L4D1 GameData file, include file and plugins updated.
+
+1.52 (31-Aug-2021)
+	- Added L4D1 and L4D2 specific "ACT_*" animation activity constants to the include file for usage in animation pre-hooks. See the include file for details.
+	- Wildcarded "RestartScenarioFromVote" detour to be compatible with the "[L4D2] Restart Without Changelevel" plugin by "iaNanaNana".
+	- Various minor changes to the code legibility.
+
+1.51 (10-Aug-2021)
+	- Added natives "L4D_GetCurrentChapter" and "L4D_GetMaxChapters" to get the current and max chapters count. Thanks to "Psyk0tik" for help.
+	- L4D1: Added natives "L4D_GetVersusMaxCompletionScore" and "L4D_SetVersusMaxCompletionScore" to get/set Versus max score. Thanks to "BHaType" for offsets.
+	- L4D1: Fixed broken "CThrowActivate" signature due to the 1.0.4.0 update. Thank to "matrixmark" for reporting.
+
+	- GameData files, include file and plugins updated.
+
+1.50 (22-Jul-2021)
+	- Fixed "Native was not found" errors in L4D1. Thanks to "xerox8521" for reporting.
+	- Test plugin: Fixed "L4D_OnMaterializeFromGhostPre" and "L4D_OnMaterializeFromGhost" throwing "String formatted incorrectly" errors.
+
+1.49 (13-Jul-2021)
+	- L4D2: Fixed the "SpawnTimer" offset being wrong. Thanks to "Forgetest" for reporting.
+	- L4D2: GameData file updated.
+
+1.48 (13-Jul-2021)
+	- Fixed "Param is not a pointer" in the "L4D_OnVomitedUpon" forward. Thanks to "ddd123" for reporting.
+	- L4D2: Changed the way "ForceNextStage" address is read on Windows, hopefully future proof.
+
+1.47 (10-Jul-2021)
+	- Fixed "Trying to get value for null pointer" in the "L4D_OnVomitedUpon" forward. Thanks to "Shadowart" for reporting.
+
+1.46 (09-Jul-2021)
+	- L4D2: Added native "L4D2_ExecVScriptCode" to exec VScript code instead of having to create an entity to fire code.
+	- L4D2: Fixed GameData file from the "2.2.2.0" game update.
+
+1.45 (04-Jul-2021)
+	- Fixed bad description for "L4D_SetHumanSpec" and "L4D_TakeOverBot" in the Include file.
+	- L4D1: Fixed forward "L4D_OnVomitedUpon" crashing. GameData file updated. Thanks to "Crasher_3637" for reporting.
+
+1.44 (01-Jul-2021)
+	- Fixed forward "L4D_OnMaterializeFromGhost" not firing. Thanks to "ProjectSky" for reporting.
+	- Fixed changelog description. Thanks to "Spirit_12" for reporting.
+
+1.43 (01-Jul-2021)
+	- L4D1 & L4D2 update:
+	- Added forward "L4D_OnMaterializeFromGhostPre" and "L4D_OnMaterializeFromGhost" when a client spawns out of ghost mode. Thanks to "ProjectSky" and "sorallll" and for suggesting.
+
+	- Added native "L4D_RespawnPlayer" to respawn a dead player.
+	- Added native "L4D_SetHumanSpec" to takeover a bot.
+	- Added native "L4D_TakeOverBot" to takeover a bot.
+	- Added native "L4D_CanBecomeGhost" to determine when someone is about to enter ghost mode.
+	- Added native "L4D2_AreWanderersAllowed" to determine if Witches can wander.
+	- Added native "L4D_IsFinaleEscapeInProgress" to determine when the rescue vehicle is leaving until.
+	- Added native "L4D_GetLastKnownArea" to retrieve a clients last known nav area.
+
+	- Added missing "ACT_ITEM2_VM_LOWERED_TO_IDLE" to the "data/left4dhooks.l4d2.cfg" config.
+
+	- Updated: Plugin, Test plugin, Include file, GameData files and "data/left4dhooks.l4d2.cfg" config.
+
+1.42 (23-Jun-2021)
+	- L4D1 & L4D2 update:
+	- Added forward "L4D_OnVomitedUpon" when client is covered in vomit.
+	- Added forward "L4D_OnEnterGhostStatePre" with the ability to block entering ghost state.
+	- Changed 2 signatures to be compatible with detouring: "CTerrorPlayer::OnStaggered" and "CTerrorPlayer::OnVomitedUpon".
+
+	- L4D2 update only:
+
+	- Added forward "L4D2_OnHitByVomitJar" when a Bilejar explodes on clients.
+	- Added native "L4D2_NavAreaTravelDistance" to return the nav flow distance between two areas.
+	- Added native "L4D2_UseAdrenaline" to give a player the Adrenaline effect and health benefits.
+
+	- Added various natives as wrappers executing VScript code:
+		- These are slower than native SDKCalls, please report popular ones to convert to fast SDKCalls.
+		"L4D2_VScriptWrapper_GetMapNumber"
+		"L4D2_VScriptWrapper_HasEverBeenInjured"
+		"L4D2_VScriptWrapper_GetAliveDuration"
+		"L4D2_VScriptWrapper_IsDead"
+		"L4D2_VScriptWrapper_IsDying"
+		"L4D2_VScriptWrapper_UseAdrenaline"
+		"L4D2_VScriptWrapper_ReviveByDefib"
+		"L4D2_VScriptWrapper_ReviveFromIncap"
+		"L4D2_VScriptWrapper_GetSenseFlags"
+		"L4D2_VScriptWrapper_NavAreaBuildPath"
+		"L4D2_VScriptWrapper_NavAreaTravelDistance" // Added as a demonstration and test, SDKCall is available, use "L4D2_NavAreaTravelDistance" instead.
+
+	- Updated: Plugin, Test plugin, GameData and Include file. Both L4D1 and L4D2.
+	- Thanks to "Eärendil" for showing me how to call some VScript functions.
+
+1.41 (18-Jun-2021)
+	- L4D2: Fixed "InvulnerabilityTimer" offset. Thanks to "Nuki" for helping.
+	- GameData .txt file updated.
+
+1.40 (16-Jun-2021)
+	- L4D2: Fixed various offsets breaking from "2.2.1.3" game update. Thanks to "Nuki" for reporting and helping.
+	- GameData .txt file updated.
+
+1.39 (16-Jun-2021)
+	- Changed command "sm_l4dd_detours" results displayed to be read easier.
+	- L4D2: Fixed signatures breaking from "2.2.1.3" game update. Thanks to "Crasher_3637" for fixing.
+	- L4D2: Fixed "VanillaModeOffset" in Linux breaking from "2.2.1.3" game update. Thanks to "Accelerator74" for fixing.
+	- GameData .txt file updated.
+
+1.38 (28-Apr-2021)
+	- Changed native "L4D2_IsReachable" to allow using team 2 and team 4.
+
+1.37 (20-Apr-2021)
+	- Removed "RoundRespawn" being used, was for private testing, maybe a future native. Thanks to "Ja-Forces" for reporting.
+
+1.36 (20-Apr-2021)
+	- Added optional forward "AP_OnPluginUpdate" from "Autoreload Plugins" by Dragokas, to rescan required detours when loaded plugins change.
+	- Fixed native "L4D2Direct_GetFlowDistance" sometimes returning -9999.0 when invalid, now returns 0.0;
+	- Fixed native "L4D_FindRandomSpot" from crashing Linux servers. Thanks to "Gold Fish" for reporting and fixing and "Marttt" for testing.
+	- Restricted native "L4D2_IsReachable" client index to Survivor bots only. Attempts to find a valid bot otherwise it will throw an error. Thanks to "Forgetest" for reporting.
+	- Signatures compatibility with plugins detouring them. L4D1: "OnLedgeGrabbed", "OnRevived" and L4D2: "OnLedgeGrabbed". Thanks to "Dragokas" for providing.
+
+	- Updated: L4D1 GameData file.
+	- Updated: L4D2 GameData file.
+	- Updated: Plugin and Include file.
+	- Updated: Test plugin to reflect above changes.
+
+1.35 (10-Apr-2021)
+	- Fixed native "L4D_GetTeamScore" error message when using the wrong team values. Thanks to "BHaType" for reporting.
+	- Restricted native "L4D2_IsReachable" client index to bots only. Attempts to find a valid bot otherwise it will throw an error. Thanks to "Forgetest" for reporting.
+
+1.34 (23-Mar-2021)
+	- Added native "L4D_HasPlayerControlledZombies" to return if players can control infected. Thanks to "Spirit_12" for requesting.
+	- Thanks to "Crasher_3637" for the L4D1 signature.
+	- Fixed Linux detection accidentally being broken from version 1.17 update.
+
+	- Updated: L4D1 GameData file.
+	- Updated: L4D2 GameData file.
+	- Updated: Plugin and Include file.
+	- Updated: Test plugin to reflect above changes.
+
+1.33a (04-Mar-2021)
+	- L4D1 GameData updated. Changes fixing "L4D2_OnEntityShoved" were missing from the previous update.
+
+1.33 (02-Mar-2021)
+	- Changed forward "L4D2_OnEntityShoved" to trigger for all entities being shoved not just clients.
+	- Fixed forward "L4D2_OnEntityShoved" not working in L4D1. GameData file updated for L4D1.
+	- Fixed native "L4D_IsFirstMapInScenario" crashing in L4D1 from changes in version 1.30 update.
+
+1.32 (23-Feb-2021)
+	- Changed native "L4D_GetRandomPZSpawnPosition" to accept client index of 0. Thanks to "Accelerator74" for reporting.
+	- Fixed target filters misspelling "incapped". Thanks to "Forgetest" for reporting.
+
+1.31 (23-Feb-2021)
+	- Added Target Filters to target randomly. Requested by "Tonblader":
+		"@incappedsurvivors", "@is"
+		"@randomincappedsurvivor", "@ris"
+		"@randomsurvivor", "@rs"
+		"@randominfected", "@ri"
+		"@randomtank", "@rt"
+		"@incappedsurvivorbot", "@isb"
+		"@survivorbot", "@sb"
+		"@infectedbot", "@ib"
+		"@tankbot", "@tb"
+
+	- Fixed "L4D_GetPlayerSpawnTime" from returning the wrong value again. Thanks to "Forgetest" for reporting.
+
+1.30 (15-Feb-2021)
+	- Fixed natives "L4D2_SetIntMeleeAttribute" and "L4D2_SetFloatMeleeAttribute" functions. Thanks to "bw4re" for reporting.
+	- Fixed native "L4D_GetPlayerSpawnTime" giving the wrong time. Thanks to "Forgetest" for reporting.
+
+	- Fixes by "Dragokas"
+	- Fixed native "L4D_IsFirstMapInScenario" call with SDKCall_Raw returned error in SM 1.11, L4D1. Thanks to "Crasher" for reporting, and "Rostu" for help.
+	- Fixed "ForceNextStage" signature (WIN).
+
+	- Updated: L4D2 GameData file.
+	- Updated: Plugin.
+
+1.29 (10-Oct-2020)
+	- Fixed "L4D_StaggerPlayer" not working with NULL_VECTOR. Thanks to "Zippeli" for reporting.
+
+1.28 (09-Oct-2020)
+	- Added command "sm_l4dd_unreserve" to remove lobby reservation. Added for testing purposes but is functional.
+	- Fixed L4D1 GameData failing to find "g_pServer" address. Thanks to "Ja-Forces" for reporting.
+	- Fixed forward "L4D_OnFirstSurvivorLeftSafeArea" throwing errors about null pointer.
+
+1.27 (05-Oct-2020)
+	- Fixed not loading in L4D1 due to recent changes. Thanks to "TiTz" for reporting.
+
+1.26 (01-Oct-2020)
+	- L4D2: Fixed the new target filters not working correctly, now matches by modelname for Survivors instead of character netprop.
+
+1.25 (01-Oct-2020)
+	- Added survivor specific target filters:	@nick, @rochelle, @coach, @ellis, @bill, @zoey, @francis, @louis
+	- Added special infected target filters:	@smokers, @boomers, @hunters, @spitters, @jockeys, @chargers
+	- Changed native "L4D2_GetMeleeWeaponIndex" to return -1 instead of throwing an error, due to melee being unavailable.
+	- Fixed melee weapon IDs being incorrect depending on which are enabled. Thanks to "iaNanaNana" for reporting.
+	- Updated the "data/left4dhooks.l4d2.cfg" config with latest "ACT_*" animation numbers.
+
+1.24 (27-Sep-2020)
+	- Reverted change: native "L4D_GetTeamScore" now accepts values 1 and 2 again.
+	- Changed natives:
+		"L4D2Direct_GetVSTankFlowPercent", "L4D2Direct_SetVSTankFlowPercent", "L4D2Direct_GetVSTankToSpawnThisRound",
+		"L4D2Direct_SetVSTankToSpawnThisRound", "L4D2Direct_GetVSWitchFlowPercent", "L4D2Direct_SetVSWitchFlowPercent",
+		"L4D2Direct_GetVSWitchToSpawnThisRound" and "L4D2Direct_SetVSWitchToSpawnThisRound".
+	- Corrected natives "roundNumber" to consider "m_bAreTeamsFlipped" and "m_bInSecondHalfOfRound".
+	- Thanks to "devilesk" for native value clarification.
+
+1.23 (27-Sep-2020)
+	- Update by "ProdigySim" to fix Addons Eclipse. Thank you!
+	- Updated: L4D2 GameData file.
+
+1.22 (24-Sep-2020)
+	- Compatibility update for L4D2's "The Last Stand" update.
+	- Big thanks to "ProdigySim" for help updating various gamedata offsets and signatures.
+	- Added support for the 2 new melee weapons.
+	- Changed native "L4D_GetTeamScore" to accept values 0 and 1 which seems is the standard.
+	- Late loading with debug enabled now shows the g_pGameRules pointer.
+	- Moved hard coded Addon Eclipse offsets to gamedata.
 
 1.21 (01-Sep-2020)
 	- Removed teleporting the old and new tank players when using "L4D_ReplaceTank" native.
@@ -282,6 +605,9 @@
 
 *	"AtomicStryker" and whoever else contributed to "l4d2addresses.txt" gamedata file.
 
+*	"Dragokas" for "String Tables Dumper" some code used to get melee weapon IDs.
+		https://forums.alliedmods.net/showthread.php?t=322674
+
 ===================================================================================================*/
 
 #pragma semicolon 1
@@ -304,6 +630,9 @@ float g_fProf;
 // Plugin
 #define GAMEDATA_1							"left4dhooks.l4d1"
 #define GAMEDATA_2							"left4dhooks.l4d2"
+#define GAMEDATA_TEMP						"left4dhooks.temp"
+#define NATIVE_UNSUPPORTED1					"\n==========\nThis Native is only supported in L4D1.\nPlease fix the code to avoid calling this native from L4D2.\n=========="
+#define NATIVE_UNSUPPORTED2					"\n==========\nThis Native is only supported in L4D2.\nPlease fix the code to avoid calling this native from L4D1.\n=========="
 
 // Tank animations
 #define L4D2_ACT_HULK_THROW					761
@@ -334,9 +663,7 @@ float g_fProf;
 #define L4D1_SEQ_THROW_FROM_HIP				48
 #define L4D1_SEQ_THROW_2HAND_OVER			49
 
-
-
-// Dissolve
+// Dissolver
 #define SPRITE_GLOW							"sprites/blueglow1.vmt"
 
 static const char g_sModels1[][] =
@@ -359,13 +686,15 @@ static const char g_sModels2[][] =
 
 
 // Dynamic Detours:
-#define MAX_FWD_LEN							32		// Maximum string length of forward names, used for ArrayList.
+#define MAX_FWD_LEN							48		// Maximum string length of forward names, used for ArrayList.
 
 // ToDo: When using extra-api.ext (or hopefully one day native SM forwards), g_aDetoursHooked will store the number of plugins using each forward
 // so we can disable when the value is 0 and not have to check all plugins just to determine if still required.
 ArrayList g_aDetoursHooked;					// Identifies if the detour hook is enabled or disabled
 ArrayList g_aDetourHandles;					// Stores detour handles to enable/disable as required
+ArrayList g_aGameDataSigs;					// Stores Signature names
 ArrayList g_aForwardNames;					// Stores Forward names
+ArrayList g_aUseLastIndex;					// Use last index
 ArrayList g_aForwardIndex;					// Stores Detour indexes
 ArrayList g_aForceDetours;					// Determines if a detour should be forced on without any forward using it
 int g_iCurrentIndex;						// Index for each detour while created
@@ -392,18 +721,29 @@ ArrayList g_aMeleePtrs;						// Stores melee pointers
 
 
 // FORWARDS
+GlobalForward g_hForward_GameModeChange;
 GlobalForward g_hForward_SpawnSpecial;
 GlobalForward g_hForward_SpawnTank;
 GlobalForward g_hForward_SpawnWitch;
 GlobalForward g_hForward_SpawnWitchBride;
 GlobalForward g_hForward_ClearTeamScores;
 GlobalForward g_hForward_SetCampaignScores;
+GlobalForward g_hForward_RecalculateVersusScore;
 GlobalForward g_hForward_OnFirstSurvivorLeftSafeArea;
 GlobalForward g_hForward_GetScriptValueInt;
 GlobalForward g_hForward_GetScriptValueFloat;
 GlobalForward g_hForward_GetScriptValueString;
 GlobalForward g_hForward_IsTeamFull;
 GlobalForward g_hForward_EnterGhostState;
+GlobalForward g_hForward_EnterGhostStatePre;
+GlobalForward g_hForward_CTankClaw_DoSwing_Pre;
+GlobalForward g_hForward_CTankClaw_DoSwing_Post;
+GlobalForward g_hForward_CTankClaw_GroundPound_Pre;
+GlobalForward g_hForward_CTankClaw_GroundPound_Post;
+GlobalForward g_hForward_CTankClaw_OnPlayerHit_Pre;
+GlobalForward g_hForward_CTankClaw_OnPlayerHit_Post;
+GlobalForward g_hForward_CTankRock_Detonate;
+GlobalForward g_hForward_CTankRock_OnRelease;
 GlobalForward g_hForward_TryOfferingTankBot;
 GlobalForward g_hForward_MobRushStart;
 GlobalForward g_hForward_SpawnITMob;
@@ -418,6 +758,7 @@ GlobalForward g_hForward_FastGetSurvivorSet;
 GlobalForward g_hForward_GetMissionVSBossSpawning;
 GlobalForward g_hForward_CThrowActivate;
 GlobalForward g_hForward_StartMeleeSwing;
+GlobalForward g_hForward_GetDamageForVictim;
 GlobalForward g_hForward_SendInRescueVehicle;
 GlobalForward g_hForward_ChangeFinaleStage;
 GlobalForward g_hForward_EndVersusModeRound;
@@ -430,10 +771,22 @@ GlobalForward g_hForward_OnReplaceTank;
 GlobalForward g_hForward_OnUseHealingItems;
 GlobalForward g_hForward_OnFindScavengeItem;
 GlobalForward g_hForward_OnChooseVictim;
+GlobalForward g_hForward_OnMaterializeFromGhostPre;
+GlobalForward g_hForward_OnMaterializeFromGhost;
+GlobalForward g_hForward_OnVomitedUpon;
+GlobalForward g_hForward_OnHitByVomitJar;
+GlobalForward g_hForward_PipeBombProjectile_Pre;
+GlobalForward g_hForward_PipeBombProjectile_Post;
+GlobalForward g_hForward_PlayerExtinguish;
 GlobalForward g_hForward_InfernoSpread;
 GlobalForward g_hForward_CTerrorWeapon_OnHit;
 GlobalForward g_hForward_OnPlayerStagger;
 GlobalForward g_hForward_OnShovedByPounceLanding;
+GlobalForward g_hForward_PlayerFling;
+GlobalForward g_hForward_FatalFalling;
+GlobalForward g_hForward_Falling;
+GlobalForward g_hForward_EnterStasis;
+GlobalForward g_hForward_LeaveStasis;
 GlobalForward g_hForward_AddonsDisabler;
 // GlobalForward g_hForward_GetRandomPZSpawnPos;
 // GlobalForward g_hForward_InfectedShoved;
@@ -443,15 +796,31 @@ GlobalForward g_hForward_AddonsDisabler;
 
 // NATIVES - SDKCall
 // Silvers Natives
-Handle g_hSDK_Call_GetClient;
+Handle g_hSDK_Call_HasConfigurableDifficultySetting;
+Handle g_hSDK_Call_IsGenericCooperativeMode;
+Handle g_hSDK_Call_IsRealismMode;
+Handle g_hSDK_Call_NavAreaTravelDistance;
 Handle g_hSDK_Call_GetLastKnownArea;
+Handle g_hSDK_Call_MusicPlay;
+Handle g_hSDK_Call_MusicStop;
 Handle g_hSDK_Call_Deafen;
 Handle g_hSDK_Call_Dissolve;
 Handle g_hSDK_Call_OnITExpired;
 Handle g_hSDK_Call_AngularVelocity;
 Handle g_hSDK_Call_IsReachable;
+Handle g_hSDK_Call_HasPlayerControlledZombies;
 Handle g_hSDK_Call_PipeBombPrj;
+Handle g_hSDK_Call_MolotovPrj;
+Handle g_hSDK_Call_VomitJarPrj;
+Handle g_hSDK_Call_GrenadeLauncher;
 Handle g_hSDK_Call_SpitterPrj;
+Handle g_hSDK_Call_OnAdrenalineUsed;
+Handle g_hSDK_Call_RoundRespawn;
+Handle g_hSDK_Call_SetHumanSpec;
+Handle g_hSDK_Call_TakeOverBot;
+Handle g_hSDK_Call_CanBecomeGhost;
+Handle g_hSDK_Call_AreWanderersAllowed;
+Handle g_hSDK_Call_IsFinaleEscapeInProgress;
 Handle g_hSDK_Call_ForceNextStage;
 Handle g_hSDK_Call_IsTankInPlay;
 Handle g_hSDK_Call_GetFurthestSurvivorFlow;
@@ -464,7 +833,9 @@ Handle g_hSDK_Call_FindRandomSpot;
 Handle g_hSDK_Call_HasAnySurvivorLeftSafeArea;
 Handle g_hSDK_Call_IsAnySurvivorInCheckpoint;
 Handle g_hSDK_Call_IsAnySurvivorInStartArea;
-Handle SDK_KV_GetString;
+Handle g_hSDK_Call_GetMaxChapters;
+Handle g_hSDK_Call_GetGameMode;
+Handle g_hSDK_Call_KV_GetString;
 
 // left4downtown.inc
 Handle g_hSDK_Call_GetTeamScore;
@@ -486,10 +857,12 @@ Handle g_hSDK_Call_SpawnWitch;
 Handle g_hSDK_Call_SpawnWitchBride;
 Handle g_hSDK_Call_GetWeaponInfo;
 Handle g_hSDK_Call_GetMeleeInfo;
+Handle g_hSDK_Call_GetMissionInfo;
 Handle g_hSDK_Call_TryOfferingTankBot;
 Handle g_hSDK_Call_GetNavArea;
 Handle g_hSDK_Call_GetFlowDistance;
 Handle g_hSDK_Call_DoAnimationEvent;
+Handle g_hSDK_Call_RecomputeTeamScores;
 Handle g_hSDK_Call_LobbyUnreserve;
 // Handle g_hSDK_Call_GetCampaignScores;
 // Handle g_hSDK_Call_LobbyIsReserved;
@@ -498,7 +871,7 @@ Handle g_hSDK_Call_LobbyUnreserve;
 Handle g_hSDK_Call_CTerrorPlayer_OnVomitedUpon;
 Handle g_hSDK_Call_CTerrorPlayer_OnHitByVomitJar;
 Handle g_hSDK_Call_Infected_OnHitByVomitJar;
-Handle g_hSDK_Call_Fling;
+Handle g_hSDK_Call_CTerrorPlayer_Fling;
 Handle g_hSDK_Call_CancelStagger;
 Handle g_hSDK_Call_CreateRescuableSurvivors;
 Handle g_hSDK_Call_OnRevived;
@@ -528,6 +901,9 @@ Handle g_hSDK_Call_UnRegisterForbiddenTarget;
 // Offsets
 // int ClearTeamScore_A;
 // int ClearTeamScore_B;
+int g_iAddonEclipse1;
+int g_iAddonEclipse2;
+
 int VersusStartTimer;
 int m_rescueCheckTimer;
 int SpawnTimer;
@@ -553,6 +929,8 @@ int m_bWitchThisRound;
 int OvertimeGraceTimer;
 int InvulnerabilityTimer;
 int m_iTankTickets;
+int m_iSurvivorHealthBonus;
+int m_bFirstSurvivorLeftStartArea;
 int m_iShovePenalty;
 int m_fNextShoveTime;
 int m_preIncapacitatedHealth;
@@ -561,6 +939,8 @@ int m_maxFlames;
 int m_flow;
 int m_PendingMobCount;
 int m_fMapMaxFlowDistance;
+int m_chapter;
+// int m_iClrRender; // NULL PTR - METHOD (kept for demonstration)
 
 // l4d2timers.inc
 int L4D2CountdownTimer_Offsets[9];
@@ -587,6 +967,8 @@ Address g_pWeaponInfoDatabase;
 
 
 // Other
+int g_iCurrentMode;
+int g_iMaxChapters;
 int g_iClassTank;
 bool g_bCheckpoint[MAXPLAYERS+1];
 bool g_bRoundEnded;
@@ -596,6 +978,13 @@ bool g_bLinuxOS;
 ConVar g_hCvarVScriptBuffer;
 ConVar g_hCvarAddonsEclipse;
 ConVar g_hCvarRescueDeadTime;
+ConVar g_hDecayDecay;
+ConVar g_hPillsHealth;
+ConVar g_hMPGameMode;
+
+#if DEBUG
+bool g_bLateLoad;
+#endif
 
 
 
@@ -622,6 +1011,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		return APLRes_SilentFailure;
 	}
 
+	#if DEBUG
+	g_bLateLoad = late;
+	#endif
+
 	g_hThisPlugin = myself;
 	RegPluginLibrary("left4dhooks");
 
@@ -632,7 +1025,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// ====================================================================================================
 	if( GetFeatureStatus(FeatureType_Native, "L4D_RestartScenarioFromVote") != FeatureStatus_Unknown )
 	{
-		strcopy(error, err_max, "This plugin replaces Left4Downtown. Delete the extension to run.");
+		strcopy(error, err_max, "\n==========\nThis plugin replaces Left4Downtown. Delete the extension to run.\n==========");
 		return APLRes_SilentFailure;
 	}
 
@@ -643,6 +1036,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// ====================================================================================================
 	// FORWARDS
 	// List should match the CreateDetour list of forwards.
+	g_hForward_GameModeChange					= new GlobalForward("L4D_OnGameModeChange",						ET_Event, Param_Cell);
 	g_hForward_SpawnSpecial						= new GlobalForward("L4D_OnSpawnSpecial",						ET_Event, Param_CellByRef, Param_Array, Param_Array);
 	g_hForward_SpawnTank						= new GlobalForward("L4D_OnSpawnTank",							ET_Event, Param_Array, Param_Array);
 	g_hForward_SpawnWitch						= new GlobalForward("L4D_OnSpawnWitch",							ET_Event, Param_Array, Param_Array);
@@ -650,15 +1044,26 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	g_hForward_SpawnITMob						= new GlobalForward("L4D_OnSpawnITMob",							ET_Event, Param_CellByRef);
 	g_hForward_SpawnMob							= new GlobalForward("L4D_OnSpawnMob",							ET_Event, Param_CellByRef);
 	g_hForward_EnterGhostState					= new GlobalForward("L4D_OnEnterGhostState",					ET_Event, Param_Cell);
+	g_hForward_EnterGhostStatePre				= new GlobalForward("L4D_OnEnterGhostStatePre",					ET_Event, Param_Cell);
 	g_hForward_IsTeamFull						= new GlobalForward("L4D_OnIsTeamFull",							ET_Event, Param_Cell, Param_CellByRef);
 	g_hForward_ClearTeamScores					= new GlobalForward("L4D_OnClearTeamScores",					ET_Event, Param_Cell);
 	g_hForward_SetCampaignScores				= new GlobalForward("L4D_OnSetCampaignScores",					ET_Event, Param_CellByRef, Param_CellByRef);
+	if( !g_bLeft4Dead2 )
+		g_hForward_RecalculateVersusScore		= new GlobalForward("L4D_OnRecalculateVersusScore",				ET_Event, Param_Cell);
 	g_hForward_OnFirstSurvivorLeftSafeArea		= new GlobalForward("L4D_OnFirstSurvivorLeftSafeArea",			ET_Event, Param_Cell);
 	g_hForward_GetCrouchTopSpeed				= new GlobalForward("L4D_OnGetCrouchTopSpeed",					ET_Event, Param_Cell, Param_FloatByRef);
 	g_hForward_GetRunTopSpeed					= new GlobalForward("L4D_OnGetRunTopSpeed",						ET_Event, Param_Cell, Param_FloatByRef);
 	g_hForward_GetWalkTopSpeed					= new GlobalForward("L4D_OnGetWalkTopSpeed",					ET_Event, Param_Cell, Param_FloatByRef);
 	g_hForward_GetMissionVSBossSpawning			= new GlobalForward("L4D_OnGetMissionVSBossSpawning",			ET_Event, Param_FloatByRef, Param_FloatByRef, Param_FloatByRef, Param_FloatByRef);
 	g_hForward_OnReplaceTank					= new GlobalForward("L4D_OnReplaceTank",						ET_Event, Param_Cell, Param_Cell);
+	g_hForward_CTankClaw_DoSwing_Pre			= new GlobalForward("L4D_TankClaw_DoSwing_Pre",					ET_Event, Param_Cell, Param_Cell);
+	g_hForward_CTankClaw_DoSwing_Post			= new GlobalForward("L4D_TankClaw_DoSwing_Post",				ET_Event, Param_Cell, Param_Cell);
+	g_hForward_CTankClaw_GroundPound_Pre		= new GlobalForward("L4D_TankClaw_GroundPound_Pre",				ET_Event, Param_Cell, Param_Cell);
+	g_hForward_CTankClaw_GroundPound_Post		= new GlobalForward("L4D_TankClaw_GroundPound_Post",			ET_Event, Param_Cell, Param_Cell);
+	g_hForward_CTankClaw_OnPlayerHit_Pre		= new GlobalForward("L4D_TankClaw_OnPlayerHit_Pre",				ET_Event, Param_Cell, Param_Cell, Param_Cell);
+	g_hForward_CTankClaw_OnPlayerHit_Post		= new GlobalForward("L4D_TankClaw_OnPlayerHit_Post",			ET_Event, Param_Cell, Param_Cell, Param_Cell);
+	g_hForward_CTankRock_Detonate				= new GlobalForward("L4D_TankRock_OnDetonate",					ET_Event, Param_Cell, Param_Cell);
+	g_hForward_CTankRock_OnRelease				= new GlobalForward("L4D_TankRock_OnRelease",					ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array, Param_Array, Param_Array);
 	g_hForward_TryOfferingTankBot				= new GlobalForward("L4D_OnTryOfferingTankBot",					ET_Event, Param_Cell, Param_CellByRef);
 	g_hForward_CThrowActivate					= new GlobalForward("L4D_OnCThrowActivate",						ET_Event, Param_Cell);
 	g_hForward_SelectTankAttackPre				= new GlobalForward("L4D2_OnSelectTankAttackPre",				ET_Event, Param_Cell, Param_CellByRef);
@@ -672,16 +1077,29 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	g_hForward_ShovedBySurvivor					= new GlobalForward("L4D_OnShovedBySurvivor",					ET_Event, Param_Cell, Param_Cell, Param_Array);
 	g_hForward_CTerrorWeapon_OnHit				= new GlobalForward("L4D2_OnEntityShoved",						ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_Array, Param_Cell);
 	g_hForward_OnShovedByPounceLanding			= new GlobalForward("L4D2_OnPounceOrLeapStumble",				ET_Event, Param_Cell, Param_Cell);
+	g_hForward_PlayerFling						= new GlobalForward("L4D2_OnPlayerFling",						ET_Event, Param_Cell, Param_Cell, Param_Array);
+	g_hForward_FatalFalling						= new GlobalForward("L4D_OnFatalFalling",						ET_Event, Param_Cell, Param_Cell);
+	g_hForward_Falling							= new GlobalForward("L4D_OnFalling",							ET_Event, Param_Cell);
+	g_hForward_EnterStasis						= new GlobalForward("L4D_OnEnterStasis",						ET_Event, Param_Cell);
+	g_hForward_LeaveStasis						= new GlobalForward("L4D_OnLeaveStasis",						ET_Event, Param_Cell);
 	g_hForward_InfernoSpread					= new GlobalForward("L4D2_OnSpitSpread",						ET_Event, Param_Cell, Param_Cell, Param_FloatByRef, Param_FloatByRef, Param_FloatByRef);
 	g_hForward_OnUseHealingItems				= new GlobalForward("L4D2_OnUseHealingItems",					ET_Event, Param_Cell);
 	g_hForward_OnFindScavengeItem				= new GlobalForward("L4D2_OnFindScavengeItem",					ET_Event, Param_Cell, Param_CellByRef);
 	g_hForward_OnChooseVictim					= new GlobalForward("L4D2_OnChooseVictim",						ET_Event, Param_Cell, Param_CellByRef);
-	// g_hForward_InfectedShoved					= new GlobalForward("L4D_OnInfectedShoved",						ET_Event, Param_Cell, Param_Cell);
-	// g_hForward_OnWaterMove						= new GlobalForward("L4D2_OnWaterMove",							ET_Event, Param_Cell);
+	g_hForward_OnMaterializeFromGhostPre		= new GlobalForward("L4D_OnMaterializeFromGhostPre",			ET_Event, Param_Cell);
+	g_hForward_OnMaterializeFromGhost			= new GlobalForward("L4D_OnMaterializeFromGhost",				ET_Event, Param_Cell);
+	g_hForward_OnVomitedUpon					= new GlobalForward("L4D_OnVomitedUpon",						ET_Event, Param_Cell, Param_CellByRef, Param_CellByRef);
+	g_hForward_PipeBombProjectile_Pre			= new GlobalForward("L4D_PipeBombProjectile_Pre",				ET_Event, Param_Cell, Param_Array, Param_Array, Param_Array, Param_Array);
+	g_hForward_PipeBombProjectile_Post			= new GlobalForward("L4D_PipeBombProjectile_Post",				ET_Event, Param_Cell, Param_Cell, Param_Array, Param_Array, Param_Array, Param_Array);
+	g_hForward_PlayerExtinguish					= new GlobalForward("L4D_PlayerExtinguish",						ET_Event, Param_Cell);
+
+		// g_hForward_InfectedShoved					= new GlobalForward("L4D_OnInfectedShoved",						ET_Event, Param_Cell, Param_Cell);
+		// g_hForward_OnWaterMove						= new GlobalForward("L4D2_OnWaterMove",							ET_Event, Param_Cell);
 	// g_hForward_GetRandomPZSpawnPos				= new GlobalForward("L4D_OnGetRandomPZSpawnPosition",			ET_Event, Param_CellByRef, Param_CellByRef, Param_CellByRef, Param_Array);
 
 	if( g_bLeft4Dead2 )
 	{
+		g_hForward_OnHitByVomitJar				= new GlobalForward("L4D2_OnHitByVomitJar",						ET_Event, Param_Cell, Param_CellByRef);
 		g_hForward_SpawnWitchBride				= new GlobalForward("L4D2_OnSpawnWitchBride",					ET_Event, Param_Array, Param_Array);
 		g_hForward_GetScriptValueInt			= new GlobalForward("L4D_OnGetScriptValueInt",					ET_Event, Param_String, Param_CellByRef);
 		g_hForward_GetScriptValueFloat			= new GlobalForward("L4D_OnGetScriptValueFloat",				ET_Event, Param_String, Param_FloatByRef);
@@ -690,6 +1108,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		g_hForward_GetSurvivorSet				= new GlobalForward("L4D_OnGetSurvivorSet",						ET_Event, Param_CellByRef);
 		g_hForward_FastGetSurvivorSet			= new GlobalForward("L4D_OnFastGetSurvivorSet",					ET_Event, Param_CellByRef);
 		g_hForward_StartMeleeSwing				= new GlobalForward("L4D_OnStartMeleeSwing",					ET_Event, Param_Cell, Param_Cell);
+		g_hForward_GetDamageForVictim			= new GlobalForward("L4D2_MeleeGetDamageForVictim",				ET_Event, Param_Cell, Param_Cell, Param_Cell, Param_FloatByRef);
 		g_hForward_ChangeFinaleStage			= new GlobalForward("L4D2_OnChangeFinaleStage",					ET_Event, Param_CellByRef, Param_String);
 		g_hForward_AddonsDisabler				= new GlobalForward("L4D2_OnClientDisableAddons",				ET_Event, Param_String);
 	}
@@ -698,8 +1117,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 	// ====================================================================================================
 	//									NATIVES
-	// L4D1 = 12 [left4downtown] + 43 - 0 (deprecated) [l4d_direct] + 15 [l4d2addresses] + 13 [silvers - mine!] + 4 [anim] = 87
-	// L4D2 = 52 [left4downtown] + 62 - 1 (deprecated) [l4d_direct] + 26 [l4d2addresses] + 21 [silvers - mine!] + 4 [anim] = 163
+	// L4D1 = 18 [left4downtown] + 47 [l4d_direct] + 15 [l4d2addresses] + 36 [silvers - mine!] + 4 [anim] = 113
+	// L4D2 = 53 [left4downtown] + 61 [l4d_direct] + 26 [l4d2addresses] + 69 [silvers - mine!] + 4 [anim] = 202
 	// ====================================================================================================
 	// ANIMATION HOOK
 	CreateNative("AnimHookEnable",		 							Native_AnimHookEnable);
@@ -712,33 +1131,69 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// =========================
 	// Silvers Natives
 	// =========================
+	CreateNative("L4D_GetGameModeType",		 						Native_GetGameMode);
+	CreateNative("L4D2_IsGenericCooperativeMode",		 			Native_IsGenericCooperativeMode);
+	CreateNative("L4D_IsCoopMode",		 							Native_IsCoopMode);
+	CreateNative("L4D2_IsRealismMode",		 						Native_IsRealismMode);
+	CreateNative("L4D_IsSurvivalMode",		 						Native_IsSurvivalMode);
+	CreateNative("L4D2_IsScavengeMode",		 						Native_IsScavengeMode);
+	CreateNative("L4D_IsVersusMode",		 						Native_IsVersusMode);
+	CreateNative("L4D2_HasConfigurableDifficultySetting",			Native_HasConfigurableDifficultySetting);
+	CreateNative("L4D_GetTempHealth",								Native_GetTempHealth);
+	CreateNative("L4D_SetTempHealth",								Native_SetTempHealth);
+	CreateNative("L4D_PlayMusic",		 							Native_PlayMusic);
+	CreateNative("L4D_StopMusic",		 							Native_StopMusic);
 	CreateNative("L4D_Deafen",		 								Native_Deafen);
 	CreateNative("L4D_Dissolve",		 							Native_Dissolve);
 	CreateNative("L4D_OnITExpired",		 							Native_OnITExpired);
 	CreateNative("L4D_AngularVelocity",		 						Native_AngularVelocity);
 	CreateNative("L4D_GetRandomPZSpawnPosition",		 			Native_GetRandomPZSpawnPosition);
-	CreateNative("L4D_GetNearestNavArea",		 					Native_GetNearestNavArea);
 	CreateNative("L4D_FindRandomSpot",		 						Native_FindRandomSpot);
+	CreateNative("L4D_GetNearestNavArea",		 					Native_GetNearestNavArea);
+	CreateNative("L4D_GetLastKnownArea",		 					Native_GetLastKnownarea);
 	CreateNative("L4D_HasAnySurvivorLeftSafeArea",		 			Native_HasAnySurvivorLeftSafeArea);
 	CreateNative("L4D_IsAnySurvivorInStartArea",		 			Native_IsAnySurvivorInStartArea);
 	CreateNative("L4D_IsAnySurvivorInCheckpoint",		 			Native_IsAnySurvivorInCheckpoint);
 	CreateNative("L4D_IsInFirstCheckpoint",		 					Native_IsInFirstCheckpoint);
 	CreateNative("L4D_IsInLastCheckpoint",		 					Native_IsInLastCheckpoint);
+	CreateNative("L4D_HasPlayerControlledZombies",		 			Native_HasPlayerControlledZombies);
 	CreateNative("L4D_PipeBombPrj",		 							Native_PipeBombPrj);
+	CreateNative("L4D_MolotovPrj",		 							Native_MolotovPrj);
+	CreateNative("L4D2_VomitJarPrj",		 						Native_VomitJarPrj);
+	CreateNative("L4D2_GrenadeLauncherPrj",		 					Native_GrenadeLauncher);
 
-	if( g_bLeft4Dead2 )
-	{
-		CreateNative("L4D2_GetVScriptOutput",						Native_GetVScriptOutput);
-		CreateNative("L4D2_SpitterPrj",		 						Native_SpitterPrj);
-		CreateNative("L4D2_GetCurrentFinaleStage",		 			Native_GetCurrentFinaleStage);
-		CreateNative("L4D2_ForceNextStage",		 					Native_ForceNextStage);
-		CreateNative("L4D2_IsTankInPlay",		 					Native_IsTankInPlay);
-		CreateNative("L4D2_IsReachable",		 					Native_IsReachable);
-		CreateNative("L4D2_GetFurthestSurvivorFlow",		 		Native_GetFurthestSurvivorFlow);
-		CreateNative("L4D2_GetScriptValueInt",						Native_GetScriptValueInt);
-		// CreateNative("L4D2_GetScriptValueFloat",					Native_GetScriptValueFloat); // Only returns default value provided.
-		// CreateNative("L4D2_GetScriptValueString",				Native_GetScriptValueString); // Not implemented, probably broken too, request if really required.
-	}
+	CreateNative("L4D_SetHumanSpec",								Native_SetHumanSpec);
+	CreateNative("L4D_TakeOverBot",									Native_TakeOverBot);
+	CreateNative("L4D_CanBecomeGhost",								Native_CanBecomeGhost);
+	CreateNative("L4D_IsFinaleEscapeInProgress",					Native_IsFinaleEscapeInProgress);
+
+	// L4D2 only:
+	CreateNative("L4D2_AreWanderersAllowed",						Native_AreWanderersAllowed);
+	CreateNative("L4D2_ExecVScriptCode",							Native_ExecVScriptCode);
+	CreateNative("L4D2_GetVScriptOutput",							Native_GetVScriptOutput);
+	CreateNative("L4D2_SpitterPrj",		 							Native_SpitterPrj);
+	CreateNative("L4D2_UseAdrenaline",		 						Native_OnAdrenalineUsed);
+	CreateNative("L4D2_GetCurrentFinaleStage",		 				Native_GetCurrentFinaleStage);
+	CreateNative("L4D2_ForceNextStage",		 						Native_ForceNextStage);
+	CreateNative("L4D2_IsTankInPlay",		 						Native_IsTankInPlay);
+	CreateNative("L4D2_IsReachable",		 						Native_IsReachable);
+	CreateNative("L4D2_GetFurthestSurvivorFlow",		 			Native_GetFurthestSurvivorFlow);
+	CreateNative("L4D2_GetScriptValueInt",							Native_GetScriptValueInt);
+	CreateNative("L4D2_NavAreaTravelDistance",		 				Native_NavAreaTravelDistance);
+
+	CreateNative("L4D2_VScriptWrapper_GetMapNumber",				Native_VS_GetMapNumber);
+	CreateNative("L4D2_VScriptWrapper_HasEverBeenInjured",			Native_VS_HasEverBeenInjured);
+	CreateNative("L4D2_VScriptWrapper_GetAliveDuration",			Native_VS_GetAliveDuration);
+	CreateNative("L4D2_VScriptWrapper_IsDead",						Native_VS_IsDead);
+	CreateNative("L4D2_VScriptWrapper_IsDying",						Native_VS_IsDying);
+	CreateNative("L4D2_VScriptWrapper_UseAdrenaline",				Native_VS_UseAdrenaline);
+	CreateNative("L4D2_VScriptWrapper_ReviveByDefib",				Native_VS_ReviveByDefib);
+	CreateNative("L4D2_VScriptWrapper_ReviveFromIncap",				Native_VS_ReviveFromIncap);
+	CreateNative("L4D2_VScriptWrapper_GetSenseFlags",				Native_VS_GetSenseFlags);
+	CreateNative("L4D2_VScriptWrapper_NavAreaBuildPath",			Native_VS_NavAreaBuildPath);
+	CreateNative("L4D2_VScriptWrapper_NavAreaTravelDistance",		Native_VS_NavAreaTravelDistance);
+	// CreateNative("L4D2_GetScriptValueFloat",						Native_GetScriptValueFloat); // Only returns default value provided.
+	// CreateNative("L4D2_GetScriptValueString",					Native_GetScriptValueString); // Not implemented, probably broken too, request if really required.
 
 
 
@@ -760,56 +1215,56 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D2_SpawnWitch",									Native_SpawnWitch);
 	CreateNative("L4D2_GetTankCount",								Native_GetTankCount);
 	CreateNative("L4D2_GetWitchCount",								Native_GetWitchCount);
+	CreateNative("L4D_GetCurrentChapter",							Native_GetCurrentChapter);
+	CreateNative("L4D_GetMaxChapters",								Native_GetMaxChapters);
+	CreateNative("L4D_GetVersusMaxCompletionScore",					Native_GetVersusMaxCompletionScore);
+	CreateNative("L4D_SetVersusMaxCompletionScore",					Native_SetVersusMaxCompletionScore);
 
-	if( g_bLeft4Dead2 )
-	{
-		CreateNative("L4D_ScavengeBeginRoundSetupTime", 			Native_ScavengeBeginRoundSetupTime);
-		CreateNative("L4D_ResetMobTimer",							Native_ResetMobTimer);
-		CreateNative("L4D_GetPlayerSpawnTime",						Native_GetPlayerSpawnTime);
-		CreateNative("L4D_GetVersusMaxCompletionScore",				Native_GetVersusMaxCompletionScore);
-		CreateNative("L4D_SetVersusMaxCompletionScore",				Native_SetVersusMaxCompletionScore);
-		CreateNative("L4D_GetTeamScore",							Native_GetTeamScore);
-		CreateNative("L4D_GetMobSpawnTimerRemaining",				Native_GetMobSpawnTimerRemaining);
-		CreateNative("L4D_GetMobSpawnTimerDuration",				Native_GetMobSpawnTimerDuration);
-		CreateNative("L4D2_ChangeFinaleStage",						Native_ChangeFinaleStage);
-		CreateNative("L4D2_SpawnWitchBride",						Native_SpawnWitchBride);
+	// L4D2 only:
+	CreateNative("L4D_ScavengeBeginRoundSetupTime", 				Native_ScavengeBeginRoundSetupTime);
+	CreateNative("L4D_ResetMobTimer",								Native_ResetMobTimer);
+	CreateNative("L4D_GetPlayerSpawnTime",							Native_GetPlayerSpawnTime);
+	CreateNative("L4D_GetTeamScore",								Native_GetTeamScore);
+	CreateNative("L4D_GetMobSpawnTimerRemaining",					Native_GetMobSpawnTimerRemaining);
+	CreateNative("L4D_GetMobSpawnTimerDuration",					Native_GetMobSpawnTimerDuration);
+	CreateNative("L4D2_ChangeFinaleStage",							Native_ChangeFinaleStage);
+	CreateNative("L4D2_SpawnWitchBride",							Native_SpawnWitchBride);
 
-		// l4d2weapons.inc
-		CreateNative("L4D2_IsValidWeapon",							Native_IsValidWeapon);
-		CreateNative("L4D2_GetIntWeaponAttribute",					Native_GetIntWeaponAttribute);
-		CreateNative("L4D2_GetFloatWeaponAttribute",				Native_GetFloatWeaponAttribute);
-		CreateNative("L4D2_SetIntWeaponAttribute",					Native_SetIntWeaponAttribute);
-		CreateNative("L4D2_SetFloatWeaponAttribute",				Native_SetFloatWeaponAttribute);
-		CreateNative("L4D2_GetMeleeWeaponIndex",					Native_GetMeleeWeaponIndex);
-		CreateNative("L4D2_GetIntMeleeAttribute",					Native_GetIntMeleeAttribute);
-		CreateNative("L4D2_GetFloatMeleeAttribute",					Native_GetFloatMeleeAttribute);
-		CreateNative("L4D2_GetBoolMeleeAttribute",					Native_GetBoolMeleeAttribute);
-		CreateNative("L4D2_SetIntMeleeAttribute",					Native_SetIntMeleeAttribute);
-		CreateNative("L4D2_SetFloatMeleeAttribute",					Native_SetFloatMeleeAttribute);
-		CreateNative("L4D2_SetBoolMeleeAttribute",					Native_SetBoolMeleeAttribute);
+	// l4d2weapons.inc
+	CreateNative("L4D2_IsValidWeapon",								Native_IsValidWeapon);
+	CreateNative("L4D2_GetIntWeaponAttribute",						Native_GetIntWeaponAttribute);
+	CreateNative("L4D2_GetFloatWeaponAttribute",					Native_GetFloatWeaponAttribute);
+	CreateNative("L4D2_SetIntWeaponAttribute",						Native_SetIntWeaponAttribute);
+	CreateNative("L4D2_SetFloatWeaponAttribute",					Native_SetFloatWeaponAttribute);
+	CreateNative("L4D2_GetMeleeWeaponIndex",						Native_GetMeleeWeaponIndex);
+	CreateNative("L4D2_GetIntMeleeAttribute",						Native_GetIntMeleeAttribute);
+	CreateNative("L4D2_GetFloatMeleeAttribute",						Native_GetFloatMeleeAttribute);
+	CreateNative("L4D2_GetBoolMeleeAttribute",						Native_GetBoolMeleeAttribute);
+	CreateNative("L4D2_SetIntMeleeAttribute",						Native_SetIntMeleeAttribute);
+	CreateNative("L4D2_SetFloatMeleeAttribute",						Native_SetFloatMeleeAttribute);
+	CreateNative("L4D2_SetBoolMeleeAttribute",						Native_SetBoolMeleeAttribute);
 
-		// l4d2timers.inc
-		CreateNative("L4D2_CTimerReset",							Native_CTimerReset);
-		CreateNative("L4D2_CTimerStart",							Native_CTimerStart);
-		CreateNative("L4D2_CTimerInvalidate",						Native_CTimerInvalidate);
-		CreateNative("L4D2_CTimerHasStarted",						Native_CTimerHasStarted);
-		CreateNative("L4D2_CTimerIsElapsed",						Native_CTimerIsElapsed);
-		CreateNative("L4D2_CTimerGetElapsedTime",					Native_CTimerGetElapsedTime);
-		CreateNative("L4D2_CTimerGetRemainingTime",					Native_CTimerGetRemainingTime);
-		CreateNative("L4D2_CTimerGetCountdownDuration",				Native_CTimerGetCountdownDuration);
-		CreateNative("L4D2_ITimerStart",							Native_ITimerStart);
-		CreateNative("L4D2_ITimerInvalidate",						Native_ITimerInvalidate);
-		CreateNative("L4D2_ITimerHasStarted",						Native_ITimerHasStarted);
-		CreateNative("L4D2_ITimerGetElapsedTime",					Native_ITimerGetElapsedTime);
+	// l4d2timers.inc
+	CreateNative("L4D2_CTimerReset",								Native_CTimerReset);
+	CreateNative("L4D2_CTimerStart",								Native_CTimerStart);
+	CreateNative("L4D2_CTimerInvalidate",							Native_CTimerInvalidate);
+	CreateNative("L4D2_CTimerHasStarted",							Native_CTimerHasStarted);
+	CreateNative("L4D2_CTimerIsElapsed",							Native_CTimerIsElapsed);
+	CreateNative("L4D2_CTimerGetElapsedTime",						Native_CTimerGetElapsedTime);
+	CreateNative("L4D2_CTimerGetRemainingTime",						Native_CTimerGetRemainingTime);
+	CreateNative("L4D2_CTimerGetCountdownDuration",					Native_CTimerGetCountdownDuration);
+	CreateNative("L4D2_ITimerStart",								Native_ITimerStart);
+	CreateNative("L4D2_ITimerInvalidate",							Native_ITimerInvalidate);
+	CreateNative("L4D2_ITimerHasStarted",							Native_ITimerHasStarted);
+	CreateNative("L4D2_ITimerGetElapsedTime",						Native_ITimerGetElapsedTime);
 
-		// l4d2director.inc
-		CreateNative("L4D2_GetVersusCampaignScores",				Native_GetVersusCampaignScores);
-		CreateNative("L4D2_SetVersusCampaignScores",				Native_SetVersusCampaignScores);
-		CreateNative("L4D2_GetVersusTankFlowPercent",				Native_GetVersusTankFlowPercent);
-		CreateNative("L4D2_SetVersusTankFlowPercent",				Native_SetVersusTankFlowPercent);
-		CreateNative("L4D2_GetVersusWitchFlowPercent",				Native_GetVersusWitchFlowPercent);
-		CreateNative("L4D2_SetVersusWitchFlowPercent",				Native_SetVersusWitchFlowPercent);
-	}
+	// l4d2director.inc
+	CreateNative("L4D2_GetVersusCampaignScores",					Native_GetVersusCampaignScores);
+	CreateNative("L4D2_SetVersusCampaignScores",					Native_SetVersusCampaignScores);
+	CreateNative("L4D2_GetVersusTankFlowPercent",					Native_GetVersusTankFlowPercent);
+	CreateNative("L4D2_SetVersusTankFlowPercent",					Native_SetVersusTankFlowPercent);
+	CreateNative("L4D2_GetVersusWitchFlowPercent",					Native_GetVersusWitchFlowPercent);
+	CreateNative("L4D2_SetVersusWitchFlowPercent",					Native_SetVersusWitchFlowPercent);
 
 
 
@@ -839,6 +1294,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D2Direct_TryOfferingTankBot",					Direct_TryOfferingTankBot);
 	CreateNative("L4D2Direct_GetFlowDistance",						Direct_GetFlowDistance);
 	CreateNative("L4D2Direct_DoAnimationEvent",						Direct_DoAnimationEvent);
+	CreateNative("L4DDirect_GetSurvivorHealthBonus",				Direct_GetSurvivorHealthBonus);
+	CreateNative("L4DDirect_SetSurvivorHealthBonus",				Direct_SetSurvivorHealthBonus);
+	CreateNative("L4DDirect_RecomputeTeamScores",					Direct_RecomputeTeamScores);
+	CreateNative("L4D2Direct_GetMobSpawnTimer",						Direct_GetMobSpawnTimer);
+	CreateNative("L4D2Direct_GetTankCount",							Direct_GetTankCount);
 
 	CreateNative("CTimer_Reset",									Direct_CTimer_Reset);
 	CreateNative("CTimer_Start",									Direct_CTimer_Start);
@@ -862,28 +1322,24 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("ITimer_GetTimestamp",								Direct_ITimer_GetTimestamp);
 	CreateNative("ITimer_SetTimestamp",								Direct_ITimer_SetTimestamp);
 
-	if( g_bLeft4Dead2 )
-	{
-		CreateNative("L4D2Direct_GetTankCount",						Direct_GetTankCount);
-		CreateNative("L4D2Direct_GetMobSpawnTimer",					Direct_GetMobSpawnTimer);
-		CreateNative("L4D2Direct_GetSIClassDeathTimer",				Direct_GetSIClassDeathTimer);
-		CreateNative("L4D2Direct_GetSIClassSpawnTimer",				Direct_GetSIClassSpawnTimer);
-		CreateNative("L4D2Direct_GetVSStartTimer",					Direct_GetVSStartTimer);
-		CreateNative("L4D2Direct_GetScavengeRoundSetupTimer",		Direct_GetScavengeRoundSetupTimer);
-		CreateNative("L4D2Direct_GetScavengeOvertimeGraceTimer",	Direct_GetScavengeOvertimeGraceTimer);
-		CreateNative("L4D2Direct_GetSpawnTimer",					Direct_GetSpawnTimer);
-		CreateNative("L4D2Direct_GetShovePenalty",					Direct_GetShovePenalty);
-		CreateNative("L4D2Direct_SetShovePenalty",					Direct_SetShovePenalty);
-		CreateNative("L4D2Direct_GetNextShoveTime",					Direct_GetNextShoveTime);
-		CreateNative("L4D2Direct_SetNextShoveTime",					Direct_SetNextShoveTime);
-		CreateNative("L4D2Direct_GetPreIncapHealth",				Direct_GetPreIncapHealth);
-		CreateNative("L4D2Direct_SetPreIncapHealth",				Direct_SetPreIncapHealth);
-		CreateNative("L4D2Direct_GetPreIncapHealthBuffer",			Direct_GetPreIncapHealthBuffer);
-		CreateNative("L4D2Direct_SetPreIncapHealthBuffer",			Direct_SetPreIncapHealthBuffer);
-		CreateNative("L4D2Direct_GetInfernoMaxFlames",				Direct_GetInfernoMaxFlames);
-		CreateNative("L4D2Direct_SetInfernoMaxFlames",				Direct_SetInfernoMaxFlames);
-		CreateNative("L4D2Direct_GetScriptedEventManager",			Direct_GetScriptedEventManager);
-	}
+	// L4D2 only:
+	CreateNative("L4D2Direct_GetSIClassDeathTimer",					Direct_GetSIClassDeathTimer);
+	CreateNative("L4D2Direct_GetSIClassSpawnTimer",					Direct_GetSIClassSpawnTimer);
+	CreateNative("L4D2Direct_GetVSStartTimer",						Direct_GetVSStartTimer);
+	CreateNative("L4D2Direct_GetScavengeRoundSetupTimer",			Direct_GetScavengeRoundSetupTimer);
+	CreateNative("L4D2Direct_GetScavengeOvertimeGraceTimer",		Direct_GetScavengeOvertimeGraceTimer);
+	CreateNative("L4D2Direct_GetSpawnTimer",						Direct_GetSpawnTimer);
+	CreateNative("L4D2Direct_GetShovePenalty",						Direct_GetShovePenalty);
+	CreateNative("L4D2Direct_SetShovePenalty",						Direct_SetShovePenalty);
+	CreateNative("L4D2Direct_GetNextShoveTime",						Direct_GetNextShoveTime);
+	CreateNative("L4D2Direct_SetNextShoveTime",						Direct_SetNextShoveTime);
+	CreateNative("L4D2Direct_GetPreIncapHealth",					Direct_GetPreIncapHealth);
+	CreateNative("L4D2Direct_SetPreIncapHealth",					Direct_SetPreIncapHealth);
+	CreateNative("L4D2Direct_GetPreIncapHealthBuffer",				Direct_GetPreIncapHealthBuffer);
+	CreateNative("L4D2Direct_SetPreIncapHealthBuffer",				Direct_SetPreIncapHealthBuffer);
+	CreateNative("L4D2Direct_GetInfernoMaxFlames",					Direct_GetInfernoMaxFlames);
+	CreateNative("L4D2Direct_SetInfernoMaxFlames",					Direct_SetInfernoMaxFlames);
+	CreateNative("L4D2Direct_GetScriptedEventManager",				Direct_GetScriptedEventManager);
 
 
 
@@ -892,6 +1348,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// =========================
 	CreateNative("L4D_CTerrorPlayer_OnVomitedUpon",					Native_CTerrorPlayer_OnVomitedUpon);
 	CreateNative("L4D_CancelStagger",								Native_CancelStagger);
+	CreateNative("L4D_RespawnPlayer",								Native_RespawnPlayer);
 	CreateNative("L4D_CreateRescuableSurvivors",					Native_CreateRescuableSurvivors);
 	CreateNative("L4D_ReviveSurvivor",								Native_OnRevived);
 	CreateNative("L4D_GetHighestFlowSurvivor",						Native_GetHighestFlowSurvivor);
@@ -906,20 +1363,18 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("L4D_RegisterForbiddenTarget",						Native_RegisterForbiddenTarget);
 	CreateNative("L4D_UnRegisterForbiddenTarget",					Native_UnRegisterForbiddenTarget);
 
-	if( g_bLeft4Dead2 )
-	{
-		CreateNative("L4D2_CTerrorPlayer_OnHitByVomitJar",			Native_CTerrorPlayer_OnHitByVomitJar);
-		CreateNative("L4D2_Infected_OnHitByVomitJar",				Native_Infected_OnHitByVomitJar);
-		CreateNative("L4D2_CTerrorPlayer_Fling",					Native_CTerrorPlayer_Fling);
-		CreateNative("L4D2_GetVersusCompletionPlayer",				Native_GetVersusCompletionPlayer);
-		CreateNative("L4D2_SwapTeams",								Native_SwapTeams);
-		CreateNative("L4D2_AreTeamsFlipped",						Native_AreTeamsFlipped);
-		CreateNative("L4D2_StartRematchVote",						Native_StartRematchVote);
-		CreateNative("L4D2_FullRestart",							Native_FullRestart);
-		CreateNative("L4D2_HideVersusScoreboard",					Native_HideVersusScoreboard);
-		CreateNative("L4D2_HideScavengeScoreboard",					Native_HideScavengeScoreboard);
-		CreateNative("L4D2_HideScoreboard",							Native_HideScoreboard);
-	}
+	// L4D2 only:
+	CreateNative("L4D2_CTerrorPlayer_OnHitByVomitJar",				Native_CTerrorPlayer_OnHitByVomitJar);
+	CreateNative("L4D2_Infected_OnHitByVomitJar",					Native_Infected_OnHitByVomitJar);
+	CreateNative("L4D2_CTerrorPlayer_Fling",						Native_CTerrorPlayer_Fling);
+	CreateNative("L4D2_GetVersusCompletionPlayer",					Native_GetVersusCompletionPlayer);
+	CreateNative("L4D2_SwapTeams",									Native_SwapTeams);
+	CreateNative("L4D2_AreTeamsFlipped",							Native_AreTeamsFlipped);
+	CreateNative("L4D2_StartRematchVote",							Native_StartRematchVote);
+	CreateNative("L4D2_FullRestart",								Native_FullRestart);
+	CreateNative("L4D2_HideVersusScoreboard",						Native_HideVersusScoreboard);
+	CreateNative("L4D2_HideScavengeScoreboard",						Native_HideScavengeScoreboard);
+	CreateNative("L4D2_HideScoreboard",								Native_HideScoreboard);
 
 	return APLRes_Success;
 }
@@ -940,6 +1395,17 @@ public void OnPluginStart()
 	g_iHookedClients = new ArrayList();
 	g_hAnimationCallbackPre = new PrivateForward(ET_Event, Param_Cell, Param_CellByRef);
 	g_hAnimationCallback = new PrivateForward(ET_Event, Param_Cell, Param_CellByRef);
+
+
+	// NULL PTR - METHOD (kept for demonstration)
+	// Null pointer - by Dragokas
+	/*
+	m_iClrRender = FindSendPropInfo("CBaseEntity", "m_clrRender");
+	if( m_iClrRender == -1 )
+	{
+		SetFailState("Error: m_clrRender not found.");
+	}
+	*/
 
 
 
@@ -1021,6 +1487,8 @@ public void OnPluginStart()
 		g_aMeleeIDs.SetValue("electric_guitar",						8);
 		g_aMeleeIDs.SetValue("knife",								9);
 		g_aMeleeIDs.SetValue("golfclub",							10);
+		g_aMeleeIDs.SetValue("pitchfork",							11);
+		g_aMeleeIDs.SetValue("shovel",								12);
 	}
 
 
@@ -1032,15 +1500,51 @@ public void OnPluginStart()
 	// ====================================================================================================
 	//									TARGET FILTERS
 	// ====================================================================================================
-	AddMultiTargetFilter("@s",				FilterSurvivor,	"Survivors", false);
-	AddMultiTargetFilter("@surv",			FilterSurvivor,	"Survivors", false);
-	AddMultiTargetFilter("@survivors",		FilterSurvivor,	"Survivors", false);
-	AddMultiTargetFilter("@infe",			FilterInfected,	"Infected", false);
-	AddMultiTargetFilter("@infected",		FilterInfected,	"Infected", false);
-	AddMultiTargetFilter("@i",				FilterInfected,	"Infected", false);
-	AddMultiTargetFilter("@tank",			FilterTanks,	"Tanks", false);
-	AddMultiTargetFilter("@tanks",			FilterTanks,	"Tanks", false);
-	AddMultiTargetFilter("@t",				FilterTanks,	"Tanks", false);
+	AddMultiTargetFilter("@s",							FilterSurvivor,	"Survivors", false);
+	AddMultiTargetFilter("@surv",						FilterSurvivor,	"Survivors", false);
+	AddMultiTargetFilter("@survivors",					FilterSurvivor,	"Survivors", false);
+	AddMultiTargetFilter("@incappedsurvivors",			FilterIncapped,	"Incapped Survivors", false);
+	AddMultiTargetFilter("@is",							FilterIncapped,	"Incapped Survivors", false);
+	AddMultiTargetFilter("@infe",						FilterInfected,	"Infected", false);
+	AddMultiTargetFilter("@infected",					FilterInfected,	"Infected", false);
+	AddMultiTargetFilter("@i",							FilterInfected,	"Infected", false);
+
+	AddMultiTargetFilter("@randomincappedsurvivor",		FilterRandomA,	"Random Incapped Survivors", false);
+	AddMultiTargetFilter("@ris",						FilterRandomA,	"Random Incapped Survivors", false);
+	AddMultiTargetFilter("@randomsurvivor",				FilterRandomB,	"Random Survivors", false);
+	AddMultiTargetFilter("@rs",							FilterRandomB,	"Random Survivors", false);
+	AddMultiTargetFilter("@randominfected",				FilterRandomC,	"Random Infected", false);
+	AddMultiTargetFilter("@ri",							FilterRandomC,	"Random Infected", false);
+	AddMultiTargetFilter("@randomtank",					FilterRandomD,	"Random Tank", false);
+	AddMultiTargetFilter("@rt",							FilterRandomD,	"Random Tank", false);
+	AddMultiTargetFilter("@incappedsurvivorbot",		FilterRandomE,	"Random Incapped Survivor Bot", false);
+	AddMultiTargetFilter("@isb",						FilterRandomE,	"Random Incapped Survivor Bot", false);
+	AddMultiTargetFilter("@survivorbot",				FilterRandomF,	"Random Survivor Bot", false);
+	AddMultiTargetFilter("@sb",							FilterRandomF,	"Random Survivor Bot", false);
+	AddMultiTargetFilter("@infectedbot",				FilterRandomG,	"Random Infected Bot", false);
+	AddMultiTargetFilter("@ib",							FilterRandomG,	"Random Infected Bot", false);
+	AddMultiTargetFilter("@tankbot",					FilterRandomH,	"Random Tank Bot", false);
+	AddMultiTargetFilter("@tb",							FilterRandomH,	"Random Tank Bot", false);
+
+	AddMultiTargetFilter("@nick",						FilterNick,		"Nick", false);
+	AddMultiTargetFilter("@rochelle",					FilterRochelle,	"Rochelle", false);
+	AddMultiTargetFilter("@coach",						FilterCoach,	"Coach", false);
+	AddMultiTargetFilter("@ellis",						FilterEllis,	"Ellis", false);
+	AddMultiTargetFilter("@bill",						FilterBill,		"Bill", false);
+	AddMultiTargetFilter("@zoey",						FilterZoey,		"Zoey", false);
+	AddMultiTargetFilter("@francis",					FilterFrancis,	"Francis", false);
+	AddMultiTargetFilter("@louis",						FilterLouis,	"Louis", false);
+
+	AddMultiTargetFilter("@smokers",					FilterSmoker,	"Smokers", false);
+	AddMultiTargetFilter("@boomers",					FilterBoomer,	"Boomers", false);
+	AddMultiTargetFilter("@hunters",					FilterHunter,	"Hunters", false);
+	AddMultiTargetFilter("@spitters",					FilterSpitter,	"Spitters", false);
+	AddMultiTargetFilter("@jockeys",					FilterJockey,	"Jockeys", false);
+	AddMultiTargetFilter("@chargers",					FilterCharger,	"Chargers", false);
+
+	AddMultiTargetFilter("@tank",						FilterTanks,	"Tanks", false);
+	AddMultiTargetFilter("@tanks",						FilterTanks,	"Tanks", false);
+	AddMultiTargetFilter("@t",							FilterTanks,	"Tanks", false);
 
 
 
@@ -1048,6 +1552,7 @@ public void OnPluginStart()
 	//									COMMANDS
 	// ====================================================================================================
 	// When adding or removing plugins that use any detours during gameplay. To optimize forwards by disabling unused or enabling required functions that were previously unused. TODO: Not needed when using extra-api.ext.
+	RegAdminCmd("sm_l4dd_unreserve",	CmdLobby,	ADMFLAG_ROOT, "Removes lobby reservation.");
 	RegAdminCmd("sm_l4dd_reload",		CmdReload,	ADMFLAG_ROOT, "Reloads the detour hooks, enabling or disabling depending if they're required by other plugins.");
 	RegAdminCmd("sm_l4dd_detours",		CmdDetours,	ADMFLAG_ROOT, "Lists the currently active forwards and the plugins using them.");
 	RegAdminCmd("sm_l4dhooks_reload",	CmdReload,	ADMFLAG_ROOT, "Reloads the detour hooks, enabling or disabling depending if they're required by other plugins.");
@@ -1063,12 +1568,17 @@ public void OnPluginStart()
 	if( g_bLeft4Dead2 )
 	{
 		g_hCvarVScriptBuffer = CreateConVar("l4d2_vscript_return", "", "Buffer used to return VScript values. Do not use.", FCVAR_DONTRECORD);
-		g_hCvarAddonsEclipse = CreateConVar("l4d2_addons_eclipse", "-1", "Addons Manager (-1: use addonconfig; 0: disable addons; 1: enable addons.", FCVAR_NOTIFY);
+		g_hCvarAddonsEclipse = CreateConVar("l4d2_addons_eclipse", "-1", "Addons Manager (-1: use addonconfig; 0: disable addons; 1: enable addons.)", FCVAR_NOTIFY);
 		AutoExecConfig(true, "left4dhooks");
 		g_hCvarAddonsEclipse.AddChangeHook(ConVarChanged_Cvars);
+
+		g_hPillsHealth = FindConVar("pain_pills_health_value");
 	}
 
+	g_hDecayDecay = FindConVar("pain_pills_decay_rate");
 	g_hCvarRescueDeadTime = FindConVar("rescue_min_dead_time");
+	g_hMPGameMode = FindConVar("mp_gamemode");
+	g_hMPGameMode.AddChangeHook(ConVarChanged_Mode);
 
 
 
@@ -1112,7 +1622,9 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 // ====================================================================================================
 public void OnMapEnd()
 {
+	// Reset vars
 	g_bMapStarted = false;
+	g_iMaxChapters = 0;
 
 	// Reset hooks
 	g_iHookedClients.Clear();
@@ -1121,7 +1633,7 @@ public void OnMapEnd()
 	Handle hIter = GetPluginIterator();
 	Handle hPlug;
 
-	// Iterate plugins
+	// Iterate plugins - remove animation hooks
 	while( MorePlugins(hIter) )
 	{
 		hPlug = ReadPlugin(hIter);
@@ -1260,6 +1772,102 @@ public void ColorConfig_End(Handle parser, bool halted, bool failed)
 
 
 // ====================================================================================================
+//										GAME MODE
+// ====================================================================================================
+public void ConVarChanged_Mode(Handle convar, const char[] oldValue, const char[] newValue)
+{
+	// Want to rescan max chapters on mode change
+	g_iMaxChapters = 0;
+
+	// For game mode native/forward
+	GetGameMode();
+}
+
+void GetGameMode()
+{
+	g_iCurrentMode = 0;
+
+	static char sMode[12];
+
+	if( g_bLeft4Dead2 )
+	{
+		ValidateAddress(g_pDirector, "g_pDirector");
+		ValidateNatives(g_hSDK_Call_GetGameMode, "GetGameMode");
+
+		//PrintToServer("#### CALL g_hSDK_Call_GetGameMode");
+		SDKCall(g_hSDK_Call_GetGameMode, g_pDirector, sMode, sizeof(sMode));
+
+		if( strcmp(sMode,			"coop") == 0 )		g_iCurrentMode = GAMEMODE_COOP;
+		else if( strcmp(sMode,		"survival") == 0 )	g_iCurrentMode = GAMEMODE_SURVIVAL;
+		else if( strcmp(sMode,		"versus") == 0 )	g_iCurrentMode = GAMEMODE_VERSUS;
+		else if( strcmp(sMode,		"scavenge") == 0 )	g_iCurrentMode = GAMEMODE_SCAVENGE;
+	} else {
+		g_hMPGameMode.GetString(sMode, sizeof(sMode));
+
+		if( strcmp(sMode,			"coop") == 0 )		g_iCurrentMode = GAMEMODE_COOP;
+		else if( strcmp(sMode,		"survival") == 0 )	g_iCurrentMode = GAMEMODE_SURVIVAL;
+		else if( strcmp(sMode,		"versus") == 0 )	g_iCurrentMode = GAMEMODE_VERSUS;
+	}
+
+	// Forward
+	static int mode;
+
+	if( mode != g_iCurrentMode )
+	{
+		mode = g_iCurrentMode;
+
+		Call_StartForward(g_hForward_GameModeChange);
+		Call_PushCell(mode);
+		Call_Finish();
+	}
+}
+
+public int Native_GetGameMode(Handle plugin, int numParams)
+{
+	return g_iCurrentMode;
+}
+
+public int Native_IsGenericCooperativeMode(Handle plugin, int numParams)
+{
+	ValidateAddress(g_pGameRules, "g_pGameRules");
+	ValidateNatives(g_hSDK_Call_IsGenericCooperativeMode, "IsGenericCooperativeMode");
+
+	//PrintToServer("#### CALL g_hSDK_Call_IsGenericCooperativeMode");
+	return SDKCall(g_hSDK_Call_IsGenericCooperativeMode, g_pGameRules);
+}
+
+public int Native_IsCoopMode(Handle plugin, int numParams)
+{
+	return g_iCurrentMode == GAMEMODE_COOP;
+}
+
+public int Native_IsRealismMode(Handle plugin, int numParams)
+{
+	ValidateAddress(g_pGameRules, "g_pGameRules");
+	ValidateNatives(g_hSDK_Call_IsRealismMode, "IsRealismMode");
+
+	//PrintToServer("#### CALL g_hSDK_Call_IsRealismMode");
+	return SDKCall(g_hSDK_Call_IsRealismMode, g_pGameRules);
+}
+
+public int Native_IsSurvivalMode(Handle plugin, int numParams)
+{
+	return g_iCurrentMode == GAMEMODE_SURVIVAL;
+}
+
+public int Native_IsVersusMode(Handle plugin, int numParams)
+{
+	return g_iCurrentMode == GAMEMODE_VERSUS;
+}
+
+public int Native_IsScavengeMode(Handle plugin, int numParams)
+{
+	return g_iCurrentMode == GAMEMODE_SCAVENGE;
+}
+
+
+
+// ====================================================================================================
 //										TARGET FILTERS
 // ====================================================================================================
 public bool FilterSurvivor(const char[] pattern, Handle clients)
@@ -1275,6 +1883,119 @@ public bool FilterSurvivor(const char[] pattern, Handle clients)
 	return true;
 }
 
+public bool FilterIncapped(const char[] pattern, Handle clients)
+{
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 2 && IsPlayerAlive(i) && GetEntProp(i, Prop_Send, "m_isIncapacitated", 1) )
+		{
+			PushArrayCell(clients, i);
+		}
+	}
+
+	return true;
+}
+
+// Specific survivors
+void MatchSurvivor(Handle clients, int survivorCharacter)
+{
+	int type;
+	bool matched;
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 2 )
+		{
+			matched = false;
+
+			if( g_bLeft4Dead2 )
+			{
+				static char modelname[32];
+				GetClientModel(i, modelname, sizeof(modelname));
+
+				switch( modelname[29] )
+				{
+					case 'b':		type = 0; // Nick
+					case 'd', 'w':	type = 1; // Rochelle, Adawong
+					case 'c':		type = 2; // Coach
+					case 'h':		type = 3; // Ellis
+					case 'v':		type = 4; // Bill
+					case 'n':		type = 5; // Zoey
+					case 'e':		type = 6; // Francis
+					case 'a':		type = 7; // Louis
+					default:		type = 0;
+				}
+
+				if( type == survivorCharacter )
+					matched = true;
+			} else {
+				survivorCharacter -= 4;
+
+				if( GetEntProp(i, Prop_Send, "m_survivorCharacter") == survivorCharacter )
+					matched = true;
+			}
+
+			if( matched )
+			{
+				PushArrayCell(clients, i);
+			}
+		}
+	}
+}
+
+public bool FilterNick(const char[] pattern, Handle clients)
+{
+	if( g_bLeft4Dead2 )
+		MatchSurvivor(clients, 0);
+	return true;
+}
+
+public bool FilterRochelle(const char[] pattern, Handle clients)
+{
+	if( g_bLeft4Dead2 )
+		MatchSurvivor(clients, 1);
+	return true;
+}
+
+public bool FilterCoach(const char[] pattern, Handle clients)
+{
+	if( g_bLeft4Dead2 )
+		MatchSurvivor(clients, 2);
+	return true;
+}
+
+public bool FilterEllis(const char[] pattern, Handle clients)
+{
+	if( g_bLeft4Dead2 )
+		MatchSurvivor(clients, 3);
+	return true;
+}
+
+public bool FilterBill(const char[] pattern, Handle clients)
+{
+	MatchSurvivor(clients, 4);
+	return true;
+}
+
+public bool FilterZoey(const char[] pattern, Handle clients)
+{
+	MatchSurvivor(clients, 5);
+	return true;
+}
+
+public bool FilterFrancis(const char[] pattern, Handle clients)
+{
+	MatchSurvivor(clients, 6);
+	return true;
+}
+
+public bool FilterLouis(const char[] pattern, Handle clients)
+{
+	MatchSurvivor(clients, 7);
+	return true;
+}
+
+// Filter all Infected
 public bool FilterInfected(const char[] pattern, Handle clients)
 {
 	for( int i = 1; i <= MaxClients; i++ )
@@ -1292,23 +2013,225 @@ public bool FilterInfected(const char[] pattern, Handle clients)
 	return true;
 }
 
+
+// Filter - Random Incapped Survivors
+public bool FilterRandomA(const char[] pattern, Handle clients)
+{
+	ArrayList aList = new ArrayList();
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 2 && IsPlayerAlive(i) && GetEntProp(i, Prop_Send, "m_isIncapacitated", 1) )
+		{
+			aList.Push(i);
+		}
+	}
+
+	PushArrayCell(clients, aList.Get(GetRandomInt(0, aList.Length - 1)));
+
+	delete aList;
+
+	return true;
+}
+
+// Filter - Random Survivors
+public bool FilterRandomB(const char[] pattern, Handle clients)
+{
+	ArrayList aList = new ArrayList();
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 2 )
+		{
+			aList.Push(i);
+		}
+	}
+
+	PushArrayCell(clients, aList.Get(GetRandomInt(0, aList.Length - 1)));
+
+	delete aList;
+
+	return true;
+}
+
+// Filter - Random Infected
+public bool FilterRandomC(const char[] pattern, Handle clients)
+{
+	ArrayList aList = new ArrayList();
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 3 )
+		{
+			aList.Push(i);
+		}
+	}
+
+	PushArrayCell(clients, aList.Get(GetRandomInt(0, aList.Length - 1)));
+
+	delete aList;
+
+	return true;
+}
+
+// Filter - Random Tank
+public bool FilterRandomD(const char[] pattern, Handle clients)
+{
+	ArrayList aList = new ArrayList();
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 3 && IsPlayerAlive(i) && GetEntProp(i, Prop_Send, "m_zombieClass") == g_iClassTank )
+		{
+			aList.Push(i);
+		}
+	}
+
+	PushArrayCell(clients, aList.Get(GetRandomInt(0, aList.Length - 1)));
+
+	delete aList;
+
+	return true;
+}
+
+// Filter - Random Incapped Survivor Bot
+public bool FilterRandomE(const char[] pattern, Handle clients)
+{
+	ArrayList aList = new ArrayList();
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 2 && IsPlayerAlive(i) && IsFakeClient(i) && GetEntProp(i, Prop_Send, "m_isIncapacitated", 1) )
+		{
+			aList.Push(i);
+		}
+	}
+
+	PushArrayCell(clients, aList.Get(GetRandomInt(0, aList.Length - 1)));
+
+	delete aList;
+
+	return true;
+}
+
+// Filter - Random Survivor Bot
+public bool FilterRandomF(const char[] pattern, Handle clients)
+{
+	ArrayList aList = new ArrayList();
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 2 && IsPlayerAlive(i) && IsFakeClient(i) )
+		{
+			aList.Push(i);
+		}
+	}
+
+	PushArrayCell(clients, aList.Get(GetRandomInt(0, aList.Length - 1)));
+
+	delete aList;
+
+	return true;
+}
+
+// Filter - Random Infected Bot
+public bool FilterRandomG(const char[] pattern, Handle clients)
+{
+	ArrayList aList = new ArrayList();
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 3 && IsPlayerAlive(i) && IsFakeClient(i) )
+		{
+			aList.Push(i);
+		}
+	}
+
+	PushArrayCell(clients, aList.Get(GetRandomInt(0, aList.Length - 1)));
+
+	delete aList;
+
+	return true;
+}
+
+// Filter - Random Tank Bot
+public bool FilterRandomH(const char[] pattern, Handle clients)
+{
+	ArrayList aList = new ArrayList();
+
+	for( int i = 1; i <= MaxClients; i++ )
+	{
+		if( IsClientInGame(i) && GetClientTeam(i) == 3 && IsPlayerAlive(i) && IsFakeClient(i) && GetEntProp(i, Prop_Send, "m_zombieClass") == g_iClassTank )
+		{
+			aList.Push(i);
+		}
+	}
+
+	PushArrayCell(clients, aList.Get(GetRandomInt(0, aList.Length - 1)));
+
+	delete aList;
+
+	return true;
+}
+
+// Specific Infected
+public bool FilterSmoker(const char[] pattern, Handle clients)
+{
+	MatchZombie(clients, 1);
+	return true;
+}
+
+public bool FilterBoomer(const char[] pattern, Handle clients)
+{
+	MatchZombie(clients, 2);
+	return true;
+}
+
+public bool FilterHunter(const char[] pattern, Handle clients)
+{
+	MatchZombie(clients, 3);
+	return true;
+}
+
+public bool FilterSpitter(const char[] pattern, Handle clients)
+{
+	MatchZombie(clients, 4);
+	return true;
+}
+
+public bool FilterJockey(const char[] pattern, Handle clients)
+{
+	MatchZombie(clients, 5);
+	return true;
+}
+
+public bool FilterCharger(const char[] pattern, Handle clients)
+{
+	MatchZombie(clients, 6);
+	return true;
+}
+
 public bool FilterTanks(const char[] pattern, Handle clients)
+{
+	MatchZombie(clients, g_iClassTank);
+	return true;
+}
+
+void MatchZombie(Handle clients, int zombieClass)
 {
 	for( int i = 1; i <= MaxClients; i++ )
 	{
-		if( IsClientInGame(i) && GetClientTeam(i) == 3 && GetEntProp(i, Prop_Send, "m_zombieClass") == g_iClassTank )
+		if( IsClientInGame(i) && GetClientTeam(i) == 3 && GetEntProp(i, Prop_Send, "m_zombieClass") == zombieClass )
 		{
 			PushArrayCell(clients, i);
 		}
 	}
-
-	return true;
 }
 
 
 
 // ====================================================================================================
-//										DISABLE ADDONS
+//										CLEAN UP
 // ====================================================================================================
 public void OnPluginEnd()
 {
@@ -1316,17 +2239,58 @@ public void OnPluginEnd()
 		AddonsDisabler_Unpatch();
 
 	// Target Filters
-	RemoveMultiTargetFilter("@s",			FilterSurvivor);
-	RemoveMultiTargetFilter("@surv",		FilterSurvivor);
-	RemoveMultiTargetFilter("@survivors",	FilterSurvivor);
-	RemoveMultiTargetFilter("@infe",		FilterInfected);
-	RemoveMultiTargetFilter("@infected",	FilterInfected);
-	RemoveMultiTargetFilter("@i",			FilterInfected);
-	RemoveMultiTargetFilter("@tank",		FilterTanks);
-	RemoveMultiTargetFilter("@tanks",		FilterTanks);
-	RemoveMultiTargetFilter("@t",			FilterTanks);
+	RemoveMultiTargetFilter("@s",						FilterSurvivor);
+	RemoveMultiTargetFilter("@surv",					FilterSurvivor);
+	RemoveMultiTargetFilter("@survivors",				FilterSurvivor);
+	RemoveMultiTargetFilter("@incappedsurvivors",		FilterIncapped);
+	RemoveMultiTargetFilter("@is",						FilterIncapped);
+	RemoveMultiTargetFilter("@infe",					FilterInfected);
+	RemoveMultiTargetFilter("@infected",				FilterInfected);
+	RemoveMultiTargetFilter("@i",						FilterInfected);
+
+	RemoveMultiTargetFilter("@randomincappedsurvivor",	FilterRandomA);
+	RemoveMultiTargetFilter("@ris",						FilterRandomA);
+	RemoveMultiTargetFilter("@randomsurvivor",			FilterRandomB);
+	RemoveMultiTargetFilter("@rs",						FilterRandomB);
+	RemoveMultiTargetFilter("@randominfected",			FilterRandomC);
+	RemoveMultiTargetFilter("@ri",						FilterRandomC);
+	RemoveMultiTargetFilter("@randomtank",				FilterRandomD);
+	RemoveMultiTargetFilter("@rt",						FilterRandomD);
+	RemoveMultiTargetFilter("@incappedsurvivorbot",		FilterRandomE);
+	RemoveMultiTargetFilter("@isb",						FilterRandomE);
+	RemoveMultiTargetFilter("@survivorbot",				FilterRandomF);
+	RemoveMultiTargetFilter("@sb",						FilterRandomF);
+	RemoveMultiTargetFilter("@infectedbot",				FilterRandomG);
+	RemoveMultiTargetFilter("@ib",						FilterRandomG);
+	RemoveMultiTargetFilter("@tankbot",					FilterRandomH);
+	RemoveMultiTargetFilter("@tb",						FilterRandomH);
+
+	RemoveMultiTargetFilter("@nick",					FilterNick);
+	RemoveMultiTargetFilter("@rochelle",				FilterRochelle);
+	RemoveMultiTargetFilter("@coach",					FilterCoach);
+	RemoveMultiTargetFilter("@ellis",					FilterEllis);
+	RemoveMultiTargetFilter("@bill",					FilterBill);
+	RemoveMultiTargetFilter("@zoey",					FilterZoey);
+	RemoveMultiTargetFilter("@francis",					FilterFrancis);
+	RemoveMultiTargetFilter("@louis",					FilterLouis);
+
+	RemoveMultiTargetFilter("@smokers",					FilterSmoker);
+	RemoveMultiTargetFilter("@boomers",					FilterBoomer);
+	RemoveMultiTargetFilter("@hunters",					FilterHunter);
+	RemoveMultiTargetFilter("@spitters",				FilterSpitter);
+	RemoveMultiTargetFilter("@jockeys",					FilterJockey);
+	RemoveMultiTargetFilter("@chargers",				FilterCharger);
+
+	RemoveMultiTargetFilter("@tank",					FilterTanks);
+	RemoveMultiTargetFilter("@tanks",					FilterTanks);
+	RemoveMultiTargetFilter("@t",						FilterTanks);
 }
 
+
+
+// ====================================================================================================
+//										DISABLE ADDONS
+// ====================================================================================================
 public void OnConfigsExecuted()
 {
 	if( g_bLeft4Dead2 )
@@ -1354,6 +2318,7 @@ void AddonsDisabler_Patch()
 		AddonsDisabler_Restore[2] = LoadFromAddress(VanillaModeAddress + view_as<Address>(VanillaModeOffset + 2), NumberType_Int8);
 	}
 
+	//PrintToServer("Addons restore: %02x%02x%02x", AddonsDisabler_Restore[0], AddonsDisabler_Restore[1], AddonsDisabler_Restore[2]);
 	StoreToAddress(VanillaModeAddress + view_as<Address>(VanillaModeOffset), 0x0F, NumberType_Int8);
 	StoreToAddress(VanillaModeAddress + view_as<Address>(VanillaModeOffset + 1), 0x1F, NumberType_Int8);
 	StoreToAddress(VanillaModeAddress + view_as<Address>(VanillaModeOffset + 2), 0x00, NumberType_Int8);
@@ -1377,20 +2342,27 @@ void AddonsDisabler_Unpatch()
 // ====================================================================================================
 public MRESReturn AddonsDisabler(int pThis, Handle hReturn, Handle hParams)
 {
-	//PrintToServer("##### DTR AddonsDisabler");
-	// Get client index like downtown:
-	// int m_nPlayerSlot = *(int *)((unsigned char *)SVC_ServerInfo + 48);
-	// IClient *pClient = g_pServer->GetClient(m_nPlayerSlot);
+	// Details on finding offsets can be found here: https://github.com/ProdigySim/left4dhooks/pull/1
+	// Big thanks to "ProdigySim" for updating for The Last Stand update.
+
+	#if DEBUG
+	PrintToServer("##### DTR AddonsDisabler");
+	#endif
 
 	int cvar = g_hCvarAddonsEclipse.IntValue;
 	if( cvar != -1 )
 	{
 		int ptr = DHookGetParam(hParams, 1);
-		int client = LoadFromAddress(view_as<Address>(ptr + 48), NumberType_Int8); // Network slot
 
-		//PrintToServer("#### CALL g_hSDK_Call_GetClient");
-		client = SDKCall(g_hSDK_Call_GetClient, g_pServer, client); // Pointer to somewhere in client address, not their actual entity address.
-		client = LoadFromAddress(view_as<Address>(client + 48), NumberType_Int8); // Strange, don't know why but works. Found with sm_ptr dump.
+		// This is `m_nPlayerSlot` on the `SVC_ServerInfo`.
+		// It represents the client index of the connecting user.
+		int playerSlot = LoadFromAddress(view_as<Address>(ptr + g_iAddonEclipse1), NumberType_Int8);
+		// The playerslot is an index into `CBaseServer::m_Clients`, and SourceMod's client entity indexes are just `m_Clients` index plus 1.
+		int client = playerSlot + 1;
+
+		#if DEBUG
+		PrintToServer("#### AddonCheck for %d", client);
+		#endif
 
 		if( client > 0 && client <= MaxClients && IsClientConnected(client) )
 		{
@@ -1398,12 +2370,22 @@ public MRESReturn AddonsDisabler(int pThis, Handle hReturn, Handle hParams)
 			static char netID[32];
 			GetClientAuthId(client, AuthId_Steam2, netID, sizeof(netID), false);
 
+			#if DEBUG
+			PrintToServer("#### AddonCheck for %d [%s] (%N)", client, netID, client);
+			#endif
+
 			Action aResult = Plugin_Continue;
 			Call_StartForward(g_hForward_AddonsDisabler);
 			Call_PushString(netID);
 			Call_Finish(aResult);
 
-			StoreToAddress(view_as<Address>(ptr + 25), aResult == Plugin_Handled ? 0 : view_as<int>(!cvar), NumberType_Int8);
+			// 1 to tell the client it should use "vanilla mode"--no addons. 0 to enable addons.
+			int bVanillaMode =  aResult == Plugin_Handled ? 0 : view_as<int>(!cvar);
+			StoreToAddress(view_as<Address>(ptr + g_iAddonEclipse2), bVanillaMode, NumberType_Int8);
+			
+			#if DEBUG
+			PrintToServer("#### AddonCheck vanillaMode for %d [%s] (%N): %d", client, netID, client, bVanillaMode);
+			#endif
 		}
 	}
 
@@ -1415,6 +2397,20 @@ public MRESReturn AddonsDisabler(int pThis, Handle hReturn, Handle hParams)
 // ====================================================================================================
 //										DYNAMIC DETOURS SETUP
 // ====================================================================================================
+// Forward from "[DEV] Autoreload Plugins" by "Dragokas"
+public void AP_OnPluginUpdate(int pre) 
+{
+	if( pre == 0 )
+	{
+		CheckRequiredDetours();
+	}
+}
+
+public Action CmdLobby(int client, int args)
+{
+	Native_LobbyUnreserve(null, 0);
+}
+
 public Action CmdDetours(int client, int args)
 {
 	CheckRequiredDetours(client + 1);
@@ -1423,7 +2419,9 @@ public Action CmdDetours(int client, int args)
 
 public Action CmdReload(int client, int args)
 {
+	float timing = GetEngineTime();
 	OnMapStart();
+	ReplyToCommand(client, "[Left4DHooks: Detours reloaded in %f seconds.", GetEngineTime() - timing);
 	return Plugin_Handled;
 }
 
@@ -1434,8 +2432,10 @@ void SetupDetours(GameData hGameData = null)
 	{
 		g_aDetoursHooked = new ArrayList();
 		g_aDetourHandles = new ArrayList();
+		g_aUseLastIndex = new ArrayList();
 		g_aForwardIndex = new ArrayList();
 		g_aForceDetours = new ArrayList();
+		g_aGameDataSigs = new ArrayList(ByteCountToCells(MAX_FWD_LEN));
 		g_aForwardNames = new ArrayList(ByteCountToCells(MAX_FWD_LEN));
 	}
 
@@ -1444,69 +2444,116 @@ void SetupDetours(GameData hGameData = null)
 
 
 	// Forwards listed here must match forward list in plugin start.
-	//			 GameData	DHookCallback PRE					DHookCallback POST		Signature Name							Forward Name				useLast index		forceOn detour
-	CreateDetour(hGameData, SpawnTank,							INVALID_FUNCTION,		"SpawnTank",							"L4D_OnSpawnTank");
-	CreateDetour(hGameData, SpawnWitch,							INVALID_FUNCTION,		"SpawnWitch",							"L4D_OnSpawnWitch");
-	CreateDetour(hGameData, MobRushStart,						INVALID_FUNCTION,		"OnMobRushStart",						"L4D_OnMobRushStart");
-	CreateDetour(hGameData, SpawnITMob,							INVALID_FUNCTION,		"SpawnITMob",							"L4D_OnSpawnITMob");
-	CreateDetour(hGameData, SpawnMob,							INVALID_FUNCTION,		"SpawnMob",								"L4D_OnSpawnMob");
-	CreateDetour(hGameData, EnterGhostStatePre,					EnterGhostState,		"OnEnterGhostState",					"L4D_OnEnterGhostState");
-	CreateDetour(hGameData, IsTeamFullPre,						INVALID_FUNCTION,		"IsTeamFull",							"L4D_OnIsTeamFull");
-	CreateDetour(hGameData, ClearTeamScores,					INVALID_FUNCTION,		"ClearTeamScores",						"L4D_OnClearTeamScores");
-	CreateDetour(hGameData, SetCampaignScores,					INVALID_FUNCTION,		"SetCampaignScores",					"L4D_OnSetCampaignScores");
-	CreateDetour(hGameData, OnFirstSurvivorLeftSafeArea,		INVALID_FUNCTION,		"OnFirstSurvivorLeftSafeArea",			"L4D_OnFirstSurvivorLeftSafeArea");
-	CreateDetour(hGameData, GetCrouchTopSpeedPre,				GetCrouchTopSpeed,		"GetCrouchTopSpeed",					"L4D_OnGetCrouchTopSpeed");
-	CreateDetour(hGameData, GetRunTopSpeedPre,					GetRunTopSpeed,			"GetRunTopSpeed",						"L4D_OnGetRunTopSpeed");
-	CreateDetour(hGameData, GetWalkTopSpeedPre,					GetWalkTopSpeed,		"GetWalkTopSpeed",						"L4D_OnGetWalkTopSpeed");
-	CreateDetour(hGameData, GetMissionVSBoss,					INVALID_FUNCTION,		"GetMissionVersusBossSpawning",			"L4D_OnGetMissionVSBossSpawning");
-	CreateDetour(hGameData, OnReplaceTank,						INVALID_FUNCTION,		"ReplaceTank",							"L4D_OnReplaceTank");
-	CreateDetour(hGameData, TryOfferingTankBot,					INVALID_FUNCTION,		"TryOfferingTankBot",					"L4D_OnTryOfferingTankBot");
-	CreateDetour(hGameData, CThrowActivate,						INVALID_FUNCTION,		"CThrowActivate",						"L4D_OnCThrowActivate");
+	//			 GameData	DHookCallback PRE					DHookCallback POST				Signature Name								Forward Name							useLast index		forceOn detour
+	CreateDetour(hGameData, SpawnTank,							INVALID_FUNCTION,				"SpawnTank",								"L4D_OnSpawnTank");
+
+	if( !g_bLeft4Dead2 && g_bLinuxOS )
+		CreateDetour(hGameData, SpawnWitchArea,					INVALID_FUNCTION,				"SpawnWitchArea",							"L4D_OnSpawnWitch");
+		// CreateDetour(hGameData, SpawnWitchAreaPre,				SpawnWitchArea,					"SpawnWitchArea",							"L4D_OnSpawnWitch");
+
+	CreateDetour(hGameData, SpawnWitch,							INVALID_FUNCTION,				"SpawnWitch",								"L4D_OnSpawnWitch");
+	CreateDetour(hGameData, MobRushStart,						INVALID_FUNCTION,				"OnMobRushStart",							"L4D_OnMobRushStart");
+	CreateDetour(hGameData, SpawnITMob,							INVALID_FUNCTION,				"SpawnITMob",								"L4D_OnSpawnITMob");
+	CreateDetour(hGameData, SpawnMob,							INVALID_FUNCTION,				"SpawnMob",									"L4D_OnSpawnMob");
+	CreateDetour(hGameData, EnterGhostStatePre,					EnterGhostState,				"OnEnterGhostState",						"L4D_OnEnterGhostState");
+	CreateDetour(hGameData, EnterGhostStatePre,					EnterGhostState,				"OnEnterGhostState",						"L4D_OnEnterGhostStatePre",				true); // Different forwards, same detour as above - same index.
+	CreateDetour(hGameData, IsTeamFullPre,						INVALID_FUNCTION,				"IsTeamFull",								"L4D_OnIsTeamFull");
+	CreateDetour(hGameData, ClearTeamScores,					INVALID_FUNCTION,				"ClearTeamScores",							"L4D_OnClearTeamScores");
+	CreateDetour(hGameData, SetCampaignScores,					INVALID_FUNCTION,				"SetCampaignScores",						"L4D_OnSetCampaignScores");
+
+	if( !g_bLeft4Dead2 )
+		CreateDetour(hGameData, RecalculateVersusScore,			INVALID_FUNCTION,				"RecalculateVersusScore",					"L4D_OnRecalculateVersusScore");
+
+	CreateDetour(hGameData, OnFirstSurvivorLeftSafeArea,		INVALID_FUNCTION,				"OnFirstSurvivorLeftSafeArea",				"L4D_OnFirstSurvivorLeftSafeArea");
+	CreateDetour(hGameData, GetCrouchTopSpeedPre,				GetCrouchTopSpeed,				"GetCrouchTopSpeed",						"L4D_OnGetCrouchTopSpeed");
+	CreateDetour(hGameData, GetRunTopSpeedPre,					GetRunTopSpeed,					"GetRunTopSpeed",							"L4D_OnGetRunTopSpeed");
+	CreateDetour(hGameData, GetWalkTopSpeedPre,					GetWalkTopSpeed,				"GetWalkTopSpeed",							"L4D_OnGetWalkTopSpeed");
+	CreateDetour(hGameData, GetMissionVSBoss,					INVALID_FUNCTION,				"GetMissionVersusBossSpawning",				"L4D_OnGetMissionVSBossSpawning");
+	CreateDetour(hGameData, OnReplaceTank,						INVALID_FUNCTION,				"ReplaceTank",								"L4D_OnReplaceTank");
+	CreateDetour(hGameData, CTankClaw_DoSwing_Pre,				CTankClaw_DoSwing_Post,			"CTankClaw::DoSwing",						"L4D_TankClaw_DoSwing_Pre");
+	CreateDetour(hGameData, CTankClaw_DoSwing_Pre,				CTankClaw_DoSwing_Post,			"CTankClaw::DoSwing",						"L4D_TankClaw_DoSwing_Post",			true); // Different forwards, same detour as above - same index.
+	CreateDetour(hGameData, CTankClaw_GroundPound_Pre,			CTankClaw_GroundPound_Post,		"CTankClaw::GroundPound",					"L4D_TankClaw_GroundPound_Pre");
+	CreateDetour(hGameData, CTankClaw_GroundPound_Pre,			CTankClaw_GroundPound_Post,		"CTankClaw::GroundPound",					"L4D_TankClaw_GroundPound_Post",		true); // Different forwards, same detour as above - same index.
+	CreateDetour(hGameData, CTankClaw_OnPlayerHit_Pre,			CTankClaw_OnPlayerHit_Post,		"CTankClaw::OnPlayerHit",					"L4D_TankClaw_OnPlayerHit_Pre");
+	CreateDetour(hGameData, CTankClaw_OnPlayerHit_Pre,			CTankClaw_OnPlayerHit_Post,		"CTankClaw::OnPlayerHit",					"L4D_TankClaw_OnPlayerHit_Post",		true); // Different forwards, same detour as above - same index.
+	CreateDetour(hGameData, CTankRock_Detonate,					INVALID_FUNCTION,				"CTankRock::Detonate",						"L4D_TankRock_OnDetonate");
+	CreateDetour(hGameData, CTankRock_OnRelease,				INVALID_FUNCTION,				"CTankRock::OnRelease",						"L4D_TankRock_OnRelease");
+
+	if( !g_bLeft4Dead2 && g_bLinuxOS )
+		CreateDetour(hGameData, TryOfferingTankBot,				INVALID_FUNCTION,				"TryOfferingTankBot_Clone",					"L4D_OnTryOfferingTankBot");
+	else
+		CreateDetour(hGameData, TryOfferingTankBot,				INVALID_FUNCTION,				"TryOfferingTankBot",						"L4D_OnTryOfferingTankBot");
+
+	CreateDetour(hGameData, CThrowActivate,						INVALID_FUNCTION,				"CThrowActivate",							"L4D_OnCThrowActivate");
 	g_iAnimationDetourIndex = g_iCurrentIndex; // Animation Hook - detour index to enable when required.
-	CreateDetour(hGameData, SelectTankAttackPre,				SelectTankAttack,		"SelectTankAttack",						"L4D2_OnSelectTankAttack"); // Animation Hook
-	CreateDetour(hGameData, SelectTankAttackPre,				SelectTankAttack,		"SelectTankAttack",						"L4D2_OnSelectTankAttackPre", true); // Animation Hook
+	CreateDetour(hGameData, SelectTankAttackPre,				SelectTankAttack,				"SelectTankAttack",							"L4D2_OnSelectTankAttack"); // Animation Hook
+	CreateDetour(hGameData, SelectTankAttackPre,				SelectTankAttack,				"SelectTankAttack",							"L4D2_OnSelectTankAttackPre",			true); // Animation Hook
+
 	if( !g_bLinuxOS ) // Blocked on Linux in L4D1/L4D2 to prevent crashes. Waiting for DHooks update to support object returns.
-	CreateDetour(hGameData, SendInRescueVehicle,				INVALID_FUNCTION,		"SendInRescueVehicle",					"L4D2_OnSendInRescueVehicle");
-	CreateDetour(hGameData, EndVersusModeRoundPre,				EndVersusModeRound,		"EndVersusModeRound",					"L4D2_OnEndVersusModeRound");
-	CreateDetour(hGameData,	EndVersusModeRoundPre,				EndVersusModeRound,		"EndVersusModeRound",					"L4D2_OnEndVersusModeRound_Post", true); // Different forwards, same detour as above - same index.
-	CreateDetour(hGameData, LedgeGrabbed,						INVALID_FUNCTION,		"OnLedgeGrabbed",						"L4D_OnLedgeGrabbed");
-	CreateDetour(hGameData, OnRevivedPre,						OnRevived,				"OnRevived",							"L4D2_OnRevived");
-	CreateDetour(hGameData, OnPlayerStagger,					INVALID_FUNCTION,		"OnStaggered",							"L4D2_OnStagger");
-	CreateDetour(hGameData, ShovedBySurvivor,					INVALID_FUNCTION,		"OnShovedBySurvivor",					"L4D_OnShovedBySurvivor");
-	CreateDetour(hGameData, CTerrorWeapon_OnHit,				INVALID_FUNCTION,		"OnHit",								"L4D2_OnEntityShoved");
-	CreateDetour(hGameData, OnShovedByPounceLanding,			INVALID_FUNCTION,		"OnShovedByPounceLanding",				"L4D2_OnPounceOrLeapStumble");
-	CreateDetour(hGameData, InfernoSpread,						INVALID_FUNCTION,		"Spread",								"L4D2_OnSpitSpread");
+		CreateDetour(hGameData, SendInRescueVehicle,			INVALID_FUNCTION,				"SendInRescueVehicle",						"L4D2_OnSendInRescueVehicle");
+
+	CreateDetour(hGameData, EndVersusModeRoundPre,				EndVersusModeRound,				"EndVersusModeRound",						"L4D2_OnEndVersusModeRound");
+	CreateDetour(hGameData,	EndVersusModeRoundPre,				EndVersusModeRound,				"EndVersusModeRound",						"L4D2_OnEndVersusModeRound_Post",		true); // Different forwards, same detour as above - same index.
+	CreateDetour(hGameData, LedgeGrabbed,						INVALID_FUNCTION,				"OnLedgeGrabbed",							"L4D_OnLedgeGrabbed");
+	CreateDetour(hGameData, OnRevivedPre,						OnRevived,						"OnRevived",								"L4D2_OnRevived");
+
+	CreateDetour(hGameData, OnPlayerStagger,					INVALID_FUNCTION,				"OnStaggered",								"L4D2_OnStagger");
+	if( !g_bLeft4Dead2 && g_bLinuxOS )
+		CreateDetour(hGameData, OnPlayerStagger_clone,			INVALID_FUNCTION,				"OnStaggered_clone",						"L4D2_OnStagger");
+
+	CreateDetour(hGameData, ShovedBySurvivor,					INVALID_FUNCTION,				"OnShovedBySurvivor",						"L4D_OnShovedBySurvivor");
+	if( !g_bLeft4Dead2 && g_bLinuxOS )
+		CreateDetour(hGameData, ShovedBySurvivor_clone,			INVALID_FUNCTION,				"OnShovedBySurvivor_clone",					"L4D_OnShovedBySurvivor");
+
+	CreateDetour(hGameData, CTerrorWeapon_OnHit,				INVALID_FUNCTION,				"OnHit",									"L4D2_OnEntityShoved");
+	CreateDetour(hGameData, OnShovedByPounceLanding,			INVALID_FUNCTION,				"OnShovedByPounceLanding",					"L4D2_OnPounceOrLeapStumble");
+	CreateDetour(hGameData, OnFatalFalling,						INVALID_FUNCTION,				"CDeathFallCamera::Enable",					"L4D_OnFatalFalling");
+	CreateDetour(hGameData, OnFallingPre,						OnFalling,						"CTerrorPlayer::OnFalling",					"L4D_OnFalling");
+	CreateDetour(hGameData, OnEnterStasisPre,					OnEnterStasis,					"Tank::EnterStasis",						"L4D_OnEnterStasis");
+	CreateDetour(hGameData, OnLeaveStasisPre,					OnLeaveStasis,					"Tank::LeaveStasis",						"L4D_OnLeaveStasis");
+	CreateDetour(hGameData, InfernoSpread,						INVALID_FUNCTION,				"Spread",									"L4D2_OnSpitSpread");
+
 	if( !g_bLinuxOS ) // Blocked on Linux in L4D1/L4D2 to prevent crashes. Waiting for DHooks update to support object returns.
-	CreateDetour(hGameData, OnUseHealingItems,					INVALID_FUNCTION,		"UseHealingItems",						"L4D2_OnUseHealingItems");
-	CreateDetour(hGameData, OnFindScavengeItemPre,				OnFindScavengeItem,		"FindScavengeItem",						"L4D2_OnFindScavengeItem");
-	CreateDetour(hGameData, OnChooseVictimPre,					OnChooseVictim,			"ChooseVictim",							"L4D2_OnChooseVictim");
+		CreateDetour(hGameData, OnUseHealingItems,				INVALID_FUNCTION,				"UseHealingItems",							"L4D2_OnUseHealingItems");
+
+	CreateDetour(hGameData, OnFindScavengeItemPre,				OnFindScavengeItem,				"FindScavengeItem",							"L4D2_OnFindScavengeItem");
+	CreateDetour(hGameData, OnChooseVictimPre,					OnChooseVictim,					"ChooseVictim",								"L4D2_OnChooseVictim");
+	CreateDetour(hGameData, OnMaterializeFromGhostPre,			OnMaterialize,					"OnMaterializeFromGhost",					"L4D_OnMaterializeFromGhostPre");
+	CreateDetour(hGameData, OnMaterializeFromGhostPre,			OnMaterialize,					"OnMaterializeFromGhost",					"L4D_OnMaterializeFromGhost",			true); // Different forwards, same detour as above - same index.
+	CreateDetour(hGameData, OnPipeBombProjectile_Pre,			OnPipeBombProjectile_Post,		"CPipeBombProjectile_Create",				"L4D_PipeBombProjectile_Pre");
+	CreateDetour(hGameData, OnPipeBombProjectile_Pre,			OnPipeBombProjectile_Post,		"CPipeBombProjectile_Create",				"L4D_PipeBombProjectile_Post",			true); // Different forwards, same detour as above - same index.
+	CreateDetour(hGameData, OnPlayerExtinguish,					INVALID_FUNCTION,				"CTerrorPlayer::Extinguish",				"L4D_PlayerExtinguish");
+	CreateDetour(hGameData, OnVomitedUpon,						INVALID_FUNCTION,				"OnVomitedUpon",							"L4D_OnVomitedUpon");
 
 	if( !g_bLeft4Dead2 )
 	{
 		// Different detours, same forward (SpawnSpecial).
-		CreateDetour(hGameData, SpawnHunter,					INVALID_FUNCTION,		"SpawnHunter",							"L4D_OnSpawnSpecial");
-		CreateDetour(hGameData, SpawnBoomer,					INVALID_FUNCTION,		"SpawnBoomer",							"L4D_OnSpawnSpecial");
-		CreateDetour(hGameData, SpawnSmoker,					INVALID_FUNCTION,		"SpawnSmoker",							"L4D_OnSpawnSpecial");
+		CreateDetour(hGameData, SpawnHunter,					INVALID_FUNCTION,				"SpawnHunter",								"L4D_OnSpawnSpecial");
+		CreateDetour(hGameData, SpawnBoomer,					INVALID_FUNCTION,				"SpawnBoomer",								"L4D_OnSpawnSpecial");
+		CreateDetour(hGameData, SpawnSmoker,					INVALID_FUNCTION,				"SpawnSmoker",								"L4D_OnSpawnSpecial");
 	}
 	else
 	{
-		CreateDetour(hGameData, SpawnSpecial,					INVALID_FUNCTION,		"SpawnSpecial",							"L4D_OnSpawnSpecial");
-		CreateDetour(hGameData, SpawnWitchBride,				INVALID_FUNCTION,		"SpawnWitchBride",						"L4D_OnSpawnWitchBride");
-		CreateDetour(hGameData, GetScriptValueInt,				INVALID_FUNCTION,		"GetScriptValueInt",					"L4D_OnGetScriptValueInt");
-		CreateDetour(hGameData, GetScriptValueFloat,			INVALID_FUNCTION,		"GetScriptValueFloat",					"L4D_OnGetScriptValueFloat");
-		CreateDetour(hGameData, GetScriptValueString,			INVALID_FUNCTION,		"GetScriptValueString",					"L4D_OnGetScriptValueString");
-		CreateDetour(hGameData, HasConfigurableDifficulty,		INVALID_FUNCTION,		"HasConfigurableDifficulty",			"L4D_OnHasConfigurableDifficulty");
-		CreateDetour(hGameData, GetSurvivorSet,					INVALID_FUNCTION,		"GetSurvivorSet",						"L4D_OnGetSurvivorSet");
-		CreateDetour(hGameData, FastGetSurvivorSet,				INVALID_FUNCTION,		"FastGetSurvivorSet",					"L4D_OnFastGetSurvivorSet");
-		CreateDetour(hGameData, StartMeleeSwing,				INVALID_FUNCTION,		"StartMeleeSwing",						"L4D_OnStartMeleeSwing");
-		CreateDetour(hGameData, ChangeFinaleStage,				INVALID_FUNCTION,		"ChangeFinaleStage",					"L4D2_OnChangeFinaleStage");
-		CreateDetour(hGameData, AddonsDisabler,					INVALID_FUNCTION,		"FillServerInfo",						"L4D2_OnClientDisableAddons", false, true); // Force detour to enable.
+		CreateDetour(hGameData, OnPlayerFling,					INVALID_FUNCTION,				"CTerrorPlayer::Fling",						"L4D2_OnPlayerFling");
+		CreateDetour(hGameData, OnHitByVomitJar,				INVALID_FUNCTION,				"OnHitByVomitJar",							"L4D2_OnHitByVomitJar");
+		CreateDetour(hGameData, SpawnSpecial,					INVALID_FUNCTION,				"SpawnSpecial",								"L4D_OnSpawnSpecial");
+		CreateDetour(hGameData, SpawnWitchBride,				INVALID_FUNCTION,				"SpawnWitchBride",							"L4D2_OnSpawnWitchBride");
+		CreateDetour(hGameData, GetScriptValueInt,				INVALID_FUNCTION,				"GetScriptValueInt",						"L4D_OnGetScriptValueInt");
+		CreateDetour(hGameData, GetScriptValueFloat,			INVALID_FUNCTION,				"GetScriptValueFloat",						"L4D_OnGetScriptValueFloat");
+		CreateDetour(hGameData, GetScriptValueString,			INVALID_FUNCTION,				"GetScriptValueString",						"L4D_OnGetScriptValueString");
+		CreateDetour(hGameData, HasConfigurableDifficulty,		INVALID_FUNCTION,				"HasConfigurableDifficulty",				"L4D_OnHasConfigurableDifficulty");
+		CreateDetour(hGameData, GetSurvivorSet,					INVALID_FUNCTION,				"GetSurvivorSet",							"L4D_OnGetSurvivorSet");
+		CreateDetour(hGameData, FastGetSurvivorSet,				INVALID_FUNCTION,				"FastGetSurvivorSet",						"L4D_OnFastGetSurvivorSet");
+		CreateDetour(hGameData, StartMeleeSwing,				INVALID_FUNCTION,				"StartMeleeSwing",							"L4D_OnStartMeleeSwing");
+		CreateDetour(hGameData, GetDamageForVictimPre,			GetDamageForVictim,				"CTerrorMeleeWeapon::GetDamageForVictim",	"L4D2_MeleeGetDamageForVictim");
+		CreateDetour(hGameData, ChangeFinaleStage,				INVALID_FUNCTION,				"ChangeFinaleStage",						"L4D2_OnChangeFinaleStage");
+		CreateDetour(hGameData, AddonsDisabler,					INVALID_FUNCTION,				"FillServerInfo",							"L4D2_OnClientDisableAddons",			false,				true); // Force detour to enable.
 	}
 
 	// Deprecated, unused or broken.
-	// CreateDetour(hGameData, InfectedShoved,					INVALID_FUNCTION,		"InfectedShoved",						"L4D_OnInfectedShoved"); // Missing signature
-	// CreateDetour(hGameData, OnWaterMovePre,					OnWaterMove,			"WaterMove",							"L4D2_OnWaterMove"); // Does not return water state. Use FL_INWATER instead.
-	// CreateDetour(hGameData, GetRandomPZSpawnPos,				INVALID_FUNCTION,		"GetRandomPZSpawnPosition",				"L4D_OnGetRandomPZSpawnPosition");
+	// CreateDetour(hGameData, InfectedShoved,						INVALID_FUNCTION,				"InfectedShoved",							"L4D_OnInfectedShoved"); // Missing signature
+	// CreateDetour(hGameData, OnWaterMovePre,						OnWaterMove,					"WaterMove",								"L4D2_OnWaterMove"); // Does not return water state. Use FL_INWATER instead.
+	// CreateDetour(hGameData, GetRandomPZSpawnPos,				INVALID_FUNCTION,				"GetRandomPZSpawnPosition",					"L4D_OnGetRandomPZSpawnPosition");
 
 	g_bCreatedDetours = true;
 }
@@ -1519,7 +2566,9 @@ void CreateDetour(GameData hGameData, DHookCallback fCallback, DHookCallback fPo
 		static int index;
 		if( useLast ) index -= 1;
 
+		g_aGameDataSigs.PushString(sName);
 		g_aForwardNames.PushString(sForward);
+		g_aUseLastIndex.Push(useLast);
 		g_aForwardIndex.Push(index++);
 		g_aForceDetours.Push(forceOn);
 
@@ -1552,7 +2601,7 @@ void CreateDetour(GameData hGameData, DHookCallback fCallback, DHookCallback fPo
 						PrintToServer("Enabling detour %d %s", index, sName);
 						#endif
 
-						if( fCallback != INVALID_FUNCTION && !DHookEnableDetour(hDetour, false, fCallback) ) LogError("Failed to detour \"%s\".", sName);
+						if( fCallback != INVALID_FUNCTION && !DHookEnableDetour(hDetour, false, fCallback) ) LogError("Failed to detour pre \"%s\".", sName);
 						if( fPostCallback != INVALID_FUNCTION && !DHookEnableDetour(hDetour, true, fPostCallback) ) LogError("Failed to detour post \"%s\".", sName);
 					} else {
 						g_aDetoursHooked.Set(index, 0);
@@ -1560,7 +2609,7 @@ void CreateDetour(GameData hGameData, DHookCallback fCallback, DHookCallback fPo
 						PrintToServer("Disabling detour %d %s", index, sName);
 						#endif
 
-						if( fCallback != INVALID_FUNCTION && !DHookDisableDetour(hDetour, false, fCallback) ) LogError("Failed to disable detour \"%s\".", sName);
+						if( fCallback != INVALID_FUNCTION && !DHookDisableDetour(hDetour, false, fCallback) ) LogError("Failed to disable detour pre \"%s\".", sName);
 						if( fPostCallback != INVALID_FUNCTION && !DHookDisableDetour(hDetour, true, fPostCallback) ) LogError("Failed to disable detour post \"%s\".", sName);
 					}
 				}
@@ -1572,12 +2621,18 @@ void CreateDetour(GameData hGameData, DHookCallback fCallback, DHookCallback fPo
 // Loop through plugins, check which forwards are being used, then hook
 void CheckRequiredDetours(int client = 0)
 {
+	#if DEBUG || !DETOUR_ALL
 	char filename[PLATFORM_MAX_PATH];
+	#endif
+
+	bool useLast;
+	char signatures[MAX_FWD_LEN];
 	char forwards[MAX_FWD_LEN];
 	ArrayList aHand = new ArrayList();
 	Handle hIter = GetPluginIterator();
 	Handle hPlug;
 	int index;
+	int count;
 
 	// Iterate plugins
 	while( MorePlugins(hIter) )
@@ -1591,13 +2646,11 @@ void CheckRequiredDetours(int client = 0)
 		{
 			// Get detour index from forward list
 			index = g_aForwardIndex.Get(i);
-
-			// Get forward name
-			g_aForwardNames.GetString(i, forwards, sizeof(forwards));
+			useLast = g_aUseLastIndex.Get(i);
 
 			// Prevent checking forwards already known in use
 			// ToDo: When using extra-api.ext, we will check all plugins to gather total number using each forward and store in g_aDetoursHooked
-			if( aHand.FindValue(index) == -1 )
+			if( aHand.FindValue(index) == -1 || useLast )
 			{
 				// Only if not enabling all detours
 				#if !DETOUR_ALL
@@ -1605,53 +2658,73 @@ void CheckRequiredDetours(int client = 0)
 				// Force detour on?
 				if( g_aForceDetours.Get(i) )
 				{
-					aHand.Push(index);
+					// Get forward name
+					g_aForwardNames.GetString(i, forwards, sizeof(forwards));
+					g_aGameDataSigs.GetString(i, signatures, sizeof(signatures));
+
+					count++;
+
+					if( !useLast )
+						aHand.Push(index);
 
 					#if DEBUG
 					if( client == 0 )
 					{
 						StopProfiling(g_vProf);
 						g_fProf += GetProfilerTime(g_vProf);
-						PrintToServer("<FORCED> detour %s", forwards);
+						PrintToServer("%2d %36s> %32s (%s)", count, "FORCED DETOUR", forwards, signatures);
 						StartProfiling(g_vProf);
 					}
 					#endif
 
-					if( client )
+					if( client > 0 )
 					{
-						ReplyToCommand(client - 1, "<FORCED> detour %s", forwards);
+						ReplyToCommand(client - 1, "%2d %36s> %32s (%s)", count, "FORCED DETOUR", forwards, signatures);
 					}
 				}
 				// Check if used
-				else if( GetFunctionByName(hPlug, forwards) != INVALID_FUNCTION )
-				#endif
+				else
 				{
-					aHand.Push(index);
+					// Get forward name
+					g_aForwardNames.GetString(i, forwards, sizeof(forwards));
 
-					#if DEBUG
-					if( client == 0 )
-					{
-						#if DETOUR_ALL
-						filename = "<THIS_PLUGIN_TEST>";
-						#else
-						GetPluginFilename(hPlug, filename, sizeof(filename));
-						#endif
-
-						StopProfiling(g_vProf);
-						g_fProf += GetProfilerTime(g_vProf);
-						PrintToServer("%s using %s", filename, forwards);
-						StartProfiling(g_vProf);
-					}
+					if( GetFunctionByName(hPlug, forwards) != INVALID_FUNCTION )
 					#endif
-
-					if( client )
 					{
-						#if DETOUR_ALL
-						ReplyToCommand(client - 1, "<FORCED> detour %s", forwards);
-						#else
-						GetPluginFilename(hPlug, filename, sizeof(filename));
-						ReplyToCommand(client - 1, "%s using %s", filename, forwards);
+						count++;
+
+						if( !useLast )
+							aHand.Push(index);
+
+						#if DEBUG
+						if( client == 0 )
+						{
+							#if DETOUR_ALL
+							filename = "THIS_PLUGIN_TEST";
+							#else
+							GetPluginFilename(hPlug, filename, sizeof(filename));
+							#endif
+
+							g_aGameDataSigs.GetString(i, signatures, sizeof(signatures));
+
+							StopProfiling(g_vProf);
+							g_fProf += GetProfilerTime(g_vProf);
+							PrintToServer("%36s> %s (%s)", filename, forwards, signatures);
+							StartProfiling(g_vProf);
+						}
 						#endif
+
+						if( client > 0 )
+						{
+							g_aGameDataSigs.GetString(i, signatures, sizeof(signatures));
+
+							#if DETOUR_ALL
+							ReplyToCommand(client - 1, "%2d %36s %32s (%s)", count, "FORCED DETOUR", forwards, signatures);
+							#else
+							GetPluginFilename(hPlug, filename, sizeof(filename));
+							ReplyToCommand(client - 1, "%2d %36s> %32s (%s)", count, filename, forwards, signatures);
+							#endif
+						}
 					}
 				}
 			}
@@ -1726,6 +2799,8 @@ public void OnMapStart()
 	{
 		g_bMapStarted = true;
 
+		GetGameMode();
+
 		// Precache Models, prevent crashing when spawning with SpawnSpecial()
 		for( int i = 0; i < sizeof(g_sModels1); i++ )
 			PrecacheModel(g_sModels1[i]);
@@ -1785,6 +2860,43 @@ public void OnMapStart()
 			// SDKCall(g_hSDK_Call_GetScriptValueInt, g_pDirector, "TotalJockey",			1);
 			// SDKCall(g_hSDK_Call_GetScriptValueInt, g_pDirector, "TotalCharger",			1);
 		}
+
+		// Melee weapon IDs - They can change when switching map depending on what melee weapons are enabled
+		if( g_bLeft4Dead2 )
+		{
+			delete g_aMeleePtrs;
+			delete g_aMeleeIDs;
+
+			g_aMeleePtrs = new ArrayList(2);
+			g_aMeleeIDs = new StringMap();
+
+			int iTable = FindStringTable("meleeweapons");
+			if( iTable == INVALID_STRING_TABLE )
+			{
+				g_aMeleeIDs.SetValue("fireaxe",								0);
+				g_aMeleeIDs.SetValue("frying_pan",							1);
+				g_aMeleeIDs.SetValue("machete",								2);
+				g_aMeleeIDs.SetValue("baseball_bat",						3);
+				g_aMeleeIDs.SetValue("crowbar",								4);
+				g_aMeleeIDs.SetValue("cricket_bat",							5);
+				g_aMeleeIDs.SetValue("tonfa",								6);
+				g_aMeleeIDs.SetValue("katana",								7);
+				g_aMeleeIDs.SetValue("electric_guitar",						8);
+				g_aMeleeIDs.SetValue("knife",								9);
+				g_aMeleeIDs.SetValue("golfclub",							10);
+				g_aMeleeIDs.SetValue("pitchfork",							11);
+				g_aMeleeIDs.SetValue("shovel",								12);
+			} else {
+				int iNum = GetStringTableNumStrings(iTable);
+				char sName[PLATFORM_MAX_PATH];
+
+				for( int i = 0; i < iNum; i++ )
+				{
+					ReadStringTable(iTable, i, sName, sizeof(sName));
+					g_aMeleeIDs.SetValue(sName, i);
+				}
+			}
+		}
 	}
 }
 
@@ -1797,6 +2909,7 @@ void LoadGameDataRules()
 	GameData hGameData = new GameData(g_bLeft4Dead2 ? GAMEDATA_2 : GAMEDATA_1);
 	if( hGameData == null ) SetFailState("Failed to load \"%s.txt\" gamedata.", g_bLeft4Dead2 ? GAMEDATA_2 : GAMEDATA_1);
 
+	// Map changes can modify the address
 	g_pGameRules = hGameData.GetAddress("GameRules");
 	ValidateAddress(g_pGameRules, "g_pGameRules", true);
 
@@ -1818,6 +2931,8 @@ void LoadGameData()
 	PrintToServer("");
 	#endif
 
+	g_bLinuxOS = hGameData.GetOffset("OS") == 1;
+
 
 
 	// ====================================================================================================
@@ -1837,18 +2952,17 @@ void LoadGameData()
 			if( g_hSDK_Call_GetWeaponInfo == null )
 				LogError("Failed to create SDKCall: GetWeaponInfo");
 		}
+	}
 
-		StartPrepSDKCall(SDKCall_Raw);
-		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "CBaseServer_GetClient") == false )
-		{
-			LogError("Failed to find signature: CBaseServer_GetClient");
-		} else {
-			PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-			PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-			g_hSDK_Call_GetClient = EndPrepSDKCall();
-			if( g_hSDK_Call_GetClient == null )
-				LogError("Failed to create SDKCall: CBaseServer_GetClient");
-		}
+	StartPrepSDKCall(SDKCall_Static);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTerrorGameRules::GetMissionInfo") == false )
+	{
+		LogError("Failed to find signature: CTerrorGameRules::GetMissionInfo");
+	} else {
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+		g_hSDK_Call_GetMissionInfo = EndPrepSDKCall();
+		if( g_hSDK_Call_GetMissionInfo == null )
+			LogError("Failed to create SDKCall: CTerrorGameRules::GetMissionInfo");
 	}
 
 
@@ -1878,6 +2992,34 @@ void LoadGameData()
 		g_hSDK_Call_Deafen = EndPrepSDKCall();
 		if( g_hSDK_Call_Deafen == null )
 			LogError("Failed to create SDKCall: CTerrorPlayer::Deafen");
+	}
+
+	StartPrepSDKCall(SDKCall_Raw);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "Music::Play") == false )
+	{
+		LogError("Failed to find signature: Music::Play");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_Call_MusicPlay = EndPrepSDKCall();
+		if( g_hSDK_Call_MusicPlay == null )
+			LogError("Failed to create SDKCall: Music::Play");
+	}
+
+	StartPrepSDKCall(SDKCall_Raw);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "Music::StopPlaying") == false )
+	{
+		LogError("Failed to find signature: Music::StopPlaying");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
+		PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_Call_MusicStop = EndPrepSDKCall();
+		if( g_hSDK_Call_MusicStop == null )
+			LogError("Failed to create SDKCall: Music::StopPlaying");
 	}
 
 	StartPrepSDKCall(SDKCall_Static);
@@ -1924,7 +3066,7 @@ void LoadGameData()
 	} else {
 		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // zombieClass
 		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // Attempts
-		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer); // Client
+		PrepSDKCall_AddParameter(SDKType_CBaseEntity, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD); // Client
 		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef, _, VENCODE_FLAG_COPYBACK); // Vector return
 		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
 		g_hSDK_Call_GetRandomPZSpawnPosition = EndPrepSDKCall();
@@ -1954,7 +3096,7 @@ void LoadGameData()
 	{
 		LogError("Failed to find signature: FindRandomSpot");
 	} else {
-		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef, _, VENCODE_FLAG_COPYBACK);
+		PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue);
 		g_hSDK_Call_FindRandomSpot = EndPrepSDKCall();
 		if( g_hSDK_Call_FindRandomSpot == null )
 			LogError("Failed to create SDKCall: FindRandomSpot");
@@ -1994,6 +3136,17 @@ void LoadGameData()
 	}
 
 	StartPrepSDKCall(SDKCall_Static);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HasPlayerControlledZombies") == false )
+	{
+		LogError("Failed to find signature: HasPlayerControlledZombies");
+	} else {
+		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_Call_HasPlayerControlledZombies = EndPrepSDKCall();
+		if( g_hSDK_Call_HasPlayerControlledZombies == null )
+			LogError("Failed to create SDKCall: HasPlayerControlledZombies");
+	}
+
+	StartPrepSDKCall(SDKCall_Static);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CPipeBombProjectile_Create") == false )
 	{
 		LogError("Failed to find signature: CPipeBombProjectile_Create");
@@ -2010,8 +3163,207 @@ void LoadGameData()
 			LogError("Failed to create SDKCall: CPipeBombProjectile_Create");
 	}
 
+
+
+	// =========================
+	// DYNAMIC SIG SCANS
+	// =========================
+
+	// Load custom gamedata addresses to detour
+	if( !g_bLinuxOS )
+	{
+		// AUTOMATICALLY GENERATE DETOURS
+		// Search game memory for specific strings
+		#define MAX_HOOKS 3
+		int iMaxHooks = g_bLeft4Dead2 ? 3 : 1;
+		int offsetPush;
+
+		Address patchAddr;
+		Address patches[MAX_HOOKS];
+
+		patches[0] = GameConfGetAddress(hGameData, "Molotov_StrFind");
+		if( g_bLeft4Dead2 )
+		{
+			patches[1] = GameConfGetAddress(hGameData, "VomitJar_StrFind");
+			patches[2] = GameConfGetAddress(hGameData, "GrenadeLauncher_StrFind");
+		}
+
+
+
+		// Write custom gamedata with found addresses
+		BuildPath(Path_SM, sPath, sizeof(sPath), "gamedata/%s.txt", GAMEDATA_TEMP);
+		File hFile = OpenFile(sPath, "w", false);
+
+		char sAddress[512];
+		char sHexAddr[32];
+
+		hFile.WriteLine("\"Games\"");
+		hFile.WriteLine("{");
+		hFile.WriteLine("	\"#default\"");
+		hFile.WriteLine("	{");
+		hFile.WriteLine("		\"Addresses\"");
+		hFile.WriteLine("		{");
+
+		for( int i = 0; i < iMaxHooks; i++ )
+		{
+			patchAddr = patches[i];
+
+			if( patchAddr )
+			{
+				hFile.WriteLine("			\"FindAddress_%d\"", i);
+				hFile.WriteLine("			{");
+				if( g_bLinuxOS )
+				{
+					hFile.WriteLine("				\"linux\"");
+					hFile.WriteLine("				{");
+					hFile.WriteLine("					\"signature\"		\"FindAddress_%d\"", i);
+					hFile.WriteLine("				}");
+				} else {
+					hFile.WriteLine("				\"windows\"");
+					hFile.WriteLine("				{");
+					hFile.WriteLine("					\"signature\"		\"FindAddress_%d\"", i);
+					hFile.WriteLine("				}");
+				}
+				hFile.WriteLine("			}");
+			}
+		}
+
+		hFile.WriteLine("		}");
+		hFile.WriteLine("");
+		hFile.WriteLine("		\"Signatures\"");
+		hFile.WriteLine("		{");
+
+		for( int i = 0; i < iMaxHooks; i++ )
+		{
+			patchAddr = patches[i];
+			if( patchAddr )
+			{
+				Format(sAddress, sizeof(sAddress), "%X", patchAddr);
+				ReverseAddress(sAddress, sHexAddr);
+
+				// First byte of projectile functions is \x55 || \x8B
+				if( g_bLeft4Dead2 )
+					sAddress = "\\x55";
+				else
+					sAddress = "\\x8B";
+
+				// Offset to the "push" call
+				switch( i )
+				{
+					case 0: offsetPush = hGameData.GetOffset("Molotov_OffsetPush");
+					case 1: offsetPush = hGameData.GetOffset("VomitJar_OffsetPush");
+					case 2: offsetPush = hGameData.GetOffset("GrenadeLauncher_OffsetPush");
+				}
+
+				// Add * bytes
+				for( int x = 0; x < offsetPush; x++ )
+				{
+					StrCat(sAddress, sizeof(sAddress), "\\x2A");
+				}
+
+				// Add call X address
+				StrCat(sAddress, sizeof(sAddress), "\\x68"); // Add "push" byte
+				StrCat(sAddress, sizeof(sAddress), sHexAddr);
+
+
+				// Write lines
+				hFile.WriteLine("			\"FindAddress_%d\"", i);
+				hFile.WriteLine("			{");
+				// hFile.WriteLine("				\"library\"	\"server\""); // Server is default.
+				if( g_bLinuxOS )
+				{
+					hFile.WriteLine("				\"linux\"	\"%s\"", sAddress);
+				} else {
+					hFile.WriteLine("				\"windows\"	\"%s\"", sAddress);
+				}
+
+				// Write wildcard for IDA
+				// ReplaceString(sAddress, sizeof(sAddress), "\\x", " ");
+				// ReplaceString(sAddress, sizeof(sAddress), "2A", "?");
+				// hFile.WriteLine("				/*%s */", sAddress);
+
+				// Finish
+				hFile.WriteLine("			}");
+			}
+		}
+
+		hFile.WriteLine("		}");
+		hFile.WriteLine("	}");
+		hFile.WriteLine("}");
+
+		FlushFile(hFile);
+		delete hFile;
+
+		// =========================
+		// END DYNAMIC SIG SCANS
+		// =========================
+	}
+
+
+
+	GameData hTempGameData;
+	
+	if( !g_bLinuxOS )
+	{
+		hTempGameData = LoadGameConfigFile(GAMEDATA_TEMP);
+		if( hTempGameData == null ) LogError("Failed to load \"%s.txt\" gamedata.", GAMEDATA_TEMP);
+	}
+
+
+
+	StartPrepSDKCall(SDKCall_Static);
+	if( PrepSDKCall_SetFromConf(g_bLinuxOS ? hGameData : hTempGameData, SDKConf_Signature, g_bLinuxOS ? "MolotovProjectile_Create" : "FindAddress_0") == false )
+	{
+		LogError("Failed to find signature: MolotovProjectile_Create");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD);
+		PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+		PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+		g_hSDK_Call_MolotovPrj = EndPrepSDKCall();
+		if( g_hSDK_Call_MolotovPrj == null )
+			LogError("Failed to create SDKCall: MolotovProjectile_Create");
+	}
+
 	if( g_bLeft4Dead2 )
 	{
+		StartPrepSDKCall(SDKCall_Static);
+		if( PrepSDKCall_SetFromConf(g_bLinuxOS ? hGameData : hTempGameData, SDKConf_Signature, g_bLinuxOS ? "VomitJarProjectile_Create" : "FindAddress_1") == false )
+		{
+			LogError("Failed to find signature: VomitJarProjectile_Create");
+		} else {
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD);
+			PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+			PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+			g_hSDK_Call_VomitJarPrj = EndPrepSDKCall();
+			if( g_hSDK_Call_VomitJarPrj == null )
+				LogError("Failed to create SDKCall: VomitJarProjectile_Create");
+		}
+
+		StartPrepSDKCall(SDKCall_Static);
+		if( PrepSDKCall_SetFromConf(g_bLinuxOS ? hGameData : hTempGameData, SDKConf_Signature, g_bLinuxOS ? "GrenadeLauncher_Create" : "FindAddress_2") == false )
+		{
+			LogError("Failed to find signature: GrenadeLauncher_Create");
+		} else {
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD);
+			PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+			PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
+			g_hSDK_Call_GrenadeLauncher = EndPrepSDKCall();
+			if( g_hSDK_Call_GrenadeLauncher == null )
+				LogError("Failed to create SDKCall: GrenadeLauncher_Create");
+		}
+
 		StartPrepSDKCall(SDKCall_Static);
 		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CSpitterProjectile_Create") == false )
 		{
@@ -2021,22 +3373,64 @@ void LoadGameData()
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
-			PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+			PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer, VDECODE_FLAG_ALLOWWORLD);
 			PrepSDKCall_SetReturnInfo(SDKType_CBaseEntity, SDKPass_Pointer);
 			g_hSDK_Call_SpitterPrj = EndPrepSDKCall();
 			if( g_hSDK_Call_SpitterPrj == null )
-					LogError("Failed to create SDKCall: CSpitterProjectile_Create");
+				LogError("Failed to create SDKCall: CSpitterProjectile_Create");
 		}
 
-		StartPrepSDKCall(SDKCall_Raw);
-		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "ForceNextStage") == false )
+		StartPrepSDKCall(SDKCall_GameRules);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "HasConfigurableDifficulty") == false )
 		{
-			LogError("Failed to find signature: ForceNextStage");
+			LogError("Failed to find signature: HasConfigurableDifficulty");
+		} else {
+			PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+			g_hSDK_Call_HasConfigurableDifficultySetting = EndPrepSDKCall();
+			if( g_hSDK_Call_HasConfigurableDifficultySetting == null )
+				LogError("Failed to create SDKCall: HasConfigurableDifficulty");
+		}
+
+		StartPrepSDKCall(SDKCall_Static);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "NavAreaTravelDistance") == false )
+		{
+			LogError("Failed to find signature: NavAreaTravelDistance");
+		} else {
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+			PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+			PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
+			g_hSDK_Call_NavAreaTravelDistance = EndPrepSDKCall();
+			if( g_hSDK_Call_NavAreaTravelDistance == null )
+				LogError("Failed to create SDKCall: NavAreaTravelDistance");
+		}
+
+		StartPrepSDKCall(SDKCall_Player);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "OnAdrenalineUsed") == false )
+		{
+			LogError("Failed to find signature: OnAdrenalineUsed");
+		} else {
+			PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+			g_hSDK_Call_OnAdrenalineUsed = EndPrepSDKCall();
+			if( g_hSDK_Call_OnAdrenalineUsed == null )
+				LogError("Failed to create SDKCall: OnAdrenalineUsed");
+		}
+
+		/* Verify ForceNextStage addresses are equal (B will break in future updates, where A should remain intact)
+		Address aa = hGameData.GetAddress("ForceNextStageAddress");
+		Address bb = hGameData.GetAddress("ForceNextStage");
+		PrintToServer("ForceNextStage: A: %d B: %d", aa, bb);
+		*/
+
+		StartPrepSDKCall(SDKCall_Raw);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Address, "ForceNextStageAddress") == false )
+		{
+			LogError("Failed to find signature: ForceNextStageAddress");
 		} else {
 			PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
 			g_hSDK_Call_ForceNextStage = EndPrepSDKCall();
 			if( g_hSDK_Call_ForceNextStage == null )
-				LogError("Failed to create SDKCall: ForceNextStage");
+				LogError("Failed to create SDKCall: ForceNextStageAddress");
 		}
 
 		StartPrepSDKCall(SDKCall_Raw);
@@ -2147,17 +3541,23 @@ void LoadGameData()
 			LogError("Failed to create SDKCall: GetTeamScore");
 	}
 
-	StartPrepSDKCall(SDKCall_Raw);
+	if( g_bLeft4Dead2 )
+	{
+		StartPrepSDKCall(SDKCall_Raw);
+	} else {
+		StartPrepSDKCall(SDKCall_Static);
+	}
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "IsFirstMapInScenario") == false )
 	{
 		LogError("Failed to find signature: IsFirstMapInScenario");
 	} else {
 		if( !g_bLeft4Dead2 )
 		{
-			PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+			PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain, VDECODE_FLAG_ALLOWWORLD);
 			PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-		} else
-		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+		} else {
+			PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+		}
 		g_hSDK_Call_IsFirstMapInScenario = EndPrepSDKCall();
 		if( g_hSDK_Call_IsFirstMapInScenario == null )
 			LogError("Failed to create SDKCall: IsFirstMapInScenario");
@@ -2182,9 +3582,44 @@ void LoadGameData()
 		PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 		PrepSDKCall_AddParameter(SDKType_String, SDKPass_Pointer);
 		PrepSDKCall_SetReturnInfo(SDKType_String, SDKPass_Pointer);
-		SDK_KV_GetString = EndPrepSDKCall();
-		if( SDK_KV_GetString == null )
+		g_hSDK_Call_KV_GetString = EndPrepSDKCall();
+		if( g_hSDK_Call_KV_GetString == null )
 			SetFailState("Could not prep the \"KeyValues::GetString\" function.");
+	}
+
+	if( g_bLeft4Dead2 )
+	{
+		StartPrepSDKCall(SDKCall_GameRules);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "GetNumChaptersForMissionAndMode") == false )
+			SetFailState("Could not load the \"GetNumChaptersForMissionAndMode\" gamedata signature.");
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+		g_hSDK_Call_GetMaxChapters = EndPrepSDKCall();
+		if( g_hSDK_Call_GetMaxChapters == null )
+			SetFailState("Could not prep the \"GetNumChaptersForMissionAndMode\" function.");
+
+		StartPrepSDKCall(SDKCall_Raw);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CDirector_GetGameModeBase") == false )
+			SetFailState("Could not load the \"CDirector_GetGameModeBase\" gamedata signature.");
+		PrepSDKCall_SetReturnInfo(SDKType_String, SDKPass_Pointer);
+		g_hSDK_Call_GetGameMode = EndPrepSDKCall();
+		if( g_hSDK_Call_GetGameMode == null )
+			SetFailState("Could not prep the \"CDirector_GetGameModeBase\" function.");
+
+		StartPrepSDKCall(SDKCall_GameRules);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTerrorGameRules::IsRealismMode") == false )
+			SetFailState("Could not load the \"CTerrorGameRules::IsRealismMode\" gamedata signature.");
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+		g_hSDK_Call_IsRealismMode = EndPrepSDKCall();
+		if( g_hSDK_Call_IsRealismMode == null )
+			SetFailState("Could not prep the \"CTerrorGameRules::IsRealismMode\" function.");
+
+		StartPrepSDKCall(SDKCall_GameRules);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTerrorGameRules::IsGenericCooperativeMode") == false )
+			SetFailState("Could not load the \"CTerrorGameRules::IsGenericCooperativeMode\" gamedata signature.");
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+		g_hSDK_Call_IsGenericCooperativeMode = EndPrepSDKCall();
+		if( g_hSDK_Call_IsGenericCooperativeMode == null )
+			SetFailState("Could not prep the \"CTerrorGameRules::IsGenericCooperativeMode\" function.");
 	}
 
 	StartPrepSDKCall(SDKCall_GameRules);
@@ -2262,6 +3697,53 @@ void LoadGameData()
 	}
 
 	StartPrepSDKCall(SDKCall_Raw);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "IsFinaleEscapeInProgress") == false )
+	{
+		LogError("Failed to find signature: IsFinaleEscapeInProgress");
+	} else {
+		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_Call_IsFinaleEscapeInProgress = EndPrepSDKCall();
+		if( g_hSDK_Call_IsFinaleEscapeInProgress == null )
+			LogError("Failed to create SDKCall: IsFinaleEscapeInProgress");
+	}
+
+	StartPrepSDKCall(SDKCall_Player);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "SetHumanSpec") == false )
+	{
+		LogError("Failed to find signature: SetHumanSpec");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_Call_SetHumanSpec = EndPrepSDKCall();
+		if( g_hSDK_Call_SetHumanSpec == null )
+			LogError("Failed to create SDKCall: SetHumanSpec");
+	}
+
+	StartPrepSDKCall(SDKCall_Player);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "TakeOverBot") == false )
+	{
+		LogError("Failed to find signature: TakeOverBot");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_Call_TakeOverBot = EndPrepSDKCall();
+		if( g_hSDK_Call_TakeOverBot == null )
+			LogError("Failed to create SDKCall: TakeOverBot");
+	}
+
+	StartPrepSDKCall(SDKCall_Player);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CanBecomeGhost") == false )
+	{
+		LogError("Failed to find signature: CanBecomeGhost");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);
+		PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+		g_hSDK_Call_CanBecomeGhost = EndPrepSDKCall();
+		if( g_hSDK_Call_CanBecomeGhost == null )
+			LogError("Failed to create SDKCall: CanBecomeGhost");
+	}
+
+	StartPrepSDKCall(SDKCall_Raw);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "TryOfferingTankBot") == false )
 	{
 		LogError("Failed to find signature: TryOfferingTankBot");
@@ -2276,31 +3758,54 @@ void LoadGameData()
 
 	StartPrepSDKCall(SDKCall_Raw);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "GetNavArea") == false )
-		SetFailState("Failed to find signature: GetNavArea");
-	PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
-	PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
-	g_hSDK_Call_GetNavArea = EndPrepSDKCall();
-	if( g_hSDK_Call_GetNavArea == null )
-		SetFailState("Failed to create SDKCall: GetNavArea");
+	{
+		LogError("Failed to find signature: GetNavArea");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
+		PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
+		PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+		g_hSDK_Call_GetNavArea = EndPrepSDKCall();
+		if( g_hSDK_Call_GetNavArea == null )
+			SetFailState("Failed to create SDKCall: GetNavArea");
+	}
 
 	StartPrepSDKCall(SDKCall_Player);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "GetFlowDistance") == false )
-		SetFailState("Failed to find signature: GetFlowDistance");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
-	g_hSDK_Call_GetFlowDistance = EndPrepSDKCall();
-	if( g_hSDK_Call_GetFlowDistance == null )
-		SetFailState("Failed to create SDKCall: GetFlowDistance");
+	{
+		LogError("Failed to find signature: GetFlowDistance");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		PrepSDKCall_SetReturnInfo(SDKType_Float, SDKPass_Plain);
+		g_hSDK_Call_GetFlowDistance = EndPrepSDKCall();
+		if( g_hSDK_Call_GetFlowDistance == null )
+			SetFailState("Failed to create SDKCall: GetFlowDistance");
+	}
 
 	StartPrepSDKCall(SDKCall_Player);
 	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Virtual, "DoAnimationEvent") == false )
-		SetFailState("Failed to find signature: DoAnimationEvent");
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	g_hSDK_Call_DoAnimationEvent = EndPrepSDKCall();
-	if( g_hSDK_Call_DoAnimationEvent == null )
-		SetFailState("Failed to create SDKCall: DoAnimationEvent");
+	{
+		LogError("Failed to find signature: DoAnimationEvent");
+	} else {
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+		g_hSDK_Call_DoAnimationEvent = EndPrepSDKCall();
+		if( g_hSDK_Call_DoAnimationEvent == null )
+			SetFailState("Failed to create SDKCall: DoAnimationEvent");
+	}
+
+	if( !g_bLeft4Dead2 )
+	{
+		StartPrepSDKCall(SDKCall_GameRules);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "RecomputeTeamScores") == false )
+		{
+			LogError("Failed to find signature: RecomputeTeamScores");
+		} else {
+			PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain);
+			g_hSDK_Call_RecomputeTeamScores = EndPrepSDKCall();
+			if( g_hSDK_Call_RecomputeTeamScores == null )
+				SetFailState("Failed to create SDKCall: RecomputeTeamScores");
+		}
+	}
 
 
 
@@ -2367,7 +3872,19 @@ void LoadGameData()
 			if( g_hSDK_Call_SpawnWitchBride == null )
 				LogError("Failed to create SDKCall: SpawnWitchBride");
 		}
+
+		StartPrepSDKCall(SDKCall_Raw);
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "AreWanderersAllowed") == false )
+		{
+			LogError("Failed to find signature: AreWanderersAllowed");
+		} else {
+			PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+			g_hSDK_Call_AreWanderersAllowed = EndPrepSDKCall();
+			if( g_hSDK_Call_AreWanderersAllowed == null )
+				LogError("Failed to create SDKCall: AreWanderersAllowed");
+		}
 	} else {
+	// L4D1 only:
 		StartPrepSDKCall(SDKCall_Raw);
 		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "SpawnHunter") == false )
 		{
@@ -2433,6 +3950,16 @@ void LoadGameData()
 		g_hSDK_Call_CancelStagger = EndPrepSDKCall();
 		if( g_hSDK_Call_CancelStagger == null )
 			LogError("Failed to create SDKCall: CancelStagger");
+	}
+
+	StartPrepSDKCall(SDKCall_Player);
+	if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "RoundRespawn") == false )
+	{
+		LogError("Failed to find signature: RoundRespawn");
+	} else {
+		g_hSDK_Call_RoundRespawn = EndPrepSDKCall();
+		if( g_hSDK_Call_RoundRespawn == null )
+			LogError("Failed to create SDKCall: RoundRespawn");
 	}
 
 	StartPrepSDKCall(SDKCall_Raw);
@@ -2624,17 +4151,17 @@ void LoadGameData()
 		}
 
 		StartPrepSDKCall(SDKCall_Player);
-		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTerrorPlayer_Fling") == false )
+		if( PrepSDKCall_SetFromConf(hGameData, SDKConf_Signature, "CTerrorPlayer::Fling") == false )
 		{
-			LogError("Failed to find signature: CTerrorPlayer_Fling");
+			LogError("Failed to find signature: CTerrorPlayer::Fling");
 		} else {
 			PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef);
 			PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 			PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
 			PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);
-			g_hSDK_Call_Fling = EndPrepSDKCall();
-			if( g_hSDK_Call_Fling == null )
-				LogError("Failed to create SDKCall: CTerrorPlayer_Fling");
+			g_hSDK_Call_CTerrorPlayer_Fling = EndPrepSDKCall();
+			if( g_hSDK_Call_CTerrorPlayer_Fling == null )
+				LogError("Failed to create SDKCall: CTerrorPlayer::Fling");
 		}
 
 		StartPrepSDKCall(SDKCall_Raw);
@@ -2859,14 +4386,19 @@ void LoadGameData()
 	}
 
 	#if DEBUG
+	if( g_bLateLoad )
+	{
+		LoadGameDataRules();
+	}
+
 	PrintToServer("Pointers:");
 	PrintToServer("%12d == g_pDirector", g_pDirector);
 	PrintToServer("%12d == g_pZombieManager", g_pZombieManager);
 	PrintToServer("%12d == g_pGameRules", g_pGameRules);
 	PrintToServer("%12d == g_pNavMesh", g_pNavMesh);
+	PrintToServer("%12d == g_pServer", g_pServer);
 	if( g_bLeft4Dead2 )
 	{
-		PrintToServer("%12d == g_pServer", g_pServer);
 		PrintToServer("%12d == g_pWeaponInfoDatabase", g_pWeaponInfoDatabase);
 		PrintToServer("%12d == g_pMeleeWeaponInfoStore", g_pMeleeWeaponInfoStore);
 		PrintToServer("%12d == ScriptedEventManagerPtr", ScriptedEventManagerPtr);
@@ -2885,8 +4417,6 @@ void LoadGameData()
 	#if DEBUG
 	PrintToServer("Various Offsets:");
 	#endif
-
-	// g_bLinuxOS = hGameData.GetOffset("OS") == 1;
 
 	m_iCampaignScores = hGameData.GetOffset("m_iCampaignScores");
 	ValidateOffset(m_iCampaignScores, "m_iCampaignScores");
@@ -2912,8 +4442,20 @@ void LoadGameData()
 	m_iTankTickets = hGameData.GetOffset("m_iTankTickets");
 	ValidateOffset(m_iTankTickets, "m_iTankTickets");
 
+	if( !g_bLeft4Dead2 )
+	{
+		m_iSurvivorHealthBonus = hGameData.GetOffset("m_iSurvivorHealthBonus");
+		ValidateOffset(m_iSurvivorHealthBonus, "m_iSurvivorHealthBonus");
+
+		m_bFirstSurvivorLeftStartArea = hGameData.GetOffset("m_bFirstSurvivorLeftStartArea");
+		ValidateOffset(m_bFirstSurvivorLeftStartArea, "m_bFirstSurvivorLeftStartArea");
+	}
+
 	m_flow = hGameData.GetOffset("m_flow");
 	ValidateOffset(m_flow, "m_flow");
+
+	m_chapter = hGameData.GetOffset("m_chapter");
+	ValidateOffset(m_chapter, "m_chapter");
 
 	m_PendingMobCount = hGameData.GetOffset("m_PendingMobCount");
 	ValidateOffset(m_PendingMobCount, "m_PendingMobCount");
@@ -2924,24 +4466,29 @@ void LoadGameData()
 	m_rescueCheckTimer = hGameData.GetOffset("m_rescueCheckTimer");
 	ValidateOffset(m_rescueCheckTimer, "m_rescueCheckTimer");
 
+	VersusMaxCompletionScore = hGameData.GetOffset("VersusMaxCompletionScore");
+	ValidateOffset(VersusMaxCompletionScore, "VersusMaxCompletionScore");
+
+	m_iTankCount = hGameData.GetOffset("m_iTankCount");
+	ValidateOffset(m_iTankCount, "m_iTankCount");
+
+	MobSpawnTimer = hGameData.GetOffset("MobSpawnTimer");
+	ValidateOffset(MobSpawnTimer, "MobSpawnTimer");
+
 
 
 	if( g_bLeft4Dead2 )
 	{
+		g_iAddonEclipse1 = hGameData.GetOffset("AddonEclipse1");
+		ValidateOffset(g_iAddonEclipse1, "AddonEclipse1");
+		g_iAddonEclipse2 = hGameData.GetOffset("AddonEclipse2");
+		ValidateOffset(g_iAddonEclipse2, "AddonEclipse2");
+
 		SpawnTimer = hGameData.GetOffset("SpawnTimer");
 		ValidateOffset(SpawnTimer, "SpawnTimer");
 
-		MobSpawnTimer = hGameData.GetOffset("MobSpawnTimer");
-		ValidateOffset(MobSpawnTimer, "MobSpawnTimer");
-
 		OnBeginRoundSetupTime = hGameData.GetOffset("OnBeginRoundSetupTime");
 		ValidateOffset(OnBeginRoundSetupTime, "OnBeginRoundSetupTime");
-
-		VersusMaxCompletionScore = hGameData.GetOffset("VersusMaxCompletionScore");
-		ValidateOffset(VersusMaxCompletionScore, "VersusMaxCompletionScore");
-
-		m_iTankCount = hGameData.GetOffset("m_iTankCount");
-		ValidateOffset(SpawnTimer, "SpawnTimer");
 
 		m_iWitchCount = hGameData.GetOffset("m_iWitchCount");
 		ValidateOffset(m_iWitchCount, "m_iWitchCount");
@@ -3029,17 +4576,20 @@ void LoadGameData()
 	PrintToServer("InvulnerabilityTimer = %d", InvulnerabilityTimer);
 	PrintToServer("m_iTankTickets = %d", m_iTankTickets);
 	PrintToServer("m_flow = %d", m_flow);
+	PrintToServer("m_chapter = %d", m_chapter);
 	PrintToServer("m_PendingMobCount = %d", m_PendingMobCount);
 	PrintToServer("m_fMapMaxFlowDistance = %d", m_fMapMaxFlowDistance);
 	PrintToServer("m_rescueCheckTimer = %d", m_rescueCheckTimer);
+	PrintToServer("VersusMaxCompletionScore = %d", VersusMaxCompletionScore);
+	PrintToServer("m_iTankCount = %d", m_iTankCount);
+	PrintToServer("MobSpawnTimer = %d", MobSpawnTimer);
 
 	if( g_bLeft4Dead2 )
 	{
+		PrintToServer("g_iAddonEclipse1 = %d", g_iAddonEclipse1);
+		PrintToServer("g_iAddonEclipse2 = %d", g_iAddonEclipse2);
 		PrintToServer("SpawnTimer = %d", SpawnTimer);
-		PrintToServer("MobSpawnTimer = %d", MobSpawnTimer);
 		PrintToServer("OnBeginRoundSetupTime = %d", OnBeginRoundSetupTime);
-		PrintToServer("VersusMaxCompletionScore = %d", VersusMaxCompletionScore);
-		PrintToServer("m_iTankCount = %d", m_iTankCount);
 		PrintToServer("m_iWitchCount = %d", m_iWitchCount);
 		PrintToServer("OvertimeGraceTimer = %d", OvertimeGraceTimer);
 		PrintToServer("m_iShovePenalty = %d", m_iShovePenalty);
@@ -3071,6 +4621,7 @@ void LoadGameData()
 	// ====================================================================================================
 	//									END
 	// ====================================================================================================
+	delete hTempGameData;
 	delete hGameData;
 }
 
@@ -3110,8 +4661,25 @@ void ValidateOffset(int test, const char[] name, bool check = true)
 // ==================================================
 // Silvers Natives
 // ==================================================
+public int Native_ExecVScriptCode(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	int maxlength;
+	GetNativeStringLength(1, maxlength);
+	maxlength += 1;
+	char[] code = new char[maxlength];
+	GetNativeString(1, code, maxlength);
+
+	bool success = ExecVScriptCode(code);
+
+	return success;
+}
+
 public int Native_GetVScriptOutput(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int maxlength;
 	GetNativeStringLength(1, maxlength);
 	maxlength += 1;
@@ -3127,11 +4695,73 @@ public int Native_GetVScriptOutput(Handle plugin, int numParams)
 	return success;
 }
 
+public int Native_HasConfigurableDifficultySetting(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	ValidateNatives(g_hSDK_Call_HasConfigurableDifficultySetting, "HasConfigurableDifficultySetting");
+
+	//PrintToServer("#### CALL g_hSDK_Call_HasConfigurableDifficultySetting");
+	return SDKCall(g_hSDK_Call_HasConfigurableDifficultySetting, g_pGameRules);
+}
+
+public any Native_GetTempHealth(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	return GetTempHealth(client);
+}
+
+public int Native_SetTempHealth(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	float health = GetNativeCell(2);
+	SetTempHealth(client, health);
+}
+
+public int Native_PlayMusic(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	int source_ent = GetNativeCell(3);
+	float one_float = GetNativeCell(4);
+	bool one_bool = GetNativeCell(5);
+	bool two_bool = GetNativeCell(6);
+
+	Address music_address = GetEntityAddress(client) + view_as<Address>(GetEntSendPropOffs(client, "m_music"));
+
+	int maxlength;
+	GetNativeStringLength(2, maxlength);
+	maxlength += 1;
+	char[] music_str = new char[maxlength];
+	GetNativeString(2, music_str, maxlength);
+
+	//PrintToServer("#### CALL g_hSDK_Call_MusicPlay");
+	SDKCall(g_hSDK_Call_MusicPlay, music_address, music_str, source_ent, one_float, one_bool, two_bool);
+}
+
+public int Native_StopMusic(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	float one_float = GetNativeCell(3);
+	bool one_bool = GetNativeCell(4);
+
+	Address music_address = GetEntityAddress(client) + view_as<Address>(GetEntSendPropOffs(client, "m_music"));
+
+	int maxlength;
+	GetNativeStringLength(2, maxlength);
+	maxlength += 1;
+	char[] music_str = new char[maxlength];
+	GetNativeString(2, music_str, maxlength);
+
+	//PrintToServer("#### CALL g_hSDK_Call_MusicStop");
+	SDKCall(g_hSDK_Call_MusicStop, music_address, music_str, one_float, one_bool);
+}
+
 public int Native_Deafen(Handle plugin, int numParams)
 {
 	ValidateNatives(g_hSDK_Call_Deafen, "Deafen");
 
 	int client = GetNativeCell(1);
+
 	//PrintToServer("#### CALL g_hSDK_Call_Deafen");
 	SDKCall(g_hSDK_Call_Deafen, client, 1.0, 0.0, 0.01 );
 }
@@ -3169,6 +4799,7 @@ public int Native_OnITExpired(Handle plugin, int numParams)
 	ValidateNatives(g_hSDK_Call_OnITExpired, "OnITExpired");
 
 	int client = GetNativeCell(1);
+
 	//PrintToServer("#### CALL g_hSDK_Call_OnITExpired");
 	SDKCall(g_hSDK_Call_OnITExpired, client);
 }
@@ -3180,6 +4811,7 @@ public int Native_AngularVelocity(Handle plugin, int numParams)
 	float vAng[3];
 	int entity = GetNativeCell(1);
 	GetNativeArray(2, vAng, 3);
+
 	//PrintToServer("#### CALL g_hSDK_Call_AngularVelocity");
 	SDKCall(g_hSDK_Call_AngularVelocity, entity, vAng);
 }
@@ -3194,6 +4826,7 @@ public int Native_GetRandomPZSpawnPosition(Handle plugin, int numParams)
 	int zombieClass = GetNativeCell(2);
 	int attempts = GetNativeCell(3);
 
+	//PrintToServer("#### CALL g_hSDK_Call_GetRandomPZSpawnPosition");
 	int result = SDKCall(g_hSDK_Call_GetRandomPZSpawnPosition, g_pZombieManager, zombieClass, attempts, client, vPos);
 	SetNativeArray(4, vPos, 3);
 
@@ -3213,6 +4846,16 @@ public int Native_GetNearestNavArea(Handle plugin, int numParams)
 	return result;
 }
 
+public int Native_GetLastKnownarea(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_GetLastKnownArea, "GetLastKnownArea");
+
+	int client = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_GetLastKnownArea");
+	return SDKCall(g_hSDK_Call_GetLastKnownArea, client);
+}
+
 public int Native_FindRandomSpot(Handle plugin, int numParams)
 {
 	ValidateNatives(g_hSDK_Call_FindRandomSpot, "FindRandomSpot");
@@ -3221,8 +4864,8 @@ public int Native_FindRandomSpot(Handle plugin, int numParams)
 	int area = GetNativeCell(1);
 
 	//PrintToServer("#### CALL g_hSDK_Call_FindRandomSpot");
-	SDKCall(g_hSDK_Call_FindRandomSpot, area, vPos);
-	SetNativeArray(2, vPos, 3);
+	SDKCall(g_hSDK_Call_FindRandomSpot, area, vPos, sizeof(vPos));
+	SetNativeArray(2, vPos, sizeof(vPos));
 }
 
 public int Native_HasAnySurvivorLeftSafeArea(Handle plugin, int numParams)
@@ -3295,6 +4938,14 @@ bool InCheckpoint(int client, bool start)
 	return false;
 }
 
+public int Native_HasPlayerControlledZombies(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_HasPlayerControlledZombies, "HasPlayerControlledZombies");
+
+	//PrintToServer("#### CALL g_hSDK_Call_HasPlayerControlledZombies");
+	return SDKCall(g_hSDK_Call_HasPlayerControlledZombies);
+}
+
 public int Native_PipeBombPrj(Handle plugin, int numParams)
 {
 	ValidateNatives(g_hSDK_Call_PipeBombPrj, "PipeBombPrj");
@@ -3308,8 +4959,49 @@ public int Native_PipeBombPrj(Handle plugin, int numParams)
 	return SDKCall(g_hSDK_Call_PipeBombPrj, vPos, vAng, vAng, vAng, client, 2.0);
 }
 
+public int Native_MolotovPrj(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_MolotovPrj, "MolotovPrj");
+
+	float vPos[3], vAng[3];
+	int client = GetNativeCell(1);
+	GetNativeArray(2, vPos, 3);
+	GetNativeArray(3, vAng, 3);
+
+	//PrintToServer("#### CALL g_hSDK_Call_MolotovPrj");
+	return SDKCall(g_hSDK_Call_MolotovPrj, vPos, vAng, vAng, vAng, client, 2.0);
+}
+
+public int Native_VomitJarPrj(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_VomitJarPrj, "VomitJarPrj");
+
+	float vPos[3], vAng[3];
+	int client = GetNativeCell(1);
+	GetNativeArray(2, vPos, 3);
+	GetNativeArray(3, vAng, 3);
+
+	//PrintToServer("#### CALL g_hSDK_Call_VomitJarPrj");
+	return SDKCall(g_hSDK_Call_VomitJarPrj, vPos, vAng, vAng, vAng, client, 2.0);
+}
+
+public int Native_GrenadeLauncher(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_GrenadeLauncher, "CGrenadeLauncher");
+
+	float vPos[3], vAng[3];
+	int client = GetNativeCell(1);
+	GetNativeArray(2, vPos, 3);
+	GetNativeArray(3, vAng, 3);
+
+	//PrintToServer("#### CALL g_hSDK_Call_GrenadeLauncher");
+	return SDKCall(g_hSDK_Call_GrenadeLauncher, vPos, vAng, vAng, vAng, client, 2.0);
+}
+
 public int Native_SpitterPrj(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateNatives(g_hSDK_Call_SpitterPrj, "SpitterPrj");
 
 	float vPos[3], vAng[3];
@@ -3321,6 +5013,38 @@ public int Native_SpitterPrj(Handle plugin, int numParams)
 	return SDKCall(g_hSDK_Call_SpitterPrj, vPos, vAng, vAng, vAng, client);
 }
 
+public int Native_OnAdrenalineUsed(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	ValidateNatives(g_hSDK_Call_OnAdrenalineUsed, "OnAdrenalineUsed");
+
+	int client = GetNativeCell(1);
+	float fTime = GetNativeCell(2);
+	bool heal = GetNativeCell(3);
+
+	// Heal
+	if( heal )
+	{
+		float fHealth = GetTempHealth(client);
+		fHealth += g_hPillsHealth.FloatValue;
+		if( fHealth > 100.0 ) fHealth = 100.0;
+
+		SetTempHealth(client, fHealth);
+
+		// Event
+		Event hEvent = CreateEvent("adrenaline_used");
+		if( hEvent != null )
+		{
+			hEvent.SetInt("userid", GetClientUserId(client));
+			hEvent.Fire();
+		}
+	}
+
+	//PrintToServer("#### CALL g_hSDK_Call_OnAdrenalineUsed");
+	SDKCall(g_hSDK_Call_OnAdrenalineUsed, client, fTime);
+}
+
 public int Native_GetCurrentFinaleStage(Handle plugin, int numParams)
 {
 	ValidateAddress(ScriptedEventManagerPtr, "ScriptedEventManagerPtr");
@@ -3330,6 +5054,8 @@ public int Native_GetCurrentFinaleStage(Handle plugin, int numParams)
 
 public int Native_ForceNextStage(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_ForceNextStage, "ForceNextStage");
 
@@ -3339,6 +5065,8 @@ public int Native_ForceNextStage(Handle plugin, int numParams)
 
 public int Native_IsTankInPlay(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_IsTankInPlay, "IsTankInPlay");
 
@@ -3348,17 +5076,46 @@ public int Native_IsTankInPlay(Handle plugin, int numParams)
 
 public int Native_IsReachable(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateNatives(g_hSDK_Call_IsReachable, "IsReachable");
 
-	float vPos[3];
 	int client = GetNativeCell(1);
+
+	if( IsFakeClient(client) == false || (GetClientTeam(client) != 2 && GetClientTeam(client) != 4) )
+	{
+		client = 0;
+
+		for( int i = 1; i <= MaxClients; i++ )
+		{
+			if( IsClientInGame(i) && IsFakeClient(i) && IsPlayerAlive(i) )
+			{
+				int team = GetClientTeam(i);
+				if( team == 2 || team == 4 )
+				{
+					client = i;
+					break;
+				}
+			}
+		}
+
+		if( !client )
+		{
+			ThrowNativeError(SP_ERROR_PARAM, "L4D2_IsReachable Error: invalid client. This native only works for Survivor Bots.");
+		}
+	}
+
+	float vPos[3];
 	GetNativeArray(2, vPos, 3);
 
+	//PrintToServer("#### CALL g_hSDK_Call_IsReachable");
 	return SDKCall(g_hSDK_Call_IsReachable, client, vPos);
 }
 
 public any Native_GetFurthestSurvivorFlow(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_GetFurthestSurvivorFlow, "GetFurthestSurvivorFlow");
 
@@ -3366,8 +5123,26 @@ public any Native_GetFurthestSurvivorFlow(Handle plugin, int numParams)
 	return SDKCall(g_hSDK_Call_GetFurthestSurvivorFlow, g_pDirector);
 }
 
+public int Native_NavAreaTravelDistance(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	ValidateNatives(g_hSDK_Call_NavAreaTravelDistance, "NavAreaTravelDistance");
+
+	float vPos[3], vEnd[3];
+
+	GetNativeArray(1, vPos, sizeof(vPos));
+	GetNativeArray(2, vEnd, sizeof(vEnd));
+	int a3 = GetNativeCell(3);
+
+	//PrintToServer("#### CALL g_hSDK_Call_NavAreaTravelDistance");
+	return SDKCall(g_hSDK_Call_NavAreaTravelDistance, vPos, vEnd, a3);
+}
+
 public int Native_GetScriptValueInt(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_GetScriptValueInt, "GetScriptValueInt");
 
@@ -3378,6 +5153,8 @@ public int Native_GetScriptValueInt(Handle plugin, int numParams)
 	GetNativeString(1, key, maxlength);
 
 	int value = GetNativeCell(2);
+
+	//PrintToServer("#### CALL g_hSDK_Call_GetScriptValueInt");
 	return SDKCall(g_hSDK_Call_GetScriptValueInt, g_pDirector, key, value);
 }
 
@@ -3394,6 +5171,8 @@ public any Native_GetScriptValueFloat(Handle plugin, int numParams)
 	GetNativeString(1, key, maxlength);
 
 	float value = GetNativeCell(2);
+
+	//PrintToServer("#### CALL g_hSDK_Call_GetScriptValueFloat");
 	return SDKCall(g_hSDK_Call_GetScriptValueFloat, g_pDirector, key, value);
 }
 
@@ -3435,6 +5214,8 @@ public int Native_GetScriptValueString(Handle plugin, int numParams)
 // ==================================================
 public int Native_ScavengeBeginRoundSetupTime(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(ScavengeModePtr, "ScavengeModePtr");
 	ValidateAddress(OnBeginRoundSetupTime, "OnBeginRoundSetupTime");
 
@@ -3443,6 +5224,8 @@ public int Native_ScavengeBeginRoundSetupTime(Handle plugin, int numParams)
 
 public int Native_ResetMobTimer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_ResetMobTimer, "ResetMobTimer");
 
@@ -3453,10 +5236,12 @@ public int Native_ResetMobTimer(Handle plugin, int numParams)
 
 public any Native_GetPlayerSpawnTime(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(SpawnTimer, "SpawnTimer");
 
 	int client = GetNativeCell(1);
-	return LoadFromAddress(GetEntityAddress(client) + view_as<Address>(SpawnTimer + 8), NumberType_Int32);
+	return (view_as<float>(LoadFromAddress(GetEntityAddress(client) + view_as<Address>(SpawnTimer + 8), NumberType_Int32)) - GetGameTime());
 }
 
 public int Native_RestartScenarioFromVote(Handle plugin, int numParams)
@@ -3466,6 +5251,7 @@ public int Native_RestartScenarioFromVote(Handle plugin, int numParams)
 
 	char map[64];
 	GetNativeString(1, map, sizeof(map));
+
 	//PrintToServer("#### CALL g_hSDK_Call_RestartScenarioFromVote");
 	return SDKCall(g_hSDK_Call_RestartScenarioFromVote, g_pDirector, map);
 }
@@ -3475,7 +5261,17 @@ public int Native_GetVersusMaxCompletionScore(Handle plugin, int numParams)
 	ValidateAddress(g_pGameRules, "g_pGameRules");
 	ValidateAddress(VersusMaxCompletionScore, "VersusMaxCompletionScore");
 
-	return LoadFromAddress(g_pGameRules + view_as<Address>(VersusMaxCompletionScore), NumberType_Int32);
+	if( g_bLeft4Dead2 )
+	{
+		return LoadFromAddress(g_pGameRules + view_as<Address>(VersusMaxCompletionScore), NumberType_Int32);
+	}
+	else
+	{
+		ValidateAddress(m_chapter, "m_chapter");
+
+		int chapter = LoadFromAddress(g_pDirector + view_as<Address>(m_chapter), NumberType_Int32);
+		return LoadFromAddress(g_pGameRules + view_as<Address>(chapter * 4 + VersusMaxCompletionScore), NumberType_Int32);
+	}
 }
 
 public int Native_SetVersusMaxCompletionScore(Handle plugin, int numParams)
@@ -3484,51 +5280,47 @@ public int Native_SetVersusMaxCompletionScore(Handle plugin, int numParams)
 	ValidateAddress(VersusMaxCompletionScore, "VersusMaxCompletionScore");
 
 	int value = GetNativeCell(1);
-	StoreToAddress(g_pGameRules + view_as<Address>(VersusMaxCompletionScore), value, NumberType_Int32);
+
+	if( g_bLeft4Dead2 )
+	{
+		StoreToAddress(g_pGameRules + view_as<Address>(VersusMaxCompletionScore), value, NumberType_Int32);
+	}
+	else
+	{
+		ValidateAddress(m_chapter, "m_chapter");
+
+		int chapter = LoadFromAddress(g_pDirector + view_as<Address>(m_chapter), NumberType_Int32);
+		StoreToAddress(g_pGameRules + view_as<Address>(chapter * 4 + VersusMaxCompletionScore), value, NumberType_Int32);
+	}
+
 	return 0;
 }
 
 public int Native_GetTeamScore(Handle plugin, int numParams)
 {
-	#define SCORE_TEAM_A 1
-	#define SCORE_TEAM_B 2
+	// #define SCORE_TEAM_A 1
+	// #define SCORE_TEAM_B 2
 	#define SCORE_TYPE_ROUND 0
 	#define SCORE_TYPE_CAMPAIGN 1
 
-	if( g_bLeft4Dead2 )
+	ValidateNatives(g_hSDK_Call_GetTeamScore, "GetTeamScore");
+
+	//sanity check that the team index is valid
+	int team = GetNativeCell(1);
+	if( team < 1 || team > (g_bLeft4Dead2 ? 2 : 6) )
 	{
-		ValidateNatives(g_hSDK_Call_GetTeamScore, "GetTeamScore");
-
-		//sanity check that the team index is valid
-		int team = GetNativeCell(1);
-		if( team != SCORE_TEAM_A && team != SCORE_TEAM_B )
-		{
-			ThrowNativeError(SP_ERROR_PARAM, "Logical team %d is invalid. Accepted values: 1 or 2.", team);
-		}
-
-		//campaign_score is a boolean so should be 0 (use round score) or 1 only
-		int score = GetNativeCell(2);
-		if( score != SCORE_TYPE_ROUND && score != SCORE_TYPE_CAMPAIGN )
-		{
-			ThrowNativeError(SP_ERROR_PARAM, "campaign_score %d is invalid. Accepted values: 0 or 1", score);
-		}
-
-		//PrintToServer("#### CALL g_hSDK_Call_GetTeamScore");
-		return SDKCall(g_hSDK_Call_GetTeamScore, team, score);
-	// } else {
-		// ValidateAddress(TeamScoresAddress, "TeamScoresAddress");
-		// ValidateAddress(ClearTeamScore_A, "ClearTeamScore_A");
-		// ValidateAddress(ClearTeamScore_B, "ClearTeamScore_B");
-
-		// int team = GetNativeCell(1);
-		// if( team != SCORE_TEAM_A && team != SCORE_TEAM_B )
-		// {
-			// ThrowNativeError(SP_ERROR_PARAM, "Logical team %d is invalid. Accepted values: 1 or 2.", team);
-		// }
-
-		// return LoadFromAddress(TeamScoresAddress + view_as<Address>(team == SCORE_TEAM_A ? ClearTeamScore_A : ClearTeamScore_B), NumberType_Int32);
+		ThrowNativeError(SP_ERROR_PARAM, "Logical team %d is invalid. Accepted values: 1 %s %d.", team, g_bLeft4Dead2 ? "or" : "to", g_bLeft4Dead2 ? 2 : 6);
 	}
-	return -1;
+
+	//campaign_score is a boolean so should be 0 (use round score) or 1 only
+	int score = GetNativeCell(2);
+	if( score != SCORE_TYPE_ROUND && score != SCORE_TYPE_CAMPAIGN )
+	{
+		ThrowNativeError(SP_ERROR_PARAM, "campaign_score %d is invalid. Accepted values: 0 or 1", score);
+	}
+
+	//PrintToServer("#### CALL g_hSDK_Call_GetTeamScore");
+	return SDKCall(g_hSDK_Call_GetTeamScore, team, score);
 }
 
 public int Native_IsFirstMapInScenario(Handle plugin, int numParams)
@@ -3537,16 +5329,59 @@ public int Native_IsFirstMapInScenario(Handle plugin, int numParams)
 
 	if( !g_bLeft4Dead2 )
 	{
-		ValidateNatives(SDK_KV_GetString, "SDK_KV_GetString");
+		ValidateNatives(g_hSDK_Call_KV_GetString, "KV_GetString");
 		static char sMap[64], check[64];
 
+		/*
+		// NULL PTR - METHOD (kept for demonstration)
+		// "malloc" replacement hack (method by @Rostu)
+		Address pNull = GetEntityAddress(0) + view_as<Address>(m_iClrRender);
+
+		// Save old value
+		int iRestore = LoadFromAddress(pNull, NumberType_Int32);
+
+		// Some test to ensure that our temporary buffer is not corrupted with SDK Call
+		// Test first 1024 bytes
+		// int data[256];
+		// for( int i = 0; i < sizeof(data); i++ )
+		// {
+		// 	data[i] = LoadFromAddress(pNull + view_as<Address>(i*4), NumberType_Int32);
+		// }
+
+		// Should be 0 to match the original call arguments
+		StoreToAddress(pNull, 0, NumberType_Int32);
+
 		//PrintToServer("#### CALL g_hSDK_Call_IsFirstMapInScenario");
-		int keyvalue = SDKCall(g_hSDK_Call_IsFirstMapInScenario, 0, 0);
+		int keyvalue = SDKCall(g_hSDK_Call_IsFirstMapInScenario, pNull); // NULL PTR - METHOD (kept for demonstration)
+		// */
+
+		//PrintToServer("#### CALL g_hSDK_Call_IsFirstMapInScenario");
+		int keyvalue = SDKCall(g_hSDK_Call_IsFirstMapInScenario, 0);
+
+		// Restore the old value
+		// StoreToAddress(pNull, iRestore, NumberType_Int32); // NULL PTR - METHOD (kept for demonstration)
+
+		// NULL PTR - METHOD (kept for demonstration)
+		// Verification
+		/*
+		PrintToServer("Checking for temp. buffer modifications ...");
+		int new_byte;
+		for( int i = 0; i < sizeof(data); i++ )
+		{
+			new_byte = LoadFromAddress(pNull + view_as<Address>(i*4), NumberType_Int32);
+			if( data[i] != new_byte )
+			{
+				PrintToServer("m_iClrRender struct corrupted @%i: byte %X != %X", i*4, new_byte, data[i]);
+			}
+		}
+		*/
+
 		if( keyvalue )
 		{
+			//PrintToServer("#### CALL g_hSDK_Call_KV_GetString");
+			SDKCall(g_hSDK_Call_KV_GetString, keyvalue, check, sizeof(check), "map", "N/A");
+
 			GetCurrentMap(sMap, sizeof(sMap));
-			//PrintToServer("#### CALL SDK_KV_GetString");
-			SDKCall(SDK_KV_GetString, keyvalue, check, sizeof(check), "map", "N/A");
 			return strcmp(sMap, check) == 0;
 		}
 
@@ -3560,6 +5395,7 @@ public int Native_IsFirstMapInScenario(Handle plugin, int numParams)
 public int Native_IsMissionFinalMap(Handle plugin, int numParams)
 {
 	ValidateNatives(g_hSDK_Call_IsMissionFinalMap, "IsMissionFinalMap");
+
 	//PrintToServer("#### CALL g_hSDK_Call_IsMissionFinalMap");
 	return SDKCall(g_hSDK_Call_IsMissionFinalMap);
 }
@@ -3581,6 +5417,11 @@ public int Native_StaggerPlayer(Handle plugin, int numParams)
 	int a2 = GetNativeCell(2);
 	float vDir[3];
 	GetNativeArray(3, vDir, 3);
+
+	if( IsNativeParamNullVector(3) )
+	{
+		GetEntPropVector(a2, Prop_Send, "m_vecOrigin", vDir);
+	}
 
 	//PrintToServer("#### CALL g_hSDK_Call_StaggerPlayer");
 	SDKCall(g_hSDK_Call_StaggerPlayer, a1, a2, vDir);
@@ -3626,6 +5467,8 @@ public int Native_SendInRescueVehicle(Handle plugin, int numParams)
 
 public int Native_ChangeFinaleStage(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(ScriptedEventManagerPtr, "ScriptedEventManagerPtr");
 	ValidateNatives(g_hSDK_Call_ChangeFinaleStage, "ChangeFinaleStage");
 
@@ -3663,6 +5506,7 @@ public int Native_SpawnSpecial(Handle plugin, int numParams)
 	if( g_bLeft4Dead2 )
 	{
 		ValidateNatives(g_hSDK_Call_SpawnSpecial, "SpawnSpecial");
+
 		//PrintToServer("#### CALL g_hSDK_Call_SpawnSpecial");
 		return SDKCall(g_hSDK_Call_SpawnSpecial, g_pZombieManager, zombieClass, vPos, vAng);
 	}
@@ -3673,18 +5517,21 @@ public int Native_SpawnSpecial(Handle plugin, int numParams)
 			case 1:
 			{
 				ValidateNatives(g_hSDK_Call_SpawnSmoker, "SpawnSmoker");
+
 				//PrintToServer("#### CALL g_hSDK_Call_SpawnSmoker");
 				return SDKCall(g_hSDK_Call_SpawnSmoker, g_pZombieManager, vPos, vAng);
 			}
 			case 2:
 			{
 				ValidateNatives(g_hSDK_Call_SpawnBoomer, "SpawnBoomer");
+
 				//PrintToServer("#### CALL g_hSDK_Call_SpawnBoomer");
 				return SDKCall(g_hSDK_Call_SpawnBoomer, g_pZombieManager, vPos, vAng);
 			}
 			case 3:
 			{
 				ValidateNatives(g_hSDK_Call_SpawnHunter, "SpawnHunter");
+
 				//PrintToServer("#### CALL g_hSDK_Call_SpawnHunter");
 				return SDKCall(g_hSDK_Call_SpawnHunter, g_pZombieManager, vPos, vAng);
 			}
@@ -3709,6 +5556,8 @@ public int Native_SpawnWitch(Handle plugin, int numParams)
 
 public int Native_SpawnWitchBride(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pZombieManager, "g_pZombieManager");
 	ValidateNatives(g_hSDK_Call_SpawnWitchBride, "SpawnWitchBride");
 
@@ -3743,6 +5592,7 @@ public int Native_LobbyUnreserve(Handle plugin, int numParams)
 	ValidateAddress(g_pServer, "g_pServer");
 	ValidateNatives(g_hSDK_Call_LobbyUnreserve, "LobbyUnreserve");
 
+	//PrintToServer("#### CALL g_hSDK_Call_LobbyUnreserve");
 	SDKCall(g_hSDK_Call_LobbyUnreserve, g_pServer, 0, 0, "Unreserved by Left 4 DHooks");
 }
 
@@ -3829,11 +5679,15 @@ int GetMeleePointer(int id)
 // ==================================================
 public int Native_IsValidWeapon(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	return GetWeaponPointer() != -1;
 }
 
 public int Native_GetIntWeaponAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
 	if( attr >= view_as<int>(MAX_SIZE_L4D2IntWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
@@ -3850,6 +5704,8 @@ public int Native_GetIntWeaponAttribute(Handle plugin, int numParams)
 
 public any Native_GetFloatWeaponAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
 	if( attr >= view_as<int>(MAX_SIZE_L4D2FloatWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
@@ -3866,6 +5722,8 @@ public any Native_GetFloatWeaponAttribute(Handle plugin, int numParams)
 
 public int Native_SetIntWeaponAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
 	if( attr >= view_as<int>(MAX_SIZE_L4D2IntWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
@@ -3882,6 +5740,8 @@ public int Native_SetIntWeaponAttribute(Handle plugin, int numParams)
 
 public int Native_SetFloatWeaponAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
 	if( attr >= view_as<int>(MAX_SIZE_L4D2FloatWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
@@ -3898,18 +5758,24 @@ public int Native_SetFloatWeaponAttribute(Handle plugin, int numParams)
 
 public int Native_GetMeleeWeaponIndex(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	static char weaponName[32];
 	GetNativeString(1, weaponName, sizeof(weaponName));
 
 	int ptr;
 	if( g_aMeleeIDs.GetValue(weaponName, ptr) == false )
-		ThrowNativeError(SP_ERROR_PARAM, "Invalid melee name or melee unavailable");
+	{
+		ptr = -1;
+	}
 
 	return ptr;
 }
 
 public int Native_GetIntMeleeAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
 	if( attr >= view_as<int>(MAX_SIZE_L4D2IntMeleeWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
@@ -3926,6 +5792,8 @@ public int Native_GetIntMeleeAttribute(Handle plugin, int numParams)
 
 public any Native_GetFloatMeleeAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
 	if( attr >= view_as<int>(MAX_SIZE_L4D2FloatMeleeWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
@@ -3942,6 +5810,8 @@ public any Native_GetFloatMeleeAttribute(Handle plugin, int numParams)
 
 public int Native_GetBoolMeleeAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
 	if( attr >= view_as<int>(MAX_SIZE_L4D2BoolMeleeWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
@@ -3958,8 +5828,10 @@ public int Native_GetBoolMeleeAttribute(Handle plugin, int numParams)
 
 public int Native_SetIntMeleeAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
-	if( attr >= view_as<int>(MAX_SIZE_L4D2BoolMeleeWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
+	if( attr >= view_as<int>(MAX_SIZE_L4D2IntMeleeWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
 
 	int ptr = GetMeleePointer(GetNativeCell(1));
@@ -3973,8 +5845,10 @@ public int Native_SetIntMeleeAttribute(Handle plugin, int numParams)
 
 public int Native_SetFloatMeleeAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
-	if( attr >= view_as<int>(MAX_SIZE_L4D2BoolMeleeWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
+	if( attr >= view_as<int>(MAX_SIZE_L4D2FloatMeleeWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
 
 	int ptr = GetMeleePointer(GetNativeCell(1));
@@ -3988,6 +5862,8 @@ public int Native_SetFloatMeleeAttribute(Handle plugin, int numParams)
 
 public int Native_SetBoolMeleeAttribute(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	int attr = GetNativeCell(2);
 	if( attr >= view_as<int>(MAX_SIZE_L4D2BoolMeleeWeaponAttributes) ) // view_as to avoid tag mismatch from enum "type"
 		ThrowNativeError(SP_ERROR_PARAM, "Invalid attribute id");
@@ -4010,6 +5886,8 @@ public int Native_SetBoolMeleeAttribute(Handle plugin, int numParams)
 // ==================================================
 public int Native_CTimerReset(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4021,6 +5899,8 @@ public int Native_CTimerReset(Handle plugin, int numParams)
 
 public int Native_CTimerStart(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4034,6 +5914,8 @@ public int Native_CTimerStart(Handle plugin, int numParams)
 
 public int Native_CTimerInvalidate(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4045,6 +5927,8 @@ public int Native_CTimerInvalidate(Handle plugin, int numParams)
 
 public int Native_CTimerHasStarted(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4056,6 +5940,8 @@ public int Native_CTimerHasStarted(Handle plugin, int numParams)
 
 public int Native_CTimerIsElapsed(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4067,6 +5953,8 @@ public int Native_CTimerIsElapsed(Handle plugin, int numParams)
 
 public any Native_CTimerGetElapsedTime(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4079,6 +5967,8 @@ public any Native_CTimerGetElapsedTime(Handle plugin, int numParams)
 
 public any Native_CTimerGetRemainingTime(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4090,6 +5980,8 @@ public any Native_CTimerGetRemainingTime(Handle plugin, int numParams)
 
 public any Native_CTimerGetCountdownDuration(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4105,6 +5997,8 @@ public any Native_CTimerGetCountdownDuration(Handle plugin, int numParams)
 // ==================================================
 public int Native_ITimerStart(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4116,6 +6010,8 @@ public int Native_ITimerStart(Handle plugin, int numParams)
 
 public int Native_ITimerInvalidate(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4127,6 +6023,8 @@ public int Native_ITimerInvalidate(Handle plugin, int numParams)
 
 public int Native_ITimerHasStarted(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4138,6 +6036,8 @@ public int Native_ITimerHasStarted(Handle plugin, int numParams)
 
 public any Native_ITimerGetElapsedTime(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int id = GetNativeCell(1);
@@ -4154,22 +6054,9 @@ public any Native_ITimerGetElapsedTime(Handle plugin, int numParams)
 // ==================================================
 public int Native_GetTankCount(Handle plugin, int numParams)
 {
-	int val;
+	ValidateAddress(g_pDirector, "g_pDirector");
 
-	if( g_bLeft4Dead2 )
-	{
-		ValidateAddress(g_pDirector, "g_pDirector");
-
-		val = LoadFromAddress(g_pDirector + view_as<Address>(m_iTankCount), NumberType_Int32);
-	} else {
-		for( int i = 1; i <= MaxClients; i++ )
-		{
-			if( IsClientInGame(i) && GetClientTeam(i) == 3 && GetEntProp(i, Prop_Send, "m_zombieClass") == 5 )
-			{
-				val++;
-			}
-		}
-	}
+	int val = LoadFromAddress(g_pDirector + view_as<Address>(m_iTankCount), NumberType_Int32);
 
 	return val;
 }
@@ -4194,8 +6081,114 @@ public int Native_GetWitchCount(Handle plugin, int numParams)
 	return val;
 }
 
+public int Native_GetCurrentChapter(Handle plugin, int numParams)
+{
+	ValidateAddress(m_chapter, "m_chapter");
+
+	return LoadFromAddress(g_pDirector + view_as<Address>(m_chapter), NumberType_Int32) + 1;
+}
+
+public int Native_GetMaxChapters(Handle plugin, int numParams)
+{
+	if( g_bLeft4Dead2 )
+	{
+		ValidateNatives(g_hSDK_Call_GetMaxChapters, "GetMaxChapters");
+
+		//PrintToServer("#### CALL g_hSDK_Call_GetMaxChapters");
+		return SDKCall(g_hSDK_Call_GetMaxChapters);
+	} else {
+		if( g_iMaxChapters == 0 )
+		{
+			ValidateNatives(g_hSDK_Call_KV_GetString, "KV_GetString");
+			ValidateNatives(g_hSDK_Call_GetMissionInfo, "GetMissionInfo");
+
+			//PrintToServer("#### CALL g_hSDK_Call_GetMissionInfo");
+			int infoPointer = SDKCall(g_hSDK_Call_GetMissionInfo);
+
+			char sMode[64];
+			char sTemp[64];
+			char sRet[64];
+			g_hMPGameMode.GetString(sMode, sizeof(sMode));
+
+			int index = 1;
+			while( index < 20 )
+			{
+				Format(sTemp, sizeof(sTemp), "modes/%s/%d/Map", sMode, index);
+
+				// PrintToServer("#### CALL g_hSDK_Call_KV_GetString");
+				SDKCall(g_hSDK_Call_KV_GetString, infoPointer, sRet, sizeof(sRet), sTemp, "");
+
+				if( strcmp(sRet, "") == 0 )
+				{
+					g_iMaxChapters = index - 1;
+					return g_iMaxChapters;
+				}
+
+				index++;
+			}
+		} else {
+			return g_iMaxChapters;
+		}
+	}
+
+	return 0;
+}
+
+public int Native_IsFinaleEscapeInProgress(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_IsFinaleEscapeInProgress, "IsFinaleEscapeInProgress");
+	ValidateAddress(g_pDirector, "g_pDirector");
+
+	//PrintToServer("#### CALL g_hSDK_Call_IsFinaleEscapeInProgress");
+	return SDKCall(g_hSDK_Call_IsFinaleEscapeInProgress, g_pDirector);
+}
+
+public int Native_SetHumanSpec(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_SetHumanSpec, "SetHumanSpec");
+
+	int bot = GetNativeCell(1);
+	int client = GetNativeCell(2);
+
+	//PrintToServer("#### CALL g_hSDK_Call_SetHumanSpec");
+	return SDKCall(g_hSDK_Call_SetHumanSpec, bot, client);
+}
+
+public int Native_TakeOverBot(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_TakeOverBot, "TakeOverBot");
+
+	int client = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_TakeOverBot");
+	return SDKCall(g_hSDK_Call_TakeOverBot, client, true);
+}
+
+public int Native_CanBecomeGhost(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_CanBecomeGhost, "CanBecomeGhost");
+
+	int client = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_CanBecomeGhost");
+	return SDKCall(g_hSDK_Call_CanBecomeGhost, client, true);
+}
+
+public int Native_AreWanderersAllowed(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	ValidateNatives(g_hSDK_Call_AreWanderersAllowed, "AreWanderersAllowed");
+	ValidateAddress(g_pDirector, "g_pDirector");
+
+	//PrintToServer("#### CALL g_hSDK_Call_AreWanderersAllowed");
+	return SDKCall(g_hSDK_Call_AreWanderersAllowed, g_pDirector);
+}
+
 public int Native_GetVersusCampaignScores(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(VersusModePtr, "VersusModePtr");
 	ValidateAddress(VersusModePtr, "m_iCampaignScores");
 
@@ -4209,6 +6202,8 @@ public int Native_GetVersusCampaignScores(Handle plugin, int numParams)
 
 public int Native_SetVersusCampaignScores(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(VersusModePtr, "VersusModePtr");
 	ValidateAddress(VersusModePtr, "m_iCampaignScores");
 
@@ -4220,6 +6215,8 @@ public int Native_SetVersusCampaignScores(Handle plugin, int numParams)
 
 public int Native_GetVersusTankFlowPercent(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(VersusModePtr, "VersusModePtr");
 	ValidateAddress(VersusModePtr, "m_fTankSpawnFlowPercent");
 
@@ -4233,6 +6230,8 @@ public int Native_GetVersusTankFlowPercent(Handle plugin, int numParams)
 
 public int Native_SetVersusTankFlowPercent(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(VersusModePtr, "VersusModePtr");
 	ValidateAddress(VersusModePtr, "m_fTankSpawnFlowPercent");
 
@@ -4244,6 +6243,8 @@ public int Native_SetVersusTankFlowPercent(Handle plugin, int numParams)
 
 public int Native_GetVersusWitchFlowPercent(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(VersusModePtr, "VersusModePtr");
 	ValidateAddress(VersusModePtr, "m_fWitchSpawnFlowPercent");
 
@@ -4257,6 +6258,8 @@ public int Native_GetVersusWitchFlowPercent(Handle plugin, int numParams)
 
 public int Native_SetVersusWitchFlowPercent(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(VersusModePtr, "VersusModePtr");
 	ValidateAddress(VersusModePtr, "m_fWitchSpawnFlowPercent");
 
@@ -4305,6 +6308,8 @@ public any Direct_GetMobSpawnTimer(Handle plugin, int numParams)
 
 public any Direct_GetSIClassDeathTimer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int class = GetNativeCell(1);
@@ -4316,6 +6321,8 @@ public any Direct_GetSIClassDeathTimer(Handle plugin, int numParams)
 
 public any Direct_GetSIClassSpawnTimer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 
 	int class = GetNativeCell(1);
@@ -4371,7 +6378,9 @@ public any Direct_GetVSTankFlowPercent(Handle plugin, int numParams)
 	int round = GetNativeCell(1);
 	if( round < 0 || round > 1 ) return -1.0;
 
-	return LoadFromAddress(view_as<Address>(VersusModePtr + m_fTankSpawnFlowPercent + (round * 4)), NumberType_Int32);
+	int team = round ^ GameRules_GetProp("m_bInSecondHalfOfRound") != GameRules_GetProp("m_bAreTeamsFlipped");
+
+	return LoadFromAddress(view_as<Address>(VersusModePtr + m_fTankSpawnFlowPercent + (team * 4)), NumberType_Int32);
 }
 
 public int Direct_SetVSTankFlowPercent(Handle plugin, int numParams)
@@ -4382,8 +6391,10 @@ public int Direct_SetVSTankFlowPercent(Handle plugin, int numParams)
 	int round = GetNativeCell(1);
 	if( round < 0 || round > 1 ) return;
 
+	int team = round ^ GameRules_GetProp("m_bInSecondHalfOfRound") != GameRules_GetProp("m_bAreTeamsFlipped");
 	float flow = GetNativeCell(2);
-	StoreToAddress(view_as<Address>(VersusModePtr + m_fTankSpawnFlowPercent + (round * 4)), view_as<int>(flow), NumberType_Int32);
+
+	StoreToAddress(view_as<Address>(VersusModePtr + m_fTankSpawnFlowPercent + (team * 4)), view_as<int>(flow), NumberType_Int32);
 }
 
 public int Direct_GetVSTankToSpawnThisRound(Handle plugin, int numParams)
@@ -4394,7 +6405,9 @@ public int Direct_GetVSTankToSpawnThisRound(Handle plugin, int numParams)
 	int round = GetNativeCell(1);
 	if( round < 0 || round > 1 ) return false;
 
-	return LoadFromAddress(view_as<Address>(VersusModePtr + m_bTankThisRound + round), NumberType_Int8);
+	int team = round ^ GameRules_GetProp("m_bInSecondHalfOfRound") != GameRules_GetProp("m_bAreTeamsFlipped");
+
+	return LoadFromAddress(view_as<Address>(VersusModePtr + m_bTankThisRound + team), NumberType_Int8);
 }
 
 public int Direct_SetVSTankToSpawnThisRound(Handle plugin, int numParams)
@@ -4405,8 +6418,10 @@ public int Direct_SetVSTankToSpawnThisRound(Handle plugin, int numParams)
 	int round = GetNativeCell(1);
 	if( round < 0 || round > 1 ) return;
 
+	int team = round ^ GameRules_GetProp("m_bInSecondHalfOfRound") != GameRules_GetProp("m_bAreTeamsFlipped");
 	bool spawn = GetNativeCell(2);
-	StoreToAddress(view_as<Address>(VersusModePtr + m_bTankThisRound + round), spawn, NumberType_Int8);
+
+	StoreToAddress(view_as<Address>(VersusModePtr + m_bTankThisRound + team), spawn, NumberType_Int8);
 }
 
 public any Direct_GetVSWitchFlowPercent(Handle plugin, int numParams)
@@ -4417,7 +6432,9 @@ public any Direct_GetVSWitchFlowPercent(Handle plugin, int numParams)
 	int round = GetNativeCell(1);
 	if( round < 0 || round > 1 ) return false;
 
-	return LoadFromAddress(view_as<Address>(VersusModePtr + m_fWitchSpawnFlowPercent + (round * 4)), NumberType_Int32);
+	int team = round ^ GameRules_GetProp("m_bInSecondHalfOfRound") != GameRules_GetProp("m_bAreTeamsFlipped");
+
+	return LoadFromAddress(view_as<Address>(VersusModePtr + m_fWitchSpawnFlowPercent + (team * 4)), NumberType_Int32);
 }
 
 public int Direct_SetVSWitchFlowPercent(Handle plugin, int numParams)
@@ -4428,8 +6445,10 @@ public int Direct_SetVSWitchFlowPercent(Handle plugin, int numParams)
 	int round = GetNativeCell(1);
 	if( round < 0 || round > 1 ) return;
 
+	int team = round ^ GameRules_GetProp("m_bInSecondHalfOfRound") != GameRules_GetProp("m_bAreTeamsFlipped");
 	float flow = GetNativeCell(2);
-	StoreToAddress(view_as<Address>(VersusModePtr + m_fWitchSpawnFlowPercent + (round * 4)), view_as<int>(flow), NumberType_Int32);
+
+	StoreToAddress(view_as<Address>(VersusModePtr + m_fWitchSpawnFlowPercent + (team * 4)), view_as<int>(flow), NumberType_Int32);
 }
 
 public int Direct_GetVSWitchToSpawnThisRound(Handle plugin, int numParams)
@@ -4440,7 +6459,9 @@ public int Direct_GetVSWitchToSpawnThisRound(Handle plugin, int numParams)
 	int round = GetNativeCell(1);
 	if( round < 0 || round > 1 ) return false;
 
-	return LoadFromAddress(view_as<Address>(VersusModePtr + m_bWitchThisRound + round), NumberType_Int8);
+	int team = round ^ GameRules_GetProp("m_bInSecondHalfOfRound") != GameRules_GetProp("m_bAreTeamsFlipped");
+
+	return LoadFromAddress(view_as<Address>(VersusModePtr + m_bWitchThisRound + team), NumberType_Int8);
 }
 
 public int Direct_SetVSWitchToSpawnThisRound(Handle plugin, int numParams)
@@ -4451,12 +6472,16 @@ public int Direct_SetVSWitchToSpawnThisRound(Handle plugin, int numParams)
 	int round = GetNativeCell(1);
 	if( round < 0 || round > 1 ) return;
 
+	int team = round ^ GameRules_GetProp("m_bInSecondHalfOfRound") != GameRules_GetProp("m_bAreTeamsFlipped");
 	bool spawn = GetNativeCell(2);
-	StoreToAddress(view_as<Address>(VersusModePtr + m_bWitchThisRound + round), spawn, NumberType_Int8);
+
+	StoreToAddress(view_as<Address>(VersusModePtr + m_bWitchThisRound + team), spawn, NumberType_Int8);
 }
 
 public any Direct_GetVSStartTimer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(VersusModePtr, "VersusModePtr");
 
 	int offset;
@@ -4472,6 +6497,8 @@ public any Direct_GetVSStartTimer(Handle plugin, int numParams)
 
 public any Direct_GetScavengeRoundSetupTimer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(ScavengeModePtr, "ScavengeModePtr");
 	ValidateAddress(OnBeginRoundSetupTime, "OnBeginRoundSetupTime");
 
@@ -4480,6 +6507,8 @@ public any Direct_GetScavengeRoundSetupTimer(Handle plugin, int numParams)
 
 public any Direct_GetScavengeOvertimeGraceTimer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(ScavengeModePtr, "ScavengeModePtr");
 	ValidateAddress(OvertimeGraceTimer, "OvertimeGraceTimer");
 
@@ -4496,6 +6525,8 @@ public any Direct_GetMapMaxFlowDistance(Handle plugin, int numParams)
 
 public any Direct_GetSpawnTimer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(SpawnTimer, "SpawnTimer");
 
 	int client = GetNativeCell(1);
@@ -4557,6 +6588,8 @@ public int Direct_SetTankTickets(Handle plugin, int numParams)
 
 public int Direct_GetShovePenalty(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_iShovePenalty, "m_iShovePenalty");
 
 	int client = GetNativeCell(1);
@@ -4572,6 +6605,8 @@ public int Direct_GetShovePenalty(Handle plugin, int numParams)
 
 public int Direct_SetShovePenalty(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_iShovePenalty, "m_iShovePenalty");
 
 	int client = GetNativeCell(1);
@@ -4588,6 +6623,8 @@ public int Direct_SetShovePenalty(Handle plugin, int numParams)
 
 public any Direct_GetNextShoveTime(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_fNextShoveTime, "m_fNextShoveTime");
 
 	int client = GetNativeCell(1);
@@ -4603,6 +6640,8 @@ public any Direct_GetNextShoveTime(Handle plugin, int numParams)
 
 public int Direct_SetNextShoveTime(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_fNextShoveTime, "m_fNextShoveTime");
 
 	int client = GetNativeCell(1);
@@ -4619,6 +6658,8 @@ public int Direct_SetNextShoveTime(Handle plugin, int numParams)
 
 public int Direct_GetPreIncapHealth(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_preIncapacitatedHealth, "m_preIncapacitatedHealth");
 
 	int client = GetNativeCell(1);
@@ -4634,6 +6675,8 @@ public int Direct_GetPreIncapHealth(Handle plugin, int numParams)
 
 public int Direct_SetPreIncapHealth(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_preIncapacitatedHealth, "m_preIncapacitatedHealth");
 
 	int client = GetNativeCell(1);
@@ -4650,6 +6693,8 @@ public int Direct_SetPreIncapHealth(Handle plugin, int numParams)
 
 public int Direct_GetPreIncapHealthBuffer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_preIncapacitatedHealthBuffer, "m_preIncapacitatedHealthBuffer");
 
 	int client = GetNativeCell(1);
@@ -4665,6 +6710,8 @@ public int Direct_GetPreIncapHealthBuffer(Handle plugin, int numParams)
 
 public int Direct_SetPreIncapHealthBuffer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_preIncapacitatedHealthBuffer, "m_preIncapacitatedHealthBuffer");
 
 	int client = GetNativeCell(1);
@@ -4681,6 +6728,8 @@ public int Direct_SetPreIncapHealthBuffer(Handle plugin, int numParams)
 
 public int Direct_GetInfernoMaxFlames(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_maxFlames, "m_maxFlames");
 
 	int client = GetNativeCell(1);
@@ -4694,6 +6743,8 @@ public int Direct_GetInfernoMaxFlames(Handle plugin, int numParams)
 
 public int Direct_SetInfernoMaxFlames(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(m_maxFlames, "m_maxFlames");
 
 	int entity = GetNativeCell(1);
@@ -4708,6 +6759,8 @@ public int Direct_SetInfernoMaxFlames(Handle plugin, int numParams)
 
 public int Direct_GetScriptedEventManager(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(ScriptedEventManagerPtr, "ScriptedEventManagerPtr");
 
 	return ScriptedEventManagerPtr;
@@ -4716,6 +6769,7 @@ public int Direct_GetScriptedEventManager(Handle plugin, int numParams)
 public any Direct_GetTerrorNavArea(Handle plugin, int numParams)
 {
 	ValidateAddress(g_pNavMesh, "g_pNavMesh");
+	ValidateNatives(g_hSDK_Call_GetNavArea, "GetNavArea");
 
 	float vPos[3];
 	GetNativeArray(1, vPos, 3);
@@ -4756,10 +6810,14 @@ public any Direct_GetFlowDistance(Handle plugin, int numParams)
 
 	int client = GetNativeCell(1);
 
+	//PrintToServer("#### CALL g_hSDK_Call_GetLastKnownArea");
 	int area = SDKCall(g_hSDK_Call_GetLastKnownArea, client);
 	if( area == 0 ) return 0.0;
 
-	return LoadFromAddress(view_as<Address>(area + m_flow), NumberType_Int32);
+	float flow = view_as<float>(LoadFromAddress(view_as<Address>(area + m_flow), NumberType_Int32));
+	if( flow == -9999.0 ) flow = 0.0;
+
+	return flow;
 }
 
 public int Direct_DoAnimationEvent(Handle plugin, int numParams)
@@ -4771,8 +6829,57 @@ public int Direct_DoAnimationEvent(Handle plugin, int numParams)
 		return;
 
 	int event = GetNativeCell(2);
+
 	//PrintToServer("#### CALL g_hSDK_Call_DoAnimationEvent");
 	SDKCall(g_hSDK_Call_DoAnimationEvent, client, event, 0);
+}
+
+public int Direct_GetSurvivorHealthBonus(Handle plugin, int numParams)
+{
+	if( g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED1);
+
+	int client = GetNativeCell(1);
+
+	Address pEntity = GetEntityAddress(client);
+	if( pEntity == Address_Null )
+		return -1;
+
+	return LoadFromAddress(pEntity + view_as<Address>(m_iSurvivorHealthBonus), NumberType_Int32);
+}
+
+public int Direct_SetSurvivorHealthBonus(Handle plugin, int numParams)
+{
+	if( g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED1);
+
+	int client = GetNativeCell(1);
+
+	Address pEntity = GetEntityAddress(client);
+	if( pEntity == Address_Null )
+		return;
+
+	int health = GetNativeCell(2);
+	bool recompute = GetNativeCell(3);
+
+	StoreToAddress(pEntity + view_as<Address>(m_iSurvivorHealthBonus), health, NumberType_Int32);
+
+	if( recompute )
+	{
+		ValidateNatives(g_hSDK_Call_RecomputeTeamScores, "RecomputeTeamScores");
+
+		//PrintToServer("#### CALL g_hSDK_Call_RecomputeTeamScores");
+		SDKCall(g_hSDK_Call_RecomputeTeamScores);
+	}
+}
+
+public int Direct_RecomputeTeamScores(Handle plugin, int numParams)
+{
+	if( g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED1);
+
+	ValidateNatives(g_hSDK_Call_RecomputeTeamScores, "RecomputeTeamScores");
+
+	//PrintToServer("#### CALL g_hSDK_Call_RecomputeTeamScores");
+	SDKCall(g_hSDK_Call_RecomputeTeamScores);
+	return true;
 }
 
 
@@ -4900,7 +7007,7 @@ public int Direct_ITimer_SetTimestamp(Handle plugin, int numParams)
 }
 
 // ==================================================
-// STOKS: l4d2d_timers.inc
+// STOCKS: l4d2d_timers.inc
 // ==================================================
 #define CTIMER_DURATION_OFFSET	view_as<Address>(4)
 #define CTIMER_TIMESTAMP_OFFSET view_as<Address>(8)
@@ -5016,36 +7123,50 @@ public int Native_CTerrorPlayer_OnVomitedUpon(Handle plugin, int numParams)
 
 	int client = GetNativeCell(1);
 	int attacker = GetNativeCell(2);
+
+	//PrintToServer("#### CALL g_hSDK_Call_CTerrorPlayer_OnVomitedUpon");
 	SDKCall(g_hSDK_Call_CTerrorPlayer_OnVomitedUpon, client, attacker, false);
 }
 
 public int Native_CTerrorPlayer_OnHitByVomitJar(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateNatives(g_hSDK_Call_CTerrorPlayer_OnHitByVomitJar, "CTerrorPlayer_OnHitByVomitJar");
 
 	int client = GetNativeCell(1);
 	int attacker = GetNativeCell(2);
+
+	//PrintToServer("#### CALL g_hSDK_Call_CTerrorPlayer_OnHitByVomitJar");
 	SDKCall(g_hSDK_Call_CTerrorPlayer_OnHitByVomitJar, client, attacker, true);
 }
 
 public int Native_Infected_OnHitByVomitJar(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateNatives(g_hSDK_Call_Infected_OnHitByVomitJar, "Infected_OnHitByVomitJar");
 
 	int entity = GetNativeCell(1);
 	int attacker = GetNativeCell(2);
+
+	//PrintToServer("#### CALL g_hSDK_Call_Infected_OnHitByVomitJar");
 	SDKCall(g_hSDK_Call_Infected_OnHitByVomitJar, entity, attacker, true);
 }
 
 public int Native_CTerrorPlayer_Fling(Handle plugin, int numParams)
 {
-	ValidateNatives(g_hSDK_Call_Fling, "Fling");
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	ValidateNatives(g_hSDK_Call_CTerrorPlayer_Fling, "CTerrorPlayer_Fling");
 
 	int client = GetNativeCell(1);
 	int attacker = GetNativeCell(2);
 	float vDir[3];
 	GetNativeArray(3, vDir, 3);
-	SDKCall(g_hSDK_Call_Fling, client, vDir, 76, attacker, 3.0); // 76 is the 'got bounced' animation in L4D2. 3.0 = incapTime, what's this mean?
+
+	//PrintToServer("#### CALL g_hSDK_Call_CTerrorPlayer_Fling");
+	SDKCall(g_hSDK_Call_CTerrorPlayer_Fling, client, vDir, 76, attacker, 3.0); // 76 is the 'got bounced' animation in L4D2. 3.0 = incapTime, what's this mean?
 }
 
 public int Native_CancelStagger(Handle plugin, int numParams)
@@ -5053,7 +7174,19 @@ public int Native_CancelStagger(Handle plugin, int numParams)
 	ValidateNatives(g_hSDK_Call_CancelStagger, "CancelStagger");
 
 	int client = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_CancelStagger");
 	SDKCall(g_hSDK_Call_CancelStagger, client);
+}
+
+public int Native_RespawnPlayer(Handle plugin, int numParams)
+{
+	ValidateNatives(g_hSDK_Call_RoundRespawn, "RoundRespawn");
+
+	int client = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_RoundRespawn");
+	SDKCall(g_hSDK_Call_RoundRespawn, client);
 }
 
 public int Native_CreateRescuableSurvivors(Handle plugin, int numParams)
@@ -5087,6 +7220,7 @@ void RespawnRescue()
 
 	int time = g_hCvarRescueDeadTime.IntValue;
 	g_hCvarRescueDeadTime.SetInt(0);
+	//PrintToServer("#### CALL g_hSDK_Call_CreateRescuableSurvivors");
 	SDKCall(g_hSDK_Call_CreateRescuableSurvivors, g_pDirector);
 	g_hCvarRescueDeadTime.SetInt(time);
 }
@@ -5096,21 +7230,29 @@ public int Native_OnRevived(Handle plugin, int numParams)
 	ValidateNatives(g_hSDK_Call_OnRevived, "OnRevived");
 
 	int client = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_OnRevived");
 	SDKCall(g_hSDK_Call_OnRevived, client);
 }
 
 public any Native_GetVersusCompletionPlayer(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pGameRules, "g_pGameRules");
 	ValidateNatives(g_hSDK_Call_GetVersusCompletionPlayer, "GetVersusCompletionPlayer");
 
 	int client = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_GetVersusCompletionPlayer");
 	return SDKCall(g_hSDK_Call_GetVersusCompletionPlayer, g_pGameRules, client);
 }
 
 public int Native_GetHighestFlowSurvivor(Handle plugin, int numParams)
 {
 	ValidateNatives(g_hSDK_Call_GetHighestFlowSurvivor, "GetHighestFlowSurvivor");
+
+	//PrintToServer("#### CALL g_hSDK_Call_GetHighestFlowSurvivor");
 	return SDKCall(g_hSDK_Call_GetHighestFlowSurvivor, 0, 0);
 }
 
@@ -5121,6 +7263,7 @@ public any Native_GetInfectedFlowDistance(Handle plugin, int numParams)
 	int entity = GetNativeCell(1);
 	if( entity > MaxClients )
 	{
+		//PrintToServer("#### CALL g_hSDK_Call_GetInfectedFlowDistance");
 		return SDKCall(g_hSDK_Call_GetInfectedFlowDistance, entity);
 	}
 
@@ -5139,11 +7282,16 @@ public int Native_TakeOverZombieBot(Handle plugin, int numParams)
 		IsFakeClient(client) == false && IsFakeClient(target) == true )
 	{
 		if( g_bLeft4Dead2 )
+		{
+			//PrintToServer("#### CALL g_hSDK_Call_TakeOverZombieBot");
 			SDKCall(g_hSDK_Call_TakeOverZombieBot, client, target);
+		}
 		else
 		{
 			// Workaround spawning wrong type, you'll hear another special infected type sound when spawning.
 			int zombieClass = GetEntProp(target, Prop_Send, "m_zombieClass");
+
+			//PrintToServer("#### CALL g_hSDK_Call_TakeOverZombieBot");
 			SDKCall(g_hSDK_Call_TakeOverZombieBot, client, target);
 			SetClass(client, zombieClass);
 		}
@@ -5160,8 +7308,11 @@ public int Native_ReplaceWithBot(Handle plugin, int numParams)
 	GetClientAbsOrigin(client, vPos);
 	GetClientEyeAngles(client, vAng);
 
+	//PrintToServer("#### CALL g_hSDK_Call_ReplaceWithBot");
 	SDKCall(g_hSDK_Call_ReplaceWithBot, client, true);
+	//PrintToServer("#### CALL g_hSDK_Call_BecomeGhost");
 	SDKCall(g_hSDK_Call_BecomeGhost, client, 0, 0); // Otherwise they duplicate bots and don't go into ghost mode
+
 	TeleportEntity(client, vPos, vAng, NULL_VECTOR);
 }
 
@@ -5170,6 +7321,8 @@ public int Native_CullZombie(Handle plugin, int numParams)
 	ValidateNatives(g_hSDK_Call_CullZombie, "CullZombie");
 
 	int client = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_CullZombie");
 	SDKCall(g_hSDK_Call_CullZombie, client);
 }
 
@@ -5196,8 +7349,10 @@ void SetClass(int client, int zombieClass)
 	int ability = GetEntPropEnt(client, Prop_Send, "m_customAbility");
 	if( ability != -1 ) RemoveEntity(ability);
 
+	//PrintToServer("#### CALL g_hSDK_Call_SetClass");
 	SDKCall(g_hSDK_Call_SetClass, client, zombieClass);
 
+	//PrintToServer("#### CALL g_hSDK_Call_CreateAbility");
 	ability = SDKCall(g_hSDK_Call_CreateAbility, client);
 	if( ability != -1 ) SetEntPropEnt(client, Prop_Send, "m_customAbility", ability);
 }
@@ -5209,6 +7364,7 @@ public int Native_MaterializeFromGhost(Handle plugin, int numParams)
 	int client = GetNativeCell(1);
 	if( GetClientTeam(client) == 3 && GetEntProp(client, Prop_Send, "m_isGhost") )
 	{
+		//PrintToServer("#### CALL g_hSDK_Call_MaterializeFromGhost");
 		SDKCall(g_hSDK_Call_MaterializeFromGhost, client);
 		return GetEntPropEnt(client, Prop_Send, "m_customAbility");
 	}
@@ -5223,9 +7379,15 @@ public int Native_BecomeGhost(Handle plugin, int numParams)
 	if( GetEntProp(client, Prop_Send, "m_isGhost") == 0 )
 	{
 		if( g_bLeft4Dead2 )
+		{
+			//PrintToServer("#### CALL g_hSDK_Call_BecomeGhost");
 			return !!SDKCall(g_hSDK_Call_BecomeGhost, client, true);
+		}
 		else
+		{
+			//PrintToServer("#### CALL g_hSDK_Call_BecomeGhost");
 			return !!SDKCall(g_hSDK_Call_BecomeGhost, client, 0, 0);
+		}
 	}
 	return 0;
 }
@@ -5236,61 +7398,85 @@ public int Native_State_Transition(Handle plugin, int numParams)
 
 	int client = GetNativeCell(1);
 	int state = GetNativeCell(2);
+
+	//PrintToServer("#### CALL g_hSDK_Call_State_Transition");
 	SDKCall(g_hSDK_Call_State_Transition, client, state);
 }
 
 public int Native_SwapTeams(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_SwapTeams, "SwapTeams");
 
+	//PrintToServer("#### CALL g_hSDK_Call_SwapTeams");
 	SDKCall(g_hSDK_Call_SwapTeams, g_pDirector);
 }
 
 public int Native_AreTeamsFlipped(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_AreTeamsFlipped, "AreTeamsFlipped");
 
+	//PrintToServer("#### CALL g_hSDK_Call_AreTeamsFlipped");
 	return SDKCall(g_hSDK_Call_AreTeamsFlipped, g_pDirector);
 }
 
 public int Native_StartRematchVote(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateNatives(g_hSDK_Call_StartRematchVote, "StartRematchVote");
+
+	//PrintToServer("#### CALL g_hSDK_Call_StartRematchVote");
 	SDKCall(g_hSDK_Call_StartRematchVote, g_pDirector);
 }
 
 
 public int Native_FullRestart(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_FullRestart, "FullRestart");
 
+	//PrintToServer("#### CALL g_hSDK_Call_FullRestart");
 	SDKCall(g_hSDK_Call_FullRestart, g_pDirector);
 }
 
 public int Native_HideVersusScoreboard(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(VersusModePtr, "VersusModePtr");
 	ValidateNatives(g_hSDK_Call_HideVersusScoreboard, "VersusScoreboard");
 
+	//PrintToServer("#### CALL g_hSDK_Call_HideVersusScoreboard");
 	SDKCall(g_hSDK_Call_HideVersusScoreboard, VersusModePtr);
 }
 
 public int Native_HideScavengeScoreboard(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(ScavengeModePtr, "ScavengeModePtr");
 	ValidateNatives(g_hSDK_Call_HideScavengeScoreboard, "HideScavengeScoreboard");
 
+	//PrintToServer("#### CALL g_hSDK_Call_HideScavengeScoreboard");
 	SDKCall(g_hSDK_Call_HideScavengeScoreboard, ScavengeModePtr);
 }
 
 public int Native_HideScoreboard(Handle plugin, int numParams)
 {
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
 	ValidateAddress(g_pDirector, "g_pDirector");
 	ValidateNatives(g_hSDK_Call_HideScoreboard, "HideScoreboard");
 
+	//PrintToServer("#### CALL g_hSDK_Call_HideScoreboard");
 	SDKCall(g_hSDK_Call_HideScoreboard, g_pDirector);
 }
 
@@ -5300,6 +7486,8 @@ public int Native_RegisterForbiddenTarget(Handle plugin, int numParams)
 	ValidateNatives(g_hSDK_Call_RegisterForbiddenTarget, "RegisterForbiddenTarget");
 
 	int entity = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_RegisterForbiddenTarget");
 	return SDKCall(g_hSDK_Call_RegisterForbiddenTarget, g_pDirector, entity);
 }
 
@@ -5309,6 +7497,8 @@ public int Native_UnRegisterForbiddenTarget(Handle plugin, int numParams)
 	ValidateNatives(g_hSDK_Call_UnRegisterForbiddenTarget, "UnRegisterForbiddenTarget");
 
 	int entity = GetNativeCell(1);
+
+	//PrintToServer("#### CALL g_hSDK_Call_UnRegisterForbiddenTarget");
 	SDKCall(g_hSDK_Call_UnRegisterForbiddenTarget, g_pDirector, entity);
 }
 
@@ -5337,8 +7527,8 @@ public MRESReturn SpawnSpecial(Handle hReturn, Handle hParams)
 	Action aResult = Plugin_Continue;
 	Call_StartForward(g_hForward_SpawnSpecial);
 	Call_PushCellRef(class);
-	Call_PushArray(a1, 3);
-	Call_PushArray(a2, 3);
+	Call_PushArray(a1, sizeof(a1));
+	Call_PushArray(a2, sizeof(a2));
 	Call_Finish(aResult);
 
 	if( aResult == Plugin_Handled )
@@ -5387,8 +7577,8 @@ MRESReturn Spawn_SmokerBoomerHunter(int zombieClass, Handle hReturn, Handle hPar
 	Action aResult = Plugin_Continue;
 	Call_StartForward(g_hForward_SpawnSpecial);
 	Call_PushCellRef(class);
-	Call_PushArray(a1, 3);
-	Call_PushArray(a2, 3);
+	Call_PushArray(a1, sizeof(a1));
+	Call_PushArray(a2, sizeof(a2));
 	Call_Finish(aResult);
 
 	if( aResult == Plugin_Handled )
@@ -5465,12 +7655,50 @@ MRESReturn Spawn_TankWitch(Handle hForward, Handle hReturn, Handle hParams)
 
 	Action aResult = Plugin_Continue;
 	Call_StartForward(hForward);
-	Call_PushArray(a1, 3);
-	Call_PushArray(a2, 3);
+	Call_PushArray(a1, sizeof(a1));
+	Call_PushArray(a2, sizeof(a2));
 	Call_Finish(aResult);
 
 	if( aResult == Plugin_Handled )
 	{
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
+// L4D1 Linux clone function detour
+/*
+public MRESReturn SpawnWitchAreaPre(Handle hReturn, Handle hParams)
+{
+	return MRES_Ignored;
+}
+*/
+
+public MRESReturn SpawnWitchArea(Handle hReturn, Handle hParams)
+{
+	// PrintToServer("##### DTR SpawnWitchArea");
+	// From the post hook
+	/*
+	int entity = DHookGetReturn(hReturn);
+	if( entity == 0 ) return MRES_Ignored;
+
+	float a1[3], a2[3];
+	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", a1);
+	DHookGetParamVector(hParams, 2, a2);
+	*/
+
+	float a2[3];
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_SpawnWitch);
+	Call_PushArray(NULL_VECTOR, sizeof(a2));
+	Call_PushArray(a2, sizeof(a2));
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		// RemoveEntity(entity); // From the post hook
 		DHookSetReturn(hReturn, 0);
 		return MRES_Supercede;
 	}
@@ -5526,9 +7754,29 @@ public MRESReturn SetCampaignScores(Handle hReturn, Handle hParams)
 	return MRES_Ignored;
 }
 
+public MRESReturn RecalculateVersusScore(int pThis, Handle hReturn, Handle hParams)
+{
+	//PrintToServer("##### DTR RecalculateVersusScore");
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_RecalculateVersusScore);
+	Call_PushCell(pThis);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
 public MRESReturn OnFirstSurvivorLeftSafeArea(Handle hReturn, Handle hParams)
 {
 	//PrintToServer("##### DTR OnFirstSurvivorLeftSafeArea");
+	if( DHookIsNullParam(hParams, 1) ) return MRES_Ignored;
+
 	int value = DHookGetParam(hParams, 1);
 
 	Action aResult = Plugin_Continue;
@@ -5538,6 +7786,15 @@ public MRESReturn OnFirstSurvivorLeftSafeArea(Handle hReturn, Handle hParams)
 
 	if( aResult == Plugin_Handled )
 	{
+		if( !g_bLeft4Dead2 )
+		{
+			
+			// Remove bool that says not to check if they have left
+			ValidateAddress(g_pDirector, "g_pDirector");
+			ValidateAddress(m_bFirstSurvivorLeftStartArea, "m_bFirstSurvivorLeftStartArea");
+			StoreToAddress(g_pDirector + view_as<Address>(m_bFirstSurvivorLeftStartArea), 0, NumberType_Int8);
+		}
+
 		DHookSetReturn(hReturn, 0);
 		return MRES_Supercede;
 	}
@@ -5616,6 +7873,18 @@ public MRESReturn SpawnMob(Handle hReturn, Handle hParams)
 public MRESReturn EnterGhostStatePre(int pThis, Handle hReturn, Handle hParams)
 {
 	//PrintToServer("##### DTR EnterGhostStatePre");
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_EnterGhostStatePre);
+	Call_PushCell(pThis);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
 }
 
 public MRESReturn EnterGhostState(int pThis, Handle hReturn, Handle hParams)
@@ -5880,14 +8149,166 @@ public MRESReturn OnReplaceTank(Handle hReturn, Handle hParams)
 	Call_Finish();
 }
 
+public MRESReturn CTankClaw_DoSwing_Pre(int pThis)
+{
+	// PrintToServer("##### DTR CTankClaw_DoSwing_Pre");
+	int tank = GetEntPropEnt(pThis, Prop_Data, "m_hOwner");
+
+	Call_StartForward(g_hForward_CTankClaw_DoSwing_Pre);
+	Call_PushCell(tank);
+	Call_PushCell(pThis);
+	Call_Finish();
+}
+
+public MRESReturn CTankClaw_DoSwing_Post(int pThis)
+{
+	// PrintToServer("##### DTR CTankClaw_DoSwing_Post");
+	int tank = GetEntPropEnt(pThis, Prop_Data, "m_hOwner");
+
+	Call_StartForward(g_hForward_CTankClaw_DoSwing_Post);
+	Call_PushCell(tank);
+	Call_PushCell(pThis);
+	Call_Finish();
+}
+
+public MRESReturn CTankClaw_GroundPound_Pre(int pThis)
+{
+	// PrintToServer("##### DTR CTankClaw_GroundPound_Pre");
+	int tank = GetEntPropEnt(pThis, Prop_Data, "m_hOwner");
+
+	Call_StartForward(g_hForward_CTankClaw_GroundPound_Pre);
+	Call_PushCell(tank);
+	Call_PushCell(pThis);
+	Call_Finish();
+}
+
+public MRESReturn CTankClaw_GroundPound_Post(int pThis)
+{
+	// PrintToServer("##### DTR CTankClaw_GroundPound_Post");
+	int tank = GetEntPropEnt(pThis, Prop_Data, "m_hOwner");
+
+	Call_StartForward(g_hForward_CTankClaw_GroundPound_Post);
+	Call_PushCell(tank);
+	Call_PushCell(pThis);
+	Call_Finish();
+}
+
+public MRESReturn CTankClaw_OnPlayerHit_Pre(int pThis,  Handle hParams)
+{
+	//PrintToServer("##### DTR CTankClaw_OnPlayerHit_Pre");
+	int tank = GetEntPropEnt(pThis, Prop_Data, "m_hOwner");
+	int target = DHookGetParam(hParams, 1);
+	// bool incap = DHookGetParam(hParams, 2); // Unknown usage, always returns "1"
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_CTankClaw_OnPlayerHit_Pre);
+	Call_PushCell(tank);
+	Call_PushCell(pThis);
+	Call_PushCell(target);
+	Call_Finish(aResult);
+
+	// WORKS - Blocks target player being flung
+	if( aResult == Plugin_Handled )
+	{
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn CTankClaw_OnPlayerHit_Post(int pThis,  Handle hParams)
+{
+	//PrintToServer("##### DTR CTankClaw_OnPlayerHit_Post");
+	int tank = GetEntPropEnt(pThis, Prop_Data, "m_hOwner");
+	int target = DHookGetParam(hParams, 1);
+	// bool incap = DHookGetParam(hParams, 2);
+
+	Call_StartForward(g_hForward_CTankClaw_OnPlayerHit_Post);
+	Call_PushCell(tank);
+	Call_PushCell(pThis);
+	Call_PushCell(target);
+	Call_Finish();
+}
+
+public MRESReturn CTankRock_Detonate(int pThis, Handle hParams)
+{
+	//PrintToServer("##### DTR CTankRock_Detonate");
+	int tank = GetEntPropEnt(pThis, Prop_Data, "m_hThrower");
+
+	Call_StartForward(g_hForward_CTankRock_Detonate);
+	Call_PushCell(tank);
+	Call_PushCell(pThis);
+	Call_Finish();
+
+	// Freezes tank rock on hit, causes constant severe shake
+	// return MRES_Supercede;
+}
+
+public MRESReturn CTankRock_OnRelease(int pThis, Handle hParams)
+{
+	//PrintToServer("##### DTR CTankRock_OnRelease");
+	int tank = GetEntPropEnt(pThis, Prop_Data, "m_hThrower");
+
+	float v1[3];
+	float v2[3];
+	float v3[3];
+	float v4[3];
+
+	DHookGetParamVector(hParams, 1, v1); // vPos
+	DHookGetParamVector(hParams, 2, v2); // vAng
+	DHookGetParamVector(hParams, 3, v3); // vVel
+	DHookGetParamVector(hParams, 4, v4); // vRot
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_CTankRock_OnRelease);
+	Call_PushCell(tank);
+	Call_PushCell(pThis);
+	Call_PushArrayEx(v1, sizeof(v1), SM_PARAM_COPYBACK);
+	Call_PushArrayEx(v2, sizeof(v2), SM_PARAM_COPYBACK);
+	Call_PushArrayEx(v3, sizeof(v3), SM_PARAM_COPYBACK);
+	Call_PushArrayEx(v4, sizeof(v4), SM_PARAM_COPYBACK);
+	Call_Finish(aResult);
+
+	/*
+	if( aResult == Plugin_Handled )
+	{
+		// Causes the rock to not be thrown, but stuck to the Tanks hand
+		return MRES_Supercede;
+	}
+	// */
+
+	if( aResult == Plugin_Changed )
+	{
+		DHookSetParamVector(hParams, 1, v1);
+		DHookSetParamVector(hParams, 2, v2);
+		DHookSetParamVector(hParams, 3, v3);
+		DHookSetParamVector(hParams, 4, v4);
+		return MRES_ChangedHandled;
+	}
+
+	return MRES_Ignored;
+}
+
 public MRESReturn TryOfferingTankBot(Handle hReturn, Handle hParams)
 {
-	//PrintToServer("##### DTR TryOfferingTankBot");
-	int a1 = -1;
-	if( !DHookIsNullParam(hParams, 1) )
-		a1 = DHookGetParam(hParams, 1);
+	// PrintToServer("##### DTR TryOfferingTankBot");
+	int a1 = -1, a2;
 
-	int a2 = DHookGetParam(hParams, 2);
+	if( !g_bLeft4Dead2 && g_bLinuxOS )
+	{
+		// L4D1
+		if( !DHookIsNullParam(hParams, 2) )
+			a1 = DHookGetParam(hParams, 2);
+
+		a2 = DHookGetParam(hParams, 3);
+	}
+	else
+	{
+		if( !DHookIsNullParam(hParams, 1) )
+			a1 = DHookGetParam(hParams, 1);
+
+		a2 = DHookGetParam(hParams, 2);
+	}
 
 	Action aResult = Plugin_Continue;
 	Call_StartForward(g_hForward_TryOfferingTankBot);
@@ -5904,8 +8325,17 @@ public MRESReturn TryOfferingTankBot(Handle hReturn, Handle hParams)
 	// UNKNOWN - PROBABLY WORKING
 	if( aResult == Plugin_Changed )
 	{
-		DHookSetParam(hParams, 2, a2);
-		DHookSetReturn(hReturn, a2);
+		if( g_bLeft4Dead2 || !g_bLinuxOS )
+		{
+			DHookSetParam(hParams, 2, a2);
+			DHookSetReturn(hReturn, a2);
+		}
+		else
+		{
+			// L4D1
+			DHookSetParam(hParams, 3, a2);
+		}
+
 		return MRES_ChangedOverride;
 	}
 
@@ -6056,6 +8486,44 @@ public MRESReturn StartMeleeSwing(Handle hReturn, Handle hParams)
 	return MRES_Ignored;
 }
 
+public MRESReturn GetDamageForVictimPre(int pThis, Handle hReturn, Handle hParams)
+{
+	return MRES_Ignored;
+}
+
+public MRESReturn GetDamageForVictim(int pThis, Handle hReturn, Handle hParams)
+{
+	//PrintToServer("##### DTR GetDamageForVictim");
+	int victim = DHookGetParam(hParams, 1);
+	if(! IsValidEdict(victim) )
+		return MRES_Ignored;
+
+	int client = GetEntPropEnt(pThis, Prop_Send, "m_hOwnerEntity");
+	float damage = DHookGetReturn(hReturn);
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_GetDamageForVictim);
+	Call_PushCell(client);
+	Call_PushCell(pThis);
+	Call_PushCell(victim);
+	Call_PushFloatRef(damage);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Changed )
+	{
+		DHookSetReturn(hReturn, damage);
+		return MRES_Override;
+	}
+
+	if( aResult == Plugin_Handled )
+	{
+		DHookSetReturn(hReturn, 0.0);
+		return MRES_Override;
+	}
+
+	return MRES_Ignored;
+}
+
 public MRESReturn SendInRescueVehicle(Handle hReturn)
 // public MRESReturn SendInRescueVehicle(Handle hParams)
 {
@@ -6183,6 +8651,26 @@ public MRESReturn OnPlayerStagger(int pThis, Handle hParams)
 	return MRES_Ignored;
 }
 
+public MRESReturn OnPlayerStagger_clone(Handle hParams)
+{
+	//PrintToServer("##### DTR OnPlayerStagger");
+	int target = DHookGetParam(hParams, 1);
+
+	int source = -1;
+
+	if( !DHookIsNullParam(hParams, 2) )
+		source = DHookGetParam(hParams, 2);
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_OnPlayerStagger);
+	Call_PushCell(target);
+	Call_PushCell(source);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled ) return MRES_Supercede;
+	return MRES_Ignored;
+}
+
 public MRESReturn ShovedBySurvivor(int pThis, Handle hReturn, Handle hParams)
 {
 	//PrintToServer("##### DTR ShovedBySurvivor");
@@ -6194,7 +8682,31 @@ public MRESReturn ShovedBySurvivor(int pThis, Handle hReturn, Handle hParams)
 	Call_StartForward(g_hForward_ShovedBySurvivor);
 	Call_PushCell(a1);
 	Call_PushCell(pThis);
-	Call_PushArray(a2, 3);
+	Call_PushArray(a2, sizeof(a2));
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn ShovedBySurvivor_clone(Handle hReturn, Handle hParams)
+{
+	//PrintToServer("##### DTR ShovedBySurvivor_clone");
+	float a3[3];
+	int a1 = DHookGetParam(hParams, 1);
+	int a2 = DHookGetParam(hParams, 2);
+	DHookGetParamVector(hParams, 3, a3);
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_ShovedBySurvivor);
+	Call_PushCell(a2);
+	Call_PushCell(a1);
+	Call_PushArray(a3, sizeof(a3));
 	Call_Finish(aResult);
 
 	if( aResult == Plugin_Handled )
@@ -6212,15 +8724,28 @@ public MRESReturn CTerrorWeapon_OnHit(int weapon, Handle hReturn, Handle hParams
 	bool userCall = DHookGetParam(hParams, 3);
 	if( userCall )
 	{
+		// CTerrorWeapon::OnHit(CGameTrace &, Vector const&, bool)
+		// Get target from CGameTrace
 		int trace = DHookGetParam(hParams, 1);
-		int client = GetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity");
 		int target = LoadFromAddress(view_as<Address>(trace + 76), NumberType_Int32);
-		if( target ) target = GetClientFromAddress(target);
+		if( !target ) return MRES_Ignored;
 
-		if( client > 0 && client <= MaxClients && target > 0 && target <= MaxClients )
+		// Returns entity address, get entity or client index
+		target = GetEntityFromAddress(target);
+		if( !target ) target = GetClientFromAddress(target);
+		if( !target ) return MRES_Ignored;
+
+		// Verify client hitting
+		int client = GetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity");
+		if( client > 0 && client <= MaxClients )
 		{
-			// int deadStop = LoadFromAddress(view_as<Address>(target + 16024), NumberType_Int32) > 0;
-			int deadStop = GetEntProp(target, Prop_Send, "m_isAttemptingToPounce");
+			// Dead stop option - not always correct but should show if hunter was pouncing while punched
+			int deadStop;
+			if( target > 0 && target <= MaxClients )
+			{
+				// deadStop = LoadFromAddress(view_as<Address>(target + 16024), NumberType_Int32) > 0;
+				deadStop = GetEntProp(target, Prop_Send, "m_isAttemptingToPounce");
+			}
 
 			float vec[3];
 			DHookGetParamVector(hParams, 2, vec);
@@ -6230,7 +8755,7 @@ public MRESReturn CTerrorWeapon_OnHit(int weapon, Handle hReturn, Handle hParams
 			Call_PushCell(client);
 			Call_PushCell(target);
 			Call_PushCell(weapon);
-			Call_PushArray(vec, 3);
+			Call_PushArray(vec, sizeof(vec));
 			Call_PushCell(deadStop);
 			Call_Finish(aResult);
 
@@ -6260,6 +8785,87 @@ public MRESReturn OnShovedByPounceLanding(int pThis, Handle hReturn, Handle hPar
 		DHookSetReturn(hReturn, 0.0);
 		return MRES_Supercede;
 	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnPlayerFling(int pThis, Handle hParams)
+{
+	float vPos[3];
+	int attacker = DHookGetParam(hParams, 3);
+	DHookGetParamVector(hParams, 1, vPos);
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_PlayerFling);
+	Call_PushCell(pThis);
+	Call_PushCell(attacker);
+	Call_PushArray(vPos, sizeof(vPos));
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnFatalFalling(int pThis, Handle hParams)
+{
+	int client = DHookGetParam(hParams, 1);
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_FatalFalling);
+	Call_PushCell(client);
+	Call_PushCell(pThis);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnFallingPre(int pThis, Handle hReturn)
+{
+	return MRES_Ignored;
+}
+
+public MRESReturn OnFalling(int pThis, Handle hReturn)
+{
+	Call_StartForward(g_hForward_Falling);
+	Call_PushCell(pThis);
+	Call_Finish();
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnEnterStasisPre(int pThis, Handle hReturn)
+{
+	return MRES_Ignored;
+}
+
+public MRESReturn OnEnterStasis(int pThis, Handle hReturn)
+{
+	Call_StartForward(g_hForward_EnterStasis);
+	Call_PushCell(pThis);
+	Call_Finish();
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnLeaveStasisPre(int pThis, Handle hReturn)
+{
+	return MRES_Ignored;
+}
+
+public MRESReturn OnLeaveStasis(int pThis, Handle hReturn)
+{
+	Call_StartForward(g_hForward_LeaveStasis);
+	Call_PushCell(pThis);
+	Call_Finish();
 
 	return MRES_Ignored;
 }
@@ -6388,6 +8994,187 @@ public MRESReturn OnChooseVictim(int client, Handle hReturn)
 	return MRES_Ignored;
 }
 
+public MRESReturn OnMaterializeFromGhostPre(int client)
+{
+	//PrintToServer("##### DTR OnMaterializeFromGhostPre");
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_OnMaterializeFromGhostPre);
+	Call_PushCell(client);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnMaterialize(int client)
+{
+	//PrintToServer("##### DTR OnMaterializeFromGhost");
+
+	Call_StartForward(g_hForward_OnMaterializeFromGhost);
+	Call_PushCell(client);
+	Call_Finish();
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnPipeBombProjectile_Pre(Handle hReturn, Handle hParams)
+{
+	// PrintToServer("##### DTR OnPipeBombProjectile_Pre");
+
+	int client;
+	if( !DHookIsNullParam(hParams, 5) )
+		client = DHookGetParam(hParams, 5);
+
+	float v1[3];
+	float v2[3];
+	float v3[3];
+	float v4[3];
+
+	DHookGetParamVector(hParams, 1, v1); // vPos
+	DHookGetParamVector(hParams, 2, v2); // vAng
+	DHookGetParamVector(hParams, 3, v3); // vVel
+	DHookGetParamVector(hParams, 4, v4); // vRot
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_PipeBombProjectile_Pre);
+	Call_PushCell(client);
+	Call_PushArrayEx(v1, sizeof(v1), SM_PARAM_COPYBACK);
+	Call_PushArrayEx(v2, sizeof(v2), SM_PARAM_COPYBACK);
+	Call_PushArrayEx(v3, sizeof(v3), SM_PARAM_COPYBACK);
+	Call_PushArrayEx(v4, sizeof(v4), SM_PARAM_COPYBACK);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Changed )
+	{
+		DHookSetParamVector(hParams, 1, v1);
+		DHookSetParamVector(hParams, 2, v2);
+		DHookSetParamVector(hParams, 3, v3);
+		DHookSetParamVector(hParams, 4, v4);
+		return MRES_ChangedHandled;
+	}
+
+	if( aResult == Plugin_Handled )
+	{
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnPipeBombProjectile_Post(Handle hReturn, Handle hParams)
+{
+	// PrintToServer("##### DTR OnPipeBombProjectile_Post");
+
+	int client;
+	if( !DHookIsNullParam(hParams, 5) )
+		client = DHookGetParam(hParams, 5);
+
+	int entity = DHookGetReturn(hReturn);
+
+	float v1[3];
+	float v2[3];
+	float v3[3];
+	float v4[3];
+
+	DHookGetParamVector(hParams, 1, v1); // vPos
+	DHookGetParamVector(hParams, 2, v2); // vAng
+	DHookGetParamVector(hParams, 3, v3); // vVel
+	DHookGetParamVector(hParams, 4, v4); // vRot
+
+	Call_StartForward(g_hForward_PipeBombProjectile_Post);
+	Call_PushCell(client);
+	Call_PushCell(entity);
+	Call_PushArray(v1, sizeof(v1));
+	Call_PushArray(v2, sizeof(v2));
+	Call_PushArray(v3, sizeof(v3));
+	Call_PushArray(v4, sizeof(v4));
+	Call_Finish();
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnPlayerExtinguish(int client)
+{
+	// PrintToServer("##### DTR OnPlayerExtinguish");
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_PlayerExtinguish);
+	Call_PushCell(client);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		return MRES_Supercede;
+	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnVomitedUpon(int client, Handle hReturn, Handle hParams)
+{
+	// PrintToServer("##### DTR OnVomitedUpon");
+
+	if( DHookIsNullParam(hParams, 1) ) return MRES_Ignored;
+
+	int a1 = DHookGetParam(hParams, 1);
+	int a2 = DHookGetParam(hParams, 2);
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_OnVomitedUpon);
+	Call_PushCell(client);
+	Call_PushCellRef(a1);
+	Call_PushCellRef(a2);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
+	}
+
+	if( aResult == Plugin_Changed )
+	{
+		DHookSetParam(hParams, 1, a1);
+		DHookSetParam(hParams, 2, a2);
+		return MRES_ChangedHandled;
+	}
+
+	return MRES_Ignored;
+}
+
+public MRESReturn OnHitByVomitJar(int client, Handle hReturn, Handle hParams)
+{
+	// PrintToServer("##### DTR OnHitByVomitJar");
+
+	int a1 = DHookGetParam(hParams, 1);
+
+	Action aResult = Plugin_Continue;
+	Call_StartForward(g_hForward_OnHitByVomitJar);
+	Call_PushCell(client);
+	Call_PushCellRef(a1);
+	Call_Finish(aResult);
+
+	if( aResult == Plugin_Handled )
+	{
+		DHookSetReturn(hReturn, 0);
+		return MRES_Supercede;
+	}
+
+	if( aResult == Plugin_Changed )
+	{
+		DHookSetParam(hParams, 1, a1);
+		return MRES_ChangedHandled;
+	}
+
+	return MRES_Ignored;
+}
+
 /*
 // Removed because it spawns specials at 0,0,0 when modifying any value.
 public MRESReturn GetRandomPZSpawnPos(Handle hReturn, Handle hParams)
@@ -6422,9 +9209,9 @@ public MRESReturn GetRandomPZSpawnPos(Handle hReturn, Handle hParams)
 		if( vecPos[0] != 0.0 )
 		{
 			// DHookSetParamVector(hParams, 4, vecPos);
-			DHookSetParamVector(hParams, 4, view_as<float>({ 0.0, 0.0, 0.0}));
+			DHookSetParamVector(hParams, 4, view_as<float>({0.0, 0.0, 0.0}));
 		} else {
-			DHookSetParamVector(hParams, 4, view_as<float>({ 0.0, 0.0, 0.0}));
+			DHookSetParamVector(hParams, 4, view_as<float>({0.0, 0.0, 0.0}));
 		}
 
 		return MRES_ChangedHandled;
@@ -6476,45 +9263,325 @@ public MRESReturn OnWaterMove(int pThis, Handle hReturn, Handle hParams)
 
 
 // ====================================================================================================
-//										HELPERS
+//										VSCRIPT WRAPPERS
 // ====================================================================================================
-bool GetVScriptOutput(char[] code, char[] ret, int maxlength)
+public int Native_VS_GetMapNumber(Handle plugin, int numParams)
 {
-	static int logic;
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
 
-	if( !logic || EntRefToEntIndex(logic) == INVALID_ENT_REFERENCE )
+	// Vars
+	char code[256];
+	char buffer[8];
+
+	// Code
+	FormatEx(code, sizeof(code), "ret <- Director.GetMapNumber(); <RETURN>ret</RETURN>");
+
+	// Exec
+	if( GetVScriptOutput(code, buffer, sizeof(buffer)) )
+		return StringToInt(buffer);
+	else
+		return false;
+}
+
+public int Native_VS_HasEverBeenInjured(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[256];
+	char buffer[8];
+
+	int client = GetNativeCell(1);
+	client = GetClientUserId(client);
+	int team = GetNativeCell(2);
+
+	// Code
+	FormatEx(code, sizeof(code), "ret <- GetPlayerFromUserID(%d).HasEverBeenInjured(%d); <RETURN>ret</RETURN>", client, team);
+
+	// Exec
+	if( GetVScriptOutput(code, buffer, sizeof(buffer)) )
+		return view_as<bool>(StringToInt(buffer));
+	else
+		return false;
+}
+
+public any Native_VS_GetAliveDuration(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[256];
+	char buffer[8];
+
+	int client = GetNativeCell(1);
+	client = GetClientUserId(client);
+
+	// Code
+	FormatEx(code, sizeof(code), "ret <- GetPlayerFromUserID(%d).GetAliveDuration(); <RETURN>ret</RETURN>", client);
+
+	// Exec
+	if( GetVScriptOutput(code, buffer, sizeof(buffer)) )
+		return StringToFloat(buffer);
+	else
+		return false;
+}
+
+public int Native_VS_IsDead(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[256];
+	char buffer[8];
+
+	int client = GetNativeCell(1);
+	client = GetClientUserId(client);
+
+	// Code
+	FormatEx(code, sizeof(code), "ret <- GetPlayerFromUserID(%d).IsDead(); <RETURN>ret</RETURN>", client);
+
+	// Exec
+	if( GetVScriptOutput(code, buffer, sizeof(buffer)) )
+		return view_as<bool>(StringToInt(buffer));
+	else
+		return false;
+}
+
+public int Native_VS_IsDying(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[256];
+	char buffer[8];
+
+	int client = GetNativeCell(1);
+	client = GetClientUserId(client);
+
+	// Code
+	FormatEx(code, sizeof(code), "ret <- GetPlayerFromUserID(%d).IsDying(); <RETURN>ret</RETURN>", client);
+
+	// Exec
+	if( GetVScriptOutput(code, buffer, sizeof(buffer)) )
+		return view_as<bool>(StringToInt(buffer));
+	else
+		return false;
+}
+
+public int Native_VS_UseAdrenaline(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[256];
+
+	int client = GetNativeCell(1);
+	client = GetClientUserId(client);
+	float fTime = GetNativeCell(2);
+
+	// Code
+	FormatEx(code, sizeof(code), "GetPlayerFromUserID(%d).UseAdrenaline(%f);", client, fTime);
+
+	// Exec
+	return ExecVScriptCode(code);
+}
+
+public int Native_VS_ReviveByDefib(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[256];
+
+	int client = GetNativeCell(1);
+	client = GetClientUserId(client);
+
+	// Code
+	FormatEx(code, sizeof(code), "GetPlayerFromUserID(%d).ReviveByDefib();", client);
+
+	// Exec
+	return ExecVScriptCode(code);
+}
+
+public int Native_VS_ReviveFromIncap(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[256];
+
+	int client = GetNativeCell(1);
+	client = GetClientUserId(client);
+
+	// Code
+	FormatEx(code, sizeof(code), "GetPlayerFromUserID(%d).ReviveFromIncap();", client);
+
+	// Exec
+	return ExecVScriptCode(code);
+}
+
+public int Native_VS_GetSenseFlags(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[256];
+	char buffer[8];
+
+	int client = GetNativeCell(1);
+	client = GetClientUserId(client);
+
+	// Code
+	FormatEx(code, sizeof(code), "ret <- GetPlayerFromUserID(%d).GetSenseFlags(); <RETURN>ret</RETURN>", client);
+
+	// Exec
+	if( GetVScriptOutput(code, buffer, sizeof(buffer)) )
+		return StringToInt(buffer);
+	else
+		return false;
+}
+
+public int Native_VS_NavAreaBuildPath(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[512];
+	char buffer[8];
+	float vPos[3];
+	float vEnd[3];
+
+	// Params
+	GetNativeArray(1, vPos, sizeof(vPos));
+	GetNativeArray(2, vEnd, sizeof(vEnd));
+	float flMaxPathLength = GetNativeCell(3);
+	bool checkLOS = GetNativeCell(4);
+	bool checkGround = GetNativeCell(5);
+	int teamID = GetNativeCell(6);
+	bool ignoreNavBlockers = GetNativeCell(7);
+
+	// Code
+	FormatEx(code, sizeof(code), "\
+	a1 <- NavMesh.GetNearestNavArea(Vector(%f, %f, %f), %f, %s, %s);\
+	a2 <- NavMesh.GetNearestNavArea(Vector(%f, %f, %f), %f, %s, %s);\
+	a3 <- NavMesh.NavAreaBuildPath(a1, a2, Vector(%f, %f, %f), %f, %d, %s);\
+	<RETURN>a3</RETURN>",
+	vPos[0], vPos[1], vPos[2], flMaxPathLength, checkLOS ? "true" : "false", checkGround ? "true" : "false",
+	vEnd[0], vEnd[1], vEnd[2], flMaxPathLength, checkLOS ? "true" : "false", checkGround ? "true" : "false",
+	vEnd[0], vEnd[1], vEnd[2], flMaxPathLength, teamID, ignoreNavBlockers ? "true" : "false"
+	);
+
+	// Exec
+	if( GetVScriptOutput(code, buffer, sizeof(buffer)) )
+		return view_as<bool>(StringToInt(buffer));
+	else
+		return false;
+}
+
+public any Native_VS_NavAreaTravelDistance(Handle plugin, int numParams)
+{
+	if( !g_bLeft4Dead2 ) ThrowNativeError(SP_ERROR_NOT_RUNNABLE, NATIVE_UNSUPPORTED2);
+
+	// Vars
+	char code[512];
+	char buffer[8];
+	float vPos[3];
+	float vEnd[3];
+
+	// Params
+	GetNativeArray(1, vPos, sizeof(vPos));
+	GetNativeArray(2, vEnd, sizeof(vEnd));
+	float flMaxPathLength = GetNativeCell(3);
+	bool checkLOS = GetNativeCell(4);
+	bool checkGround = GetNativeCell(5);
+
+	// Code
+	FormatEx(code, sizeof(code), "\
+	a1 <- NavMesh.GetNearestNavArea(Vector(%f, %f, %f), %f, %s, %s);\
+	a2 <- NavMesh.GetNearestNavArea(Vector(%f, %f, %f), %f, %s, %s);\
+	a3 <- NavMesh.NavAreaTravelDistance(a1, a2, %f);\
+	<RETURN>a3</RETURN>",
+	vPos[0], vPos[1], vPos[2], flMaxPathLength, checkLOS ? "true" : "false", checkGround ? "true" : "false",
+	vEnd[0], vEnd[1], vEnd[2], flMaxPathLength, checkLOS ? "true" : "false", checkGround ? "true" : "false",
+	vEnd[0], vEnd[1], vEnd[2], flMaxPathLength
+	);
+
+	// Exec
+	if( GetVScriptOutput(code, buffer, sizeof(buffer)) )
+		return StringToFloat(buffer);
+	else
+		return -1.0;
+}
+
+
+
+// ====================================================================================================
+//										VSCRIPT STUFF
+// ====================================================================================================
+int g_iLogicScript;
+
+bool GetVScriptEntity()
+{
+	if( !g_iLogicScript || EntRefToEntIndex(g_iLogicScript) == INVALID_ENT_REFERENCE )
 	{
-		logic = CreateEntityByName("logic_script");
+		g_iLogicScript = CreateEntityByName("logic_script");
 
-		if( logic == INVALID_ENT_REFERENCE || !IsValidEntity(logic) )
+		if( g_iLogicScript == INVALID_ENT_REFERENCE || !IsValidEntity(g_iLogicScript) )
 		{
 			LogError("Could not create 'logic_script'");
 			return false;
 		}
 
-		logic = EntIndexToEntRef(logic);
+		DispatchSpawn(g_iLogicScript);
+
+		g_iLogicScript = EntIndexToEntRef(g_iLogicScript);
 	}
 
-	DispatchSpawn(logic);
+	return true;
+}
+
+bool ExecVScriptCode(char[] code)
+{
+	if( !GetVScriptEntity() ) return false;
+
+	// Run code
+	SetVariantString(code);
+	AcceptEntityInput(g_iLogicScript, "RunScriptCode");
+
+	#if KILL_VSCRIPT
+	RemoveEntity(g_iLogicScript);
+	#endif
+
+	return true;
+}
+
+bool GetVScriptOutput(char[] code, char[] ret, int maxlength)
+{
+	if( !GetVScriptEntity() ) return false;
 
 	// Return values between <RETURN> </RETURN>
-	static char buffer[1024];
+	int length = strlen(code) + 256;
+	char[] buffer = new char[length];
+
 	int pos = StrContains(code, "<RETURN>");
 	if( pos != -1 )
 	{
-		strcopy(buffer, sizeof(buffer), code);
-		ReplaceString(buffer, sizeof(buffer), "</RETURN>", ");");
-		ReplaceString(buffer, sizeof(buffer), "<RETURN>", "Convars.SetValue(\"l4d2_vscript_return\", ");
+		strcopy(buffer, length, code);
+		ReplaceString(buffer, length, "</RETURN>", ");");
+		ReplaceString(buffer, length, "<RETURN>", "Convars.SetValue(\"l4d2_vscript_return\", ");
 	}
 	else
 	{
-		Format(buffer, sizeof(buffer), "Convars.SetValue(\"l4d2_vscript_return\", \"\" + %s + \"\");", code);
+		Format(buffer, length, "Convars.SetValue(\"l4d2_vscript_return\", \"\" + %s + \"\");", code);
 	}
 
 	// Run code
 	SetVariantString(buffer);
-	AcceptEntityInput(logic, "RunScriptCode");
-	AcceptEntityInput(logic, "Kill");
+	AcceptEntityInput(g_iLogicScript, "RunScriptCode");
+
+	#if KILL_VSCRIPT
+	RemoveEntity(g_iLogicScript);
+	#endif
 
 	// Retrieve value and return to buffer
 	g_hCvarVScriptBuffer.GetString(ret, maxlength);
@@ -6523,6 +9590,45 @@ bool GetVScriptOutput(char[] code, char[] ret, int maxlength)
 	if( ret[0] == '\x0')
 		return false;
 	return true;
+}
+
+
+
+// ====================================================================================================
+//										MEMORY HELPERS
+// ====================================================================================================
+int GetEntityFromAddress(int addr)
+{
+	int max = GetEntityCount();
+	for( int i = 0; i <= max; i++ )
+		if( IsValidEdict(i) )
+			if( GetEntityAddress(i) == view_as<Address>(addr) )
+				return i;
+	return -1;
+}
+
+int GetClientFromAddress(int addr)
+{
+	for(int i = 1; i <= MaxClients; i++ )
+		if( IsClientInGame(i) )
+			if( GetEntityAddress(i) == view_as<Address>(addr) )
+				return i;
+	return 0;
+}
+
+void ReverseAddress(const char[] sBytes, char sReturn[32])
+{
+	sReturn[0] = 0;
+	char sByte[3];
+	for( int i = strlen(sBytes) - 2; i >= -1 ; i -= 2 )
+	{
+		strcopy(sByte, i >= 1 ? 3 : i + 3, sBytes[i >= 0 ? i : 0]);
+
+		StrCat(sReturn, sizeof(sReturn), "\\x");
+		if( strlen(sByte) == 1 )
+			StrCat(sReturn, sizeof(sReturn), "0");
+		StrCat(sReturn, sizeof(sReturn), sByte);
+	}
 }
 
 // Unused, but here for demonstration and if required
@@ -6547,22 +9653,22 @@ stock void ReadMemoryString(int addr, char[] temp, int size)
 	}
 }
 
-// Unused, but here for demonstration and if required
-stock int GetEntityFromAddress(int addr)
+
+
+// ====================================================================================================
+//										STOCKS - HEALTH
+// ====================================================================================================
+float GetTempHealth(int client)
 {
-	int max = GetEntityCount();
-	for( int i = 0; i <= max; i++ )
-		if( IsValidEdict(i) )
-			if( GetEntityAddress(i) == view_as<Address>(addr) )
-				return i;
-	return -1;
+    float fGameTime = GetGameTime();
+    float fHealthTime = GetEntPropFloat(client, Prop_Send, "m_healthBufferTime");
+    float fHealth = GetEntPropFloat(client, Prop_Send, "m_healthBuffer");
+    fHealth -= (fGameTime - fHealthTime) * g_hDecayDecay.FloatValue;
+    return fHealth < 0.0 ? 0.0 : fHealth;
 }
 
-int GetClientFromAddress(int addr)
+void SetTempHealth(int client, float fHealth)
 {
-	for(int i = 1; i <= MaxClients; i++ )
-		if( IsClientInGame(i) )
-			if( GetEntityAddress(i) == view_as<Address>(addr) )
-				return i;
-	return 0;
+    SetEntPropFloat(client, Prop_Send, "m_healthBuffer", fHealth < 0.0 ? 0.0 : fHealth);
+    SetEntPropFloat(client, Prop_Send, "m_healthBufferTime", GetGameTime());
 }

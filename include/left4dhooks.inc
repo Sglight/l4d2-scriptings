@@ -687,8 +687,107 @@ forward Action L4D_OnGetMissionVSBossSpawning(float &spawn_pos_min, float &spawn
  *
  * @param tank			the player who was a tank
  * @param newtank		a player who has become a new tank
+ *
+ * @noreturn
  */
 forward void L4D_OnReplaceTank(int tank, int newtank);
+
+/**
+ * @brief Called whenever CTankClaw::DoSwing(CTankClaw *this) is invoked
+ * @remarks When a tank is swinging to punch.
+ *
+ * @param tank			tank client index
+ * @param rock			the claw entity index
+ *
+ * @noreturn
+ */
+forward void L4D_TankClaw_DoSwing_Pre(int tank, int claw);
+
+/**
+ * @brief Called whenever CTankClaw::DoSwing(CTankClaw *this) is invoked
+ * @remarks When a tank is swinging to punch.
+ *
+ * @param tank			tank client index
+ * @param rock			the claw entity index
+ *
+ * @noreturn
+ */
+forward void L4D_TankClaw_DoSwing_Post(int tank, int claw);
+
+/**
+ * @brief Called whenever CTankClaw::GroundPound() is invoked
+ * @remarks When hitting the ground (maybe only when hitting an incapped player)
+ * @remarks The forwards "L4D_TankClaw_OnPlayerHit_Pre" and "L4D_TankClaw_OnPlayerHit_Post" trigger after this, allowing identification of victim
+ * @remarks The forwards "L4D_TankClaw_DoSwing_Pre" and "L4D_TankClaw_DoSwing_Post" can trigger after this
+ *
+ * @param tank			tank client index
+ * @param rock			the claw entity index
+ *
+ * @noreturn
+ */
+forward void L4D_TankClaw_GroundPound_Pre(int tank, int claw);
+
+/**
+ * @brief Called whenever CTankClaw::GroundPound() is invoked
+ * @remarks When hitting the ground (maybe only when hitting an incapped player)
+ * @remarks The forwards "L4D_TankClaw_OnPlayerHit_Pre" and "L4D_TankClaw_OnPlayerHit_Post" trigger before this
+ * @remarks The forwards "L4D_TankClaw_DoSwing_Pre" and "L4D_TankClaw_DoSwing_Post" can trigger after this
+ *
+ * @param tank			tank client index
+ * @param rock			the claw entity index
+ *
+ * @noreturn
+ */
+forward void L4D_TankClaw_GroundPound_Post(int tank, int claw);
+
+/**
+ * @brief Called whenever CTankClaw::OnPlayerHit(CTerrorPlayer*, bool) is invoked
+ * @remarks When a tank swings and punches a player.
+ *
+ * @param tank			tank client index
+ * @param rock			the claw entity index
+ *
+ * @return				Plugin_Handled to block the target player from being stumbled, Plugin_Continue otherwise.
+ */
+forward Action L4D_TankClaw_OnPlayerHit_Pre(int tank, int claw, int player);
+
+/**
+ * @brief Called whenever CTankClaw::OnPlayerHit(CTerrorPlayer*, bool) is invoked
+ * @remarks When a tank swings and punches a player.
+ *
+ * @param tank			tank client index
+ * @param rock			the claw entity index
+ * @param player		the player being hit
+ *
+ * @noreturn
+ */
+forward void L4D_TankClaw_OnPlayerHit_Post(int tank, int claw, int player);
+
+/**
+ * @brief Called whenever CTankRock::Detonate() is invoked
+ * @remarks When a tank rock hits something and explodes.
+ *
+ * @param tank			tank client index
+ * @param rock			the rock entity index
+ *
+ * @noreturn
+ */
+forward void L4D_TankRock_OnDetonate(int tank, int rock);
+
+/**
+ * @brief Called whenever CTankRock::OnRelease(Vector const&, QAngle const&, Vector const&, Vector const&) is invoked
+ * @remarks When a tank rock is thrown.
+ *
+ * @param tank			tank client index
+ * @param rock			the rock entity index
+ * @param vecPos		the position vector of the rock
+ * @param vecAng		the angle vector of the rock
+ * @param vecVel		the velocity vector of the rock
+ * @param vecRot		the rotation vector of the rock
+ *
+ * @return				Plugin_Changed to modify the vector values, Plugin_Continue otherwise.
+ */
+forward Action L4D_TankRock_OnRelease(int tank, int rock, float vecPos[3], float vecAng[3], float vecVel[3], float vecRot[3]);
 
 /**
  * @brief Called whenever CDirector::TryOfferingTankBot is invoked
@@ -766,6 +865,21 @@ forward Action L4D2_OnSelectTankAttack(int client, int &sequence);
  */
 // L4D2 only.
 forward Action L4D_OnStartMeleeSwing(int client, bool boolean);
+
+/**
+ * @brief Called whenever CTerrorMeleeWeapon::GetDamageForVictim() is invoked
+ * @remarks Called to calculate the damage when a melee weapon hits something
+ * @remarks A headshot on Common Infected will still kill them
+ *
+ * @param client	the client swinging the melee weapon
+ * @param weapon	the weapon entity index
+ * @param victim	the victim being hit by the melee weapon
+ * @param damage	the amount of damage to inflict on the victim
+ *
+ * @return			Plugin_Handled to block, Plugin_Changed to change damage, Plugin_Continue otherwise
+ */
+// L4D2 only.
+forward Action L4D2_MeleeGetDamageForVictim(int client, int weapon, int victim, float &damage);
 
 /**
  * @brief Called whenever CDirectorScriptedEventManager::SendInRescueVehicle(void) is invoked
@@ -959,6 +1073,45 @@ forward Action L4D_OnMaterializeFromGhostPre(int client);
 forward Action L4D_OnMaterializeFromGhost(int client);
 
 /**
+ * @brief Called whenever CPipeBombProjectile::Create is invoked
+ * @remarks Called when a PipeBomb projectile is being created
+ *
+ * @param client			the client who is throwing the grenade (can be 0)
+ * @param vecPos			the position vector of the projectile
+ * @param vecAng			the angle vector of the projectile
+ * @param vecVel			the velocity vector of the projectile
+ * @param vecRot			the rotation vector of the projectile
+ *
+ * @return					Plugin_Handled to block the grenade creation, Plugin_Changed to modify the vector values, Plugin_Continue otherwise.
+ */
+forward Action L4D_PipeBombProjectile_Pre(int client, float vecPos[3], float vecAng[3], float vecVel[3], float vecRot[3]);
+
+/**
+ * @brief Called whenever CPipeBombProjectile::Create is invoked
+ * @remarks Called when a PipeBomb projectile has been created
+ *
+ * @param client			the client who is throwing the grenade (can be 0)
+ * @param projectile		the projectile entity index (can be 0 if blocked in the pre hook)
+ * @param vecPos			the position vector of the projectile
+ * @param vecAng			the angle vector of the projectile
+ * @param vecVel			the velocity vector of the projectile
+ * @param vecRot			the rotation vector of the projectile
+ *
+ * @noreturn
+ */
+forward void L4D_PipeBombProjectile_Post(int client, int projectile, float vecPos[3], float vecAng[3], float vecVel[3], float vecRot[3]);
+
+/**
+ * @brief Called whenever CTerrorPlayer::Extinguish() is invoked
+ * @remarks Called when a player (Survivor or Special Infected) is about to be extinguished
+ *
+ * @param client			the client who is about to be extinguished
+ *
+ * @return					Plugin_Handled to block extinguishing, Plugin_Continue otherwise
+ */
+forward Action L4D_PlayerExtinguish(int client);
+
+/**
  * @brief Called whenever CTerrorPlayer::OnVomitedUpon is invoked
  * @remarks Called when a Survivor player is covered in Boomer bile, or when using "Bile the World" plugin by "AtomicStryker"
  *
@@ -971,7 +1124,7 @@ forward Action L4D_OnVomitedUpon(int victim, int &attacker, bool &boomerExplosio
 
 /**
  * @brief Called whenever CTerrorPlayer::OnHitByVomitJar is invoked
- * @remarks Called a Special Infected is hit from a Bilejar explosion
+ * @remarks Called when a Special Infected is hit from a Bilejar explosion
  *
  * @param victim			the client who's now it
  * @param attacker			the attacker who caused the vomit
@@ -1026,7 +1179,7 @@ forward void L4D2_OnWaterMove(int client);
  *
  * @return	Current game mode.
  */
-forward Action L4D_OnGameModeChange(int gamemode);
+forward void L4D_OnGameModeChange(int gamemode);
 
 /**
  * @brief Called when CTerrorPlayer::Fling(Vector const&, PlayerAnimEvent_t, CBaseCombatCharacter*, float) is invoked.
@@ -1344,7 +1497,7 @@ native bool L4D_HasPlayerControlledZombies();
  * @remarks Does not attach the "Fuse" or "Light" particles, see the "left4dhooks_test" plugin for example on attaching these
  * @remarks Also used in the "PipeBomb Shove" plugin by Silvers
  *
- * @param client	Client id to attribute the projectile to for damage credit
+ * @param client	Client id to attribute the projectile to for damage credit. Passing 0 (world) is allowed
  * @param vecPos	Vector coordinate of the projectile on creation
  * @param vecAng	Vector velocity and direction of the projectile
  *
@@ -1355,7 +1508,7 @@ native int L4D_PipeBombPrj(int client, const float vecPos[3], const float vecAng
 /**
  * @brief Creates an activated Molotov projectile.
  *
- * @param client	Client id to attribute the projectile to for damage credit
+ * @param client	Client id to attribute the projectile to for damage credit Passing 0 (world) is allowed
  * @param vecPos	Vector coordinate of the projectile on creation
  * @param vecAng	Vector velocity and direction of the projectile
  *
@@ -1366,7 +1519,7 @@ native int L4D_MolotovPrj(int client, const float vecPos[3], const float vecAng[
 /**
  * @brief Creates an activated VomitJar projectile.
  *
- * @param client	Client id to attribute the projectile to for damage credit
+ * @param client	Client id to attribute the projectile to for damage credit Passing 0 (world) is allowed
  * @param vecPos	Vector coordinate of the projectile on creation
  * @param vecAng	Vector velocity and direction of the projectile
  *
@@ -1378,7 +1531,7 @@ native int L4D2_VomitJarPrj(int client, const float vecPos[3], const float vecAn
 /**
  * @brief Creates an activated Grenade Launcher projectile.
  *
- * @param client	Client id to attribute the projectile to for damage credit
+ * @param client	Client id to attribute the projectile to for damage credit Passing 0 (world) is allowed
  * @param vecPos	Vector coordinate of the projectile on creation
  * @param vecAng	Vector velocity and direction of the projectile
  *
@@ -1390,7 +1543,7 @@ native int L4D2_GrenadeLauncherPrj(int client, const float vecPos[3], const floa
 /**
  * @brief Creates a Spitter goo projectile.
  *
- * @param client	Client id to attribute the projectile to for damage credit
+ * @param client	Client id to attribute the projectile to for damage credit Passing 0 (world) is allowed
  * @param vecPos	Vector coordinate of the projectile on creation
  * @param vecAng	Vector velocity and direction of the projectile
  *

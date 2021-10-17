@@ -50,7 +50,7 @@ public Plugin myinfo =
 	name = "[L4D2] Shop and Economic System",
 	author = "海洋空氣",
 	description = "",
-	version = "1.2",
+	version = "1.3",
 	url = "https://steamcommunity.com/id/larkspur2017/"
 };
 
@@ -101,7 +101,7 @@ public void OnClientPutInServer(int client)
 public Action GiveMoney(int client, int args)
 {
 	if (!client) return;
-	char givemoneyChar[5];
+	char givemoneyChar[12];
 	GetCmdArg(1, givemoneyChar, sizeof(givemoneyChar));
 	money[client] += StringToInt(givemoneyChar);
 	Menu_CreateWeaponMenu(client, false);
@@ -315,35 +315,45 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 
 	if (bIsSurvior(client) && zx27[client] < GetConVarInt(hZeusX27Frequency) && buttons & IN_ZOOM) {
 		char clientWeapon[32];
-		char zeusX27Weapon[256];
+		char zeusX27WeaponAll[256];
 		GetClientWeapon(client, clientWeapon, sizeof(clientWeapon));
-		GetConVarString(hZeusX27Weapon, zeusX27Weapon, sizeof(zeusX27Weapon));
+		GetConVarString(hZeusX27Weapon, zeusX27WeaponAll, sizeof(zeusX27WeaponAll));
 
-		if (StrContains(zeusX27Weapon, clientWeapon, false)) {
-			int target = GetClientAimTarget(client, true);
-			if (bIsInfected(target))
-			{
-				float clientPos[3] = 0.0;
-				GetClientEyePosition(client, clientPos);
-				float targetPos[3] = 0.0;
-				GetClientEyePosition(target, targetPos);
-				float distance = GetVectorDistance(clientPos, targetPos, false);
-				float zeusX27Range = GetConVarFloat(hZeusX27Range);
+		char zeusX27WeaponArray[32][32];
+		ExplodeString(zeusX27WeaponAll, ",", zeusX27WeaponArray, 32, 32, false); // 拆分为数组
 
-				if (distance <= zeusX27Range) { // 目标在射击范围内
-					int hp = GetEntProp(target, Prop_Send, "m_iHealth", 4, 0);
-					int damage = GetConVarInt(hZeusX27Damage);
-					EmitSoundToAll("weapons/defibrillator/defibrillator_use.wav", client, 0, 75, 0, 1.0, 125, -1, clientPos, NULL_VECTOR, true, 0.0);
-					ShowParticle(targetPos, NULL_VECTOR, "electrical_arc_01_system", 3.0);
-					if (hp - damage <= 0) {
-						ForcePlayerSuicide(target);
-						SendDeathMessage(client, target, clientWeapon, true);
-					} else {
-						SetEntityHealth(target, hp - damage);
+		for (int i = 0; i < 32; i++) {
+			char zeusX27Weapon[32];
+			zeusX27Weapon = zeusX27WeaponArray[i];
+			if ( StrEqual(zeusX27Weapon, "") ) { break; } // 遇到空字符串直接退出循环
+			TrimString(zeusX27Weapon); // 去首尾空格
+
+			if ( StrEqual(zeusX27Weapon, clientWeapon, false) ) {
+				int target = GetClientAimTarget(client, true);
+				if (bIsInfected(target))
+				{
+					float clientPos[3] = 0.0;
+					GetClientEyePosition(client, clientPos);
+					float targetPos[3] = 0.0;
+					GetClientEyePosition(target, targetPos);
+					float distance = GetVectorDistance(clientPos, targetPos, false);
+					float zeusX27Range = GetConVarFloat(hZeusX27Range);
+
+					if (distance <= zeusX27Range) { // 目标在射击范围内
+						int hp = GetEntProp(target, Prop_Send, "m_iHealth", 4, 0);
+						int damage = GetConVarInt(hZeusX27Damage);
+						EmitSoundToAll("weapons/defibrillator/defibrillator_use.wav", client, 0, 75, 0, 1.0, 125, -1, clientPos, NULL_VECTOR, true, 0.0);
+						ShowParticle(targetPos, NULL_VECTOR, "electrical_arc_01_system", 3.0);
+						if (hp - damage <= 0) {
+							ForcePlayerSuicide(target);
+							SendDeathMessage(client, target, "magic", true);
+						} else {
+							SetEntityHealth(target, hp - damage);
+						}
+						zx27[client]++;
+						isUsingZX27[client] = true;
+						CreateTimer(1.0, Timer_ResetUsingZX27, client, 0);
 					}
-					zx27[client]++;
-					isUsingZX27[client] = true;
-					CreateTimer(1.0, Timer_ResetUsingZX27, client, 0);
 				}
 			}
 		}
@@ -467,4 +477,5 @@ int GetZombieClass(int client) {
  * Amethyst 是我做得最用心的一套插件（虽然一共就两个插件，一个 ht，一个 Amethyst），Wingman 也是我各种奇特想法的实现地。
  * 最早是跟 William 测试插件时，弄了个无限子弹 Magnum，都觉得挺有意思的，于是便单独做了这个模式。想贴个他的视频链接的，但是被他删了，行吧。
  * 原本还有一个电击枪的功能的，电一下1200血，秒单人 tank，一回合一次，带特效。但是 tmd 源码丢失了，后来渐渐发现丢失的源码不止这一个，服了。
+ * 电击枪功能从前面的版本找到了编译后的文件，反编译改成了现在这个样子。
  */

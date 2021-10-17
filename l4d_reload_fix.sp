@@ -1,6 +1,6 @@
 /*
 *	Reload Fix - Max Clip Size
-*	Copyright (C) 2020 Silvers
+*	Copyright (C) 2021 Silvers
 *
 *	This program is free software: you can redistribute it and/or modify
 *	it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 
 
-#define PLUGIN_VERSION		"1.1"
+#define PLUGIN_VERSION		"1.3a"
 
 /*======================================================================================
 	Plugin Info:
@@ -31,6 +31,24 @@
 
 ========================================================================================
 	Change Log:
+
+1.3a (08-Sep-2021)
+	- GameData file updated. Wildcarded "CTerrorGun::Reload" to support other plugins detouring this function.
+	- Thanks to "vikingo12" for reporting.
+
+1.3 (05-Jul-2021)
+	- L4D2: Added support for the "weapon_smg_mp5" weapon. Thanks to "Alexmy" for reporting.
+
+1.2 (29-Jun-2021)
+	- L4D2: Added support for the Magnum "weapon_pistol_magnum" pistol.
+
+1.1b (17-Jun-2021)
+	- Compatibility update for L4D2's "2.2.1.3" game update. Thanks to "Crasher_3637" for fixing.
+	- GameData .txt file updated.
+
+1.1a (24-Sep-2020)
+	- Compatibility update for L4D2's "The Last Stand" update.
+	- GameData .txt file updated.
 
 1.1 (05-Sep-2020)
 	- Now prevents changing anything when the max clip size is unchanged.
@@ -65,8 +83,7 @@ char g_sWeapons[][] =
 	"weapon_hunting_rifle",
 	"weapon_smg",
 	"weapon_pumpshotgun",
-	"weapon_pistol",
-	"weapon_pistol_magnum"
+	"weapon_pistol"
 };
 
 // From Left4Dhooks - put here to prevent using include and left4dhooks requirement for L4D1.
@@ -185,15 +202,15 @@ public void OnPluginStart()
 	g_hDefaults.SetValue("weapon_smg",				50);
 	g_hDefaults.SetValue("weapon_pumpshotgun",		8);
 	g_hDefaults.SetValue("weapon_pistol",			15);
-	g_hDefaults.SetValue("weapon_pumpshotgun",		8);
-	g_hDefaults.SetValue("weapon_pistol_magnum",	8);
 
 	if( g_bLeft4Dead2 )
 	{
+		g_hDefaults.SetValue("weapon_pistol_magnum",	8);
 		g_hDefaults.SetValue("weapon_rifle_ak47",		40);
 		g_hDefaults.SetValue("weapon_rifle_desert",		60);
 		g_hDefaults.SetValue("weapon_rifle_sg552",		50);
 		g_hDefaults.SetValue("weapon_smg_silenced",		50);
+		g_hDefaults.SetValue("weapon_smg_mp5",			50);
 		g_hDefaults.SetValue("weapon_shotgun_spas",		10);
 		g_hDefaults.SetValue("weapon_shotgun_chrome",	8);
 		g_hDefaults.SetValue("weapon_sniper_awp",		20);
