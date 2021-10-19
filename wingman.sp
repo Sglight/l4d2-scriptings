@@ -325,7 +325,7 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 		for (int i = 0; i < 32; i++) {
 			char zeusX27Weapon[32];
 			zeusX27Weapon = zeusX27WeaponArray[i];
-			if ( StrEqual(zeusX27Weapon, "") ) { break; } // 遇到空字符串直接退出循环
+			if (zeusX27Weapon[0] == '\0') { break; } // 遇到空字符串直接退出循环
 			TrimString(zeusX27Weapon); // 去首尾空格
 
 			if ( StrEqual(zeusX27Weapon, clientWeapon, false) ) {
