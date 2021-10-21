@@ -56,9 +56,6 @@ Action Shove_Handler(int shover, int shovee)
 	}
 
 	// 海洋空氣 add, allow specific weapon deadstops hunter
-	int primaryWeaponId = GetPlayerWeaponSlot(shover, 0); // get survivor's primary weapon
-	char primaryWeapon[32];
-	GetEdictClassname(primaryWeaponId, primaryWeapon, sizeof(primaryWeapon));
 	bool isWeaponAllowDeadstop = true;
 
 	char allowM2WeaponAll[32];
@@ -72,7 +69,15 @@ Action Shove_Handler(int shover, int shovee)
 		if (allowM2Weapon[0] == '\0') { break; } // 遇到空字符串直接退出循环
 		TrimString(allowM2Weapon); // 去首尾空格
 
-		if ( StrEqual(allowM2Weapon, primaryWeapon, false) ) {
+		int primaryWeaponId = GetPlayerWeaponSlot(shover, 0); // get survivor's primary weapon
+		char primaryWeapon[32];
+
+		if (IsValidEdict(primaryWeaponId)) {
+			GetEdictClassname(primaryWeaponId, primaryWeapon, sizeof(primaryWeapon));
+			if ( StrEqual(allowM2Weapon, primaryWeapon, false) ) {
+				isWeaponAllowDeadstop = false;
+			}
+		} else { // no primary weapon
 			isWeaponAllowDeadstop = false;
 		}
 	}

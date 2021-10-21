@@ -138,9 +138,15 @@ public Action drawPanel(int client)
 	AddMenuItem(menu, "", "Tank 设定");
 
 	// 4
+	AddMenuItem(menu, "", "推 Hunter 设定");
+
+	// 5
 	AddMenuItem(menu, "", "");
 
-	//
+	// 6
+	AddMenuItem(menu, "", "");
+
+	// 7
 	AddMenuItem(menu, "rs", "恢复默认设置");
 
 
