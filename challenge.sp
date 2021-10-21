@@ -52,6 +52,7 @@ Handle hDmgModifyEnable = INVALID_HANDLE;
 Handle hDmgThreshold = INVALID_HANDLE;
 Handle hRatioDamage = INVALID_HANDLE;
 Handle hFastGetup = INVALID_HANDLE;
+Handle hSharpenAllMelee = INVALID_HANDLE;
 
 public Plugin myinfo =
 {
@@ -82,6 +83,7 @@ public void OnPluginStart()
 	hDmgThreshold = CreateConVar("ast_dma_dmg", "12.0", "被控扣血数值");
 	hRatioDamage = CreateConVar("ast_ratio_damage", "0", "按比例扣血开关");
 	hFastGetup = CreateConVar("ast_fast_getup", "1", "快速起身开关");
+	hSharpenAllMelee = CreateConVar("ast_sharpen_melee", "1", "所有近战都是锐器");
 }
 
 public Action challengeRequest(int client, int args)
@@ -209,36 +211,13 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 public Action Menu_TankDmg(int client, int args)
 {
 	Handle menu = CreateMenu(Menu_TankDmgHandler);
-	SetMenuTitle(menu, "修改 tank 伤害");
-	SetMenuExitBackButton(menu, true);
 	int tankdmg = GetConVarInt(FindConVar("vs_tank_damage"));
-	switch (tankdmg)
-	{
-		case 24:{
-			AddMenuItem(menu, "tf", "✔24");
-			AddMenuItem(menu, "ts", "36");
-			AddMenuItem(menu, "fe", "48");
-			AddMenuItem(menu, "oh", "100");
-		}
-		case 36:{
-			AddMenuItem(menu, "tf", "24");
-			AddMenuItem(menu, "ts", "✔36");
-			AddMenuItem(menu, "fe", "48");
-			AddMenuItem(menu, "oh", "100");
-		}
-		case 48:{
-			AddMenuItem(menu, "tf", "24");
-			AddMenuItem(menu, "ts", "36");
-			AddMenuItem(menu, "fe", "✔48");
-			AddMenuItem(menu, "oh", "100");
-		}
-		case 100:{
-			AddMenuItem(menu, "tf", "24");
-			AddMenuItem(menu, "ts", "36");
-			AddMenuItem(menu, "fe", "48");
-			AddMenuItem(menu, "oh", "✔100");
-		}
-	}
+	SetMenuTitle(menu, "修改 tank 伤害 [%d]", tankdmg);
+	SetMenuExitBackButton(menu, true);
+	AddMenuItem(menu, "tf", "24");
+	AddMenuItem(menu, "ts", "36");
+	AddMenuItem(menu, "fe", "48");
+	AddMenuItem(menu, "oh", "100");
 	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
 	return Plugin_Handled;
 }
@@ -320,36 +299,28 @@ public int TankDmgHandler(Handle vote, BuiltinVoteAction action, int param1, int
 public Action Menu_SITimer(int client, int args)
 {
 	Handle menu = CreateMenu(Menu_SITimerHandler);
-	SetMenuTitle(menu, "修改特感刷新速度");
-	SetMenuExitBackButton(menu, true);
+	char buffer[16];
 	int SITimer = GetConVarInt(hSITimer);
-	switch (SITimer)
-	{
+	switch(SITimer) {
 		case 0: {
-			AddMenuItem(menu, "", "✔较慢");
-			AddMenuItem(menu, "", "默认");
-			AddMenuItem(menu, "", "较快");
-			AddMenuItem(menu, "", "特感速递？");
+			Format(buffer, sizeof(buffer),"较慢");
 		}
 		case 1: {
-			AddMenuItem(menu, "", "较慢");
-			AddMenuItem(menu, "", "✔默认");
-			AddMenuItem(menu, "", "较快");
-			AddMenuItem(menu, "", "特感速递？");
+			Format(buffer, sizeof(buffer),"默认");
 		}
 		case 2: {
-			AddMenuItem(menu, "", "较慢");
-			AddMenuItem(menu, "", "默认");
-			AddMenuItem(menu, "", "✔较快");
-			AddMenuItem(menu, "", "特感速递？");
+			Format(buffer, sizeof(buffer),"较快");
 		}
 		case 3: {
-			AddMenuItem(menu, "", "较慢");
-			AddMenuItem(menu, "", "默认");
-			AddMenuItem(menu, "", "较快");
-			AddMenuItem(menu, "", "✔特感速递？");
+			Format(buffer, sizeof(buffer),"特感速递？");
 		}
 	}
+	SetMenuTitle(menu, "修改特感刷新速度 [%s]", buffer);
+	SetMenuExitBackButton(menu, true);
+	AddMenuItem(menu, "0", "较慢");
+	AddMenuItem(menu, "1", "默认");
+	AddMenuItem(menu, "2", "较快");
+	AddMenuItem(menu, "3", "特感速递？");
 	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
 	return Plugin_Handled;
 }
@@ -367,7 +338,7 @@ public int Menu_SITimerHandler(Handle menu, MenuAction action, int client, int p
 			}
 			case 1: {
 				tempSITimer = 1;
-				Format(buffer, sizeof(buffer),"正常");
+				Format(buffer, sizeof(buffer),"默认");
 				TZ_CallVoteStr(client, buffer);
 			}
 			case 2: {
@@ -382,6 +353,7 @@ public int Menu_SITimerHandler(Handle menu, MenuAction action, int client, int p
 			}
 		}
 	}
+	else if (action == MenuAction_Cancel) drawPanel(client);
 }
 
 public void TZ_CallVoteStr(int client, char[] param1)
@@ -443,31 +415,12 @@ public int SITimerHandler(Handle vote, BuiltinVoteAction action, int param1, int
 public Action Menu_SIDamage(int client, int args)
 {
 	Handle menu = CreateMenu(Menu_SIDamageHandler);
-	SetMenuTitle(menu, "修改特感基础伤害");
-	SetMenuExitBackButton(menu, true);
 	int dmg = GetConVarInt(hDmgThreshold);
-	switch(dmg) {
-		case 8: {
-			AddMenuItem(menu, "", "✔8");
-			AddMenuItem(menu, "", "12");
-			AddMenuItem(menu, "", "24");
-		}
-		case 12: {
-			AddMenuItem(menu, "", "8");
-			AddMenuItem(menu, "", "✔12");
-			AddMenuItem(menu, "", "24");
-		}
-		case 24: {
-			AddMenuItem(menu, "", "8");
-			AddMenuItem(menu, "", "12");
-			AddMenuItem(menu, "", "✔24");
-		}
-		default: {
-			AddMenuItem(menu, "", "8");
-			AddMenuItem(menu, "", "✔12");
-			AddMenuItem(menu, "", "24");
-		}
-	}
+	SetMenuTitle(menu, "修改特感基础伤害 [%d]", dmg);
+	SetMenuExitBackButton(menu, true);
+	AddMenuItem(menu, "", "8");
+	AddMenuItem(menu, "", "12");
+	AddMenuItem(menu, "", "24");
 	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
 	return Plugin_Handled;
 }

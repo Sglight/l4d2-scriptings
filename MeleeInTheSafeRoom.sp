@@ -67,16 +67,16 @@ public OnPluginStart()
     
     HookEvent( "round_start", Event_RoundStart );
     
-    RegAdminCmd("sm_melee", Command_SMMelee, ADMFLAG_KICK, "Lists all melee weapons spawnable in current campaign" );
+    // RegAdminCmd("sm_melee", Command_SMMelee, ADMFLAG_KICK, "Lists all melee weapons spawnable in current campaign" );
 }
 
-public Action:Command_SMMelee(client, args)
-{
-    for( new i = 0; i < g_iMeleeClassCount; i++ )
-    {
-        PrintToChat( client, "%d : %s", i, g_sMeleeClass[i] );
-    }
-}
+// public Action:Command_SMMelee(client, args)
+// {
+//     for( new i = 0; i < g_iMeleeClassCount; i++ )
+//     {
+//         PrintToChat( client, "%d : %s", i, g_sMeleeClass[i] );
+//     }
+// }
 
 public OnMapStart()
 {

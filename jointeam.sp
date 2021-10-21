@@ -12,6 +12,8 @@
 
 Handle hMaxSurvivors = INVALID_HANDLE;
 Handle hMaxInfected = INVALID_HANDLE;
+Handle hAllowHumanTank = INVALID_HANDLE;
+Handle hHumanTankHp = INVALID_HANDLE;
 
 bool gameStarted;
 
@@ -36,6 +38,8 @@ public void OnPluginStart()
 {
 	hMaxSurvivors = CreateConVar("ast_maxsurvivors", "4");
 	hMaxInfected = CreateConVar("ast_maxinfected", "0");
+	hAllowHumanTank = CreateConVar("ast_allowhumantank", "1");
+	hHumanTankHp = CreateConVar("ast_humantankhp", "2750");
 
 	RegConsoleCmd("sm_join", JoinTeam_Cmd, "Moves you to the survivor team");
 	RegConsoleCmd("sm_joingame", JoinTeam_Cmd, "Moves you to the survivor team");
@@ -222,19 +226,27 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 	}
 }
 
-public void L4D_OnEnterGhostState(int client)
+public Action L4D_OnEnterGhostStatePre(int client)
 {
-	if ( GetConVarInt(hMaxInfected) > 0 ) return;
+	int maxInfected = GetConVarInt(hMaxInfected);
+	if ( maxInfected > 0 || getHumanInfected() < maxInfected) {
+		return Plugin_Continue;
+	}
+
 	if ( isClientValid(client) ) {
 		// CreateTimer(0.1, MoveToSpecTimer, client);
 		ChangeClientTeam(client, TEAM_SPECTATORS);
+		return Plugin_Handled;
 	}
+	return Plugin_Continue;
 }
 
 public Action L4D_OnTryOfferingTankBot(int tank_index, bool &enterStasis)
 {
-	if (GetConVarInt(hMaxInfected) > 0)
+	if ( GetConVarInt(hMaxInfected) > 0 && GetConVarBool(hAllowHumanTank) ) {
+		SetEntityHealth(tank_index, GetConVarInt(hHumanTankHp));
 		return Plugin_Continue;
+	}
 	else return Plugin_Handled;
 }
 
@@ -302,6 +314,17 @@ int getHumanSurvivors() // survivor players
 	return count;
 }
 
+int getHumanInfected() // infected players
+{
+	int count = 0;
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if(isInfected(i))
+			count++;
+	}
+	return count;
+}
+
 bool isClientValid(int client)
 { 	if (client <= 0 || client > MaxClients) return false;
 	if (!IsClientConnected(client)) return false;
@@ -313,6 +336,11 @@ bool isClientValid(int client)
 bool isSurvivor(int client)
 {
 	return isClientValid(client) && GetClientTeam(client) == TEAM_SURVIVORS;
+}
+
+bool isInfected(int client)
+{
+	return isClientValid(client) && GetClientTeam(client) == TEAM_INFECTED;
 }
 
 bool SpawnFakeClientAndTeleport()

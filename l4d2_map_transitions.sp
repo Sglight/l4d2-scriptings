@@ -65,7 +65,7 @@ void LoadSDK()
 
 public Action Event_MapTransition(Handle event, const char[] name, bool dontBroadcast)
 {
-	CreateTimer(1.0, OnRoundEnd_Post);
+	CreateTimer(6.0, OnRoundEnd_Post);
 }
 
 public Action OnRoundEnd_Post(Handle timer)
@@ -95,14 +95,14 @@ public void OnMapStart()
 	//Set scores after a modified transition
 	if (g_bHasTransitioned)
 	{
-		CreateTimer(1.0, OnMapStart_Post); //Clients have issues connecting if team swap happens exactly on map start, so we delay it
+		CreateTimer(8.0, OnMapStart_Post); //Clients have issues connecting if team swap happens exactly on map start, so we delay it
 		g_bHasTransitioned = false;
 	}
 }
 
 public Action OnMapStart_Post(Handle timer)
 {
-	L4D2_FullRestart();
+	// L4D2_FullRestart();
 }
 
 public Action AddMapTransition(int args)

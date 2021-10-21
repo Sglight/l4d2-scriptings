@@ -56,7 +56,7 @@ Action Shove_Handler(int shover, int shovee)
 	}
 
 	// 海洋空氣 add, allow specific weapon deadstops hunter
-	bool isWeaponAllowDeadstop = true;
+	bool isWeaponAllowDeadstop = false;
 
 	char allowM2WeaponAll[32];
 	cvarWeaponAllowM2Hunter.GetString(allowM2WeaponAll, sizeof(allowM2WeaponAll));
@@ -75,10 +75,8 @@ Action Shove_Handler(int shover, int shovee)
 		if (IsValidEdict(primaryWeaponId)) {
 			GetEdictClassname(primaryWeaponId, primaryWeapon, sizeof(primaryWeapon));
 			if ( StrEqual(allowM2Weapon, primaryWeapon, false) ) {
-				isWeaponAllowDeadstop = false;
+				isWeaponAllowDeadstop = true;
 			}
-		} else { // no primary weapon
-			isWeaponAllowDeadstop = false;
 		}
 	}
 
