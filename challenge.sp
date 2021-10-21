@@ -141,7 +141,7 @@ public Action drawPanel(int client)
 	AddMenuItem(menu, "", "推 Hunter 设定");
 
 	// 5
-	AddMenuItem(menu, "", "");
+	AddMenuItem(menu, "", "玩家特感设定");
 
 	// 6
 	AddMenuItem(menu, "", "");

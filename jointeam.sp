@@ -11,7 +11,7 @@
 #define NULL_VELOCITY view_as<float>({0.0, 0.0, 0.0})
 
 Handle hMaxSurvivors = INVALID_HANDLE;
-Handle hAllowJoinInfected = INVALID_HANDLE;
+Handle hMaxInfected = INVALID_HANDLE;
 
 bool gameStarted;
 
@@ -23,7 +23,7 @@ bool isCountDownEnd = false;
 //bool surClient[MAXPLAYERS + 1];
 
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
 	name 			= "Jointeam",
 	author 			= "海洋空氣",
@@ -35,7 +35,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	hMaxSurvivors = CreateConVar("ast_maxsurvivors", "4");
-	hAllowJoinInfected = CreateConVar("ast_allowinfected", "0");
+	hMaxInfected = CreateConVar("ast_maxinfected", "0");
 
 	RegConsoleCmd("sm_join", JoinTeam_Cmd, "Moves you to the survivor team");
 	RegConsoleCmd("sm_joingame", JoinTeam_Cmd, "Moves you to the survivor team");
@@ -49,7 +49,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_die", Suicide_Cmd);
 	RegConsoleCmd("sm_suicide", Suicide_Cmd);
 	RegConsoleCmd("sm_zs", Suicide_Cmd);
-	
+
 	HookEvent("round_start", Event_RoundStart);
 	HookEvent("mission_lost", Event_MissionLost);
 	HookEvent("round_end", Event_MissionLost);
@@ -74,14 +74,14 @@ public void OnMapStart()
 	PrecacheSound("npc/virgil/c3end52.wav");
 	PrecacheSound("npc/virgil/beep_error01.wav");
 	PrecacheSound("player/survivor/voice/coach/worldc2m2b06.wav");
-	
+
 	CreateTimer(1.0, LoadingTimer, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT); // 开始无限循环判断是否全部加载完毕
 }
 
 public void OnClientPutInServer(int client)
 {
 	if ( !isClientValid(client) || gameStarted) return;
-	
+
 	/****** Doorlock ******/
 	if ( isCountDownStoppedOrRunning() ) {
 		isClientLoading[client] = false;
@@ -117,11 +117,11 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 	}
 	gameStarted = true;
 	GodMode(false);
-	
+
 	/****** JoinTeam ******/
 	SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
 	KickBots();
-	
+
 	/****** StartingPills ******/
 	ResetInventory(false);
 	giveStartingItem("weapon_pain_pills");
@@ -155,7 +155,7 @@ public Action Menu_SwitchCharacters(int client)
 	Menu menu = CreateMenu(CharactersMenuHandler);
 	SetMenuTitle(menu, "切换人物");
 	SetMenuExitButton(menu, true);
-	
+
 	// 添加空闲AI到面板
 	int j = 0;
 	for (int i = 1; i <= MaxClients; i++)
@@ -224,7 +224,7 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 
 public void L4D_OnEnterGhostState(int client)
 {
-	if ( GetConVarInt(hAllowJoinInfected) ) return;
+	if ( GetConVarInt(hMaxInfected) > 0 ) return;
 	if ( isClientValid(client) ) {
 		// CreateTimer(0.1, MoveToSpecTimer, client);
 		ChangeClientTeam(client, TEAM_SPECTATORS);
@@ -233,16 +233,10 @@ public void L4D_OnEnterGhostState(int client)
 
 public Action L4D_OnTryOfferingTankBot(int tank_index, bool &enterStasis)
 {
-	if (GetConVarBool(hAllowJoinInfected))
+	if (GetConVarInt(hMaxInfected) > 0)
 		return Plugin_Continue;
 	else return Plugin_Handled;
 }
-
-// public Action MoveToSpecTimer(Handle timer, int client)
-// {
-// 	if (!isClientValid(client)) return;
-// 	ChangeClientTeam(client, TEAM_SPECTATORS);
-// }
 
 public Action MoveToSurTimer(Handle timer, int client)
 {
@@ -324,18 +318,18 @@ bool isSurvivor(int client)
 bool SpawnFakeClientAndTeleport()
 {
 	if (gameStarted) return false;
-	
+
 	bool fakeclientKicked = false;
-	
+
 	// create fakeclient
 	int fakeclient = CreateFakeClient("FakeClient");
-	
+
 	// if entity is valid
 	if(fakeclient != 0)
 	{
 		// move into survivor team
 		ChangeClientTeam(fakeclient, TEAM_SURVIVORS);
-		
+
 		// check if entity classname is survivorbot
 		if(DispatchKeyValue(fakeclient, "classname", "survivorbot") == true)
 		{
@@ -346,16 +340,16 @@ bool SpawnFakeClientAndTeleport()
 					DeleteInventoryItem(fakeclient, slot);
 				}
 				BypassAndExecuteCommand(fakeclient, "give", "pistol"); // 发手枪
-				
+
 				// kick the fake client to make the bot take over
 				CreateTimer(0.3, Timer_KickFakeBot, fakeclient, TIMER_REPEAT);
 				fakeclientKicked = true;
 			}
-		}			
+		}
 		// if something went wrong, kick the created FakeClient
 		if(fakeclientKicked == false)
 			KickClient(fakeclient, "Kicking FakeClient");
-	}	
+	}
 	return fakeclientKicked;
 }
 
@@ -365,7 +359,7 @@ public Action Timer_KickFakeBot(Handle timer, int fakeclient)
 	{
 		KickClient(fakeclient, "Kicking FakeClient");
 		return Plugin_Stop;
-	}	
+	}
 	return Plugin_Continue;
 }
 
@@ -468,7 +462,7 @@ stock void ReturnPlayerToSaferoom(int client, bool flagsSet = true)
 	{
 		SetCommandFlags("warp_to_start_area", warp_flags);
 	}
-	
+
 	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, NULL_VELOCITY);
 }
 
@@ -498,7 +492,7 @@ bool isFinishedLoading()
 						isClientLoading[i] = true;
 					}
 				}
-				
+
 				if (clientTimeout[i] == 90)
 				{
 					isClientLoading[i] = false;
@@ -509,10 +503,10 @@ bool isFinishedLoading()
 				isClientLoading[i] = false;
 			}
 		}
-		
+
 		else isClientLoading[i] = false;
 	}
-	
+
 	return !isAnyClientLoading();
 }
 
@@ -566,7 +560,7 @@ public void ResetInventory(bool resetWeapon) {
 			// 回血
 			BypassAndExecuteCommand(client, "give", "health"); // 清除特殊状态
 			SetEntityHealth(client, 100);
-			SetEntityTempHealth(client, 0);
+			L4D_SetTempHealth(client, 0.0);
 		}
 	}
 }
@@ -577,13 +571,6 @@ public void DeleteInventoryItem(int client, int slot) {
 		RemovePlayerItem(client, item);
 		RemoveEdict(item);
 	}
-}
-
-public void SetEntityTempHealth(int client, int hp)
-{
-	SetEntPropFloat(client, Prop_Send, "m_healthBufferTime", GetGameTime());
-	float newOverheal = hp * 1.0; // prevent tag mismatch
-	SetEntPropFloat(client, Prop_Send, "m_healthBuffer", newOverheal);
 }
 
 public void BypassAndExecuteCommand(int client, char[] strCommand, char[] strParam1)
@@ -599,16 +586,16 @@ public void BypassAndExecuteCommand(int client, char[] strCommand, char[] strPar
 ///////////////////////////////////////////////////
 
 public Action Suicide_Cmd(int client, int args)
-{   
+{
 	if(!client || !IsPlayerAlive(client))
 		return Plugin_Handled;
-	
+
 	if(!gameStarted)
 	{
 		PrintToChat(client, "回合未开始！");
 		return Plugin_Handled;
 	}
-	
+
 	ForcePlayerSuicide(client);
 	return Plugin_Handled;
 }
