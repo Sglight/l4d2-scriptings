@@ -10,11 +10,11 @@
 
 public Plugin myinfo =
 {
-	name = "L4D2 Boss Flow Announce + Vote Boss",
-	author = "ProdigySim, Jahze, Stabby, CircleSquared, CanadaRox, Visor, Spoon, Forgetest",
-	version = "1.6.1 + 3.2.5",
-	description = "Announce boss flow percents and votin for boss change!",
-	url = "https://github.com/ConfoglTeam/ProMod, https://github.com/spoon-l4d2"
+	name = "L4D2 Boss Flow Announce",
+	author = "ProdigySim, Jahze, Stabby, CircleSquared, CanadaRox, Visor",
+	version = "1.6.1",
+	description = "Announce boss flow percents!",
+	url = "https://github.com/ConfoglTeam/ProMod"
 };
 
 int iWitchPercent = 0;
