@@ -14,10 +14,6 @@
 
 StringMap hMapTransitionPair = null;
 
-Handle hSetCampaignScores;
-
-int g_iPointsTeamA = 0;
-int g_iPointsTeamB = 0;
 bool g_bHasTransitioned = false;
 
 public Plugin myinfo = 
@@ -25,7 +21,7 @@ public Plugin myinfo =
 	name = "Map Transitions",
 	author = "Derpduck, Forgetest",
 	description = "Define map transitions to combine campaigns",
-	version = "3",
+	version = "3-coop",
 	url = "https://github.com/SirPlease/L4D2-Competitive-Rework"
 };
 
@@ -63,11 +59,6 @@ void LoadSDK()
 	
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	hSetCampaignScores = EndPrepSDKCall();
-	if (hSetCampaignScores == INVALID_HANDLE)
-	{
-		SetFailState("Function 'SetCampaignScores' found, but something went wrong.");
-	}
 	
 	delete conf;
 }
@@ -88,9 +79,6 @@ public Action OnRoundEnd_Post(Handle timer)
 	//We have a map to transition to
 	if (hMapTransitionPair.GetString(currentMapName, nextMapName, sizeof(nextMapName)))
 	{
-		//Preserve scores between transitions
-		g_iPointsTeamA = L4D2Direct_GetVSCampaignScore(0);
-		g_iPointsTeamB = L4D2Direct_GetVSCampaignScore(1)
 		g_bHasTransitioned = true;
 		
 		#if DEBUG
@@ -114,31 +102,7 @@ public void OnMapStart()
 
 public Action OnMapStart_Post(Handle timer)
 {
-	SetScores();
-}
-
-public void SetScores()
-{
-	//If team B is winning, swap teams. Does not change how scores are set
-	if (g_iPointsTeamA < g_iPointsTeamB)
-	{
-		L4D2_SwapTeams();
-		
-		#if DEBUG
-			LogMessage("Teams swapped");
-		#endif
-	}
-	
-	//Set scores on scoreboard
-	SDKCall(hSetCampaignScores, g_iPointsTeamA, g_iPointsTeamB);
-	
-	//Set actual scores
-	L4D2Direct_SetVSCampaignScore(0, g_iPointsTeamA);
-	L4D2Direct_SetVSCampaignScore(1, g_iPointsTeamB);
-	
-	#if DEBUG
-		LogMessage("Set scores to: (Survivors) %i vs (Infected) %i", g_iPointsTeamA, g_iPointsTeamB);
-	#endif
+	L4D2_FullRestart();
 }
 
 public Action AddMapTransition(int args)
@@ -160,9 +124,3 @@ public Action AddMapTransition(int args)
 	
 	return Plugin_Handled;
 }
-
-//Return if round is first or second half
-/*stock InSecondHalfOfRound()
-{
-	return GameRules_GetProp("m_bInSecondHalfOfRound");
-}*/

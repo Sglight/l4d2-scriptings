@@ -12,14 +12,14 @@
             },
 
             "windows":{
-                "command": "C:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\spcomp.exe",
+                "command": "C:\\MyFloder\\个人\\l4d2-scriptings\\spcomp.exe",
 
                 "args": [
                     "${file}",
                     "-O2", // Optimization level (0=none, 2=full)
                     "-v2",// Verbosity level; 0=quiet, 1=normal, 2=verbose
-                    "-iC:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\include", // All other 3rd-party-includes
-                    "-oC:\\MyFloder\\个人\\AstMod 2.5.4\\left4dead2\\addons\\sourcemod\\scripting\\compiled\\${fileBasenameNoExtension}.smx" // Output path for the compiled smx file
+                    "-iC:\\MyFloder\\个人\\l4d2-scriptings\\include", // All other 3rd-party-includes
+                    "-oC:\\MyFloder\\个人\\l4d2-scriptings\\compiled\\${fileBasenameNoExtension}.smx" // Output path for the compiled smx file
                 ],
             },
 

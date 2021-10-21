@@ -1,5 +1,5 @@
 #pragma semicolon 1
-// #pragma newdecls required
+#pragma newdecls required
 
 #include <sourcemod>
 #include <sdktools>
@@ -58,7 +58,7 @@ public Plugin myinfo =
 	name = "Challenge Amethyst",
 	author = "海洋空氣",
 	description = "Difficulty Controller for Amethyst Mod.",
-	version = "1.8",
+	version = "1.9",
 	url = "https://steamcommunity.com/id/larkspur2017/"
 };
 
@@ -99,27 +99,51 @@ public Action drawPanel(int client)
 	SetMenuTitle(menu, "难度控制 Difficulty Controller");
 	SetMenuExitButton(menu, true);
 
+	// 1
 	if (GetConVarBool(hRatioDamage))
 		Format(buffer, sizeof(buffer), "按特感血量扣血 [已启用]");
 	else Format(buffer, sizeof(buffer), "按特感血量扣血");
-
 	AddMenuItem(menu, "hp", buffer);
 
+	// 2
 	Format(buffer, sizeof(buffer), "修改 Tank 伤害 [%i]", GetConVarInt(FindConVar("vs_tank_damage")));
 	AddMenuItem(menu, "td", buffer);
 
+	// 3
 	AddMenuItem(menu, "st", "修改特感刷新速率");
 
+	// 4
 	Format(buffer, sizeof(buffer), "修改特感基础伤害 [%i]", GetConVarInt(hDmgThreshold));
 	AddMenuItem(menu, "sd", buffer);
 
+	// 5
 	if (GetConVarBool(hRehealth))
 		AddMenuItem(menu, "rh", "击杀特感回血 [已启用]");
 	else AddMenuItem(menu, "rh", "击杀特感回血");
 
+	// 6
 	AddMenuItem(menu, "wc", "天气控制");
 
+	// 7
 	AddMenuItem(menu, "rs", "恢复默认设置");
+
+	// 翻页
+	// 1
+	AddMenuItem(menu, "", "猎头者");
+
+	// 2
+	AddMenuItem(menu, "", "枪械参数设定");
+
+	// 3
+	AddMenuItem(menu, "", "Tank 设定");
+
+	// 4
+	AddMenuItem(menu, "", "");
+
+	//
+	AddMenuItem(menu, "rs", "恢复默认设置");
+
+
 	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
 }
 
@@ -282,7 +306,7 @@ public int TankDmgHandler(Handle vote, BuiltinVoteAction action, int param1, int
 			CloseHandle(vote);
 		}
 		case BuiltinVoteAction_Cancel: {
-			DisplayBuiltinVoteFail(vote, BuiltinVoteFailReason:param1);
+			DisplayBuiltinVoteFail( vote, view_as<BuiltinVoteFailReason>(param1) );
 		}
 	}
 }
@@ -405,7 +429,7 @@ public int SITimerHandler(Handle vote, BuiltinVoteAction action, int param1, int
 		}
 		case BuiltinVoteAction_Cancel:
 		{
-			DisplayBuiltinVoteFail(vote, BuiltinVoteFailReason:param1);
+			DisplayBuiltinVoteFail(vote, view_as<BuiltinVoteFailReason>(param1) );
 		}
 	}
 }
@@ -744,7 +768,7 @@ stock bool isInfected(int client) {
 }
 
 // Gets players out of pending animations, i.e. sets their current frame in the animation to 1000.
-_CancelGetup(client) {
+stock void _CancelGetup(int client) {
     CreateTimer(0.4, CancelGetup, client);
 }
 public Action CancelGetup(Handle timer, int client) {

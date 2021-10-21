@@ -8,6 +8,7 @@
 #define TEAM_SPECTATORS 1
 #define TEAM_SURVIVORS 2
 #define TEAM_INFECTED 3
+#define NULL_VELOCITY view_as<float>({0.0, 0.0, 0.0})
 
 Handle hMaxSurvivors = INVALID_HANDLE;
 Handle hAllowJoinInfected = INVALID_HANDLE;
@@ -27,7 +28,7 @@ public Plugin myinfo =
 	name 			= "Jointeam",
 	author 			= "海洋空氣",
 	description 	= "加入生还者 + 等待玩家读图加载 + 出门发药 + 过关重置生还状态 + 自杀",
-	version 		= "1.2",
+	version 		= "1.3",
 	url 			= "https://steamcommunity.com/id/larkspur2017/"
 }
 
@@ -36,7 +37,6 @@ public void OnPluginStart()
 	hMaxSurvivors = CreateConVar("ast_maxsurvivors", "4");
 	hAllowJoinInfected = CreateConVar("ast_allowinfected", "0");
 
-	//RegConsoleCmd("sm_addbot", AddBot_Cmd, "Attempt to add and teleport a survivor bot");
 	RegConsoleCmd("sm_join", JoinTeam_Cmd, "Moves you to the survivor team");
 	RegConsoleCmd("sm_joingame", JoinTeam_Cmd, "Moves you to the survivor team");
 	RegConsoleCmd("sm_jg", JoinTeam_Cmd, "Moves you to the survivor team");
@@ -54,7 +54,6 @@ public void OnPluginStart()
 	HookEvent("mission_lost", Event_MissionLost);
 	HookEvent("round_end", Event_MissionLost);
 	HookEvent("map_transition", Event_MapTransition);
-	// HookEvent("player_team", Event_PlayerTeam, EventHookMode_Pre);
 
 	LoadTranslations("smac.phrases");
 }
@@ -105,14 +104,14 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 	/******  Doorlock ******/
 	if (!isFinishedLoading())
 	{
-		ReturnToSaferoom(client);
+		ReturnPlayerToSaferoom(client, true);
 		EmitSoundToClient(client, "ui/beep_error01.wav");
 		PrintHintTextToAll("等待其他玩家加载中...");
 		return Plugin_Handled;
 	}
 	if (!isCountDownEnd)
 	{
-		ReturnToSaferoom(client);
+		ReturnPlayerToSaferoom(client, true);
 		EmitSoundToClient(client, "ui/beep_error01.wav");
 		return Plugin_Handled;
 	}
@@ -196,7 +195,7 @@ public Action Spectate_Cmd(int client, int args)
 	int team = GetClientTeam(client);
 	if (team == TEAM_SPECTATORS)
 	{
-		FakeClientCommand(client, "jointeam 3");
+		FakeClientCommand(client, "jointeam %d", TEAM_INFECTED);
 		return;
 	}
 	else if (team == TEAM_SURVIVORS && gameStarted && getHumanSurvivors() == 1)
@@ -209,21 +208,6 @@ public Action Spectate_Cmd(int client, int args)
 	return;
 }
 
-// public Action Event_PlayerTeam(Handle event, const char[] name, bool dontBroadcast)
-// {
-// 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
-// 	int newteam = GetEventInt(event, "team");
-// 	bool disconnect = GetEventBool(event, "disconnect");
-	
-// 	if (disconnect) return;
-	
-// 	if (isClientValid(client)) {
-// 		if (gameStarted && newteam != TEAM_SPECTATORS) {
-// 			CreateTimer(0.1, MoveToSpecTimer, client);
-// 		}
-// 	}
-// }
-
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
 	GodMode(true);
@@ -233,7 +217,7 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 	{
 		if (isClientValid(i) && GetClientTeam(i) == TEAM_SPECTATORS)
 		{
-			FakeClientCommand(i, "jointeam 3");
+			FakeClientCommand(i, "jointeam %d", TEAM_INFECTED);
 		}
 	}
 }
@@ -403,11 +387,9 @@ public Action Timer_KickFakeBot(Handle timer, int fakeclient)
 
 public Action Return_Cmd(int client, int args)
 {
-	if (client > 0
-			&& !gameStarted
-			&& GetClientTeam(client) == 2)
+	if (client > 0 && !gameStarted && GetClientTeam(client) == TEAM_SURVIVORS)
 	{
-		ReturnPlayerToSaferoom(client, false);
+		ReturnPlayerToSaferoom(client, true);
 	}
 	return Plugin_Handled;
 }
@@ -457,21 +439,27 @@ public Action StartTimer(Handle timer)
 	return Plugin_Continue;
 }
 
-void ReturnPlayerToSaferoom(int client, bool flagsSet = true)
+public Action L4D_OnLedgeGrabbed(int client)
+{
+	if (client > 0 && !gameStarted && GetClientTeam(client) == TEAM_SURVIVORS) {
+		L4D_ReviveSurvivor(client);
+		return Plugin_Handled;
+	}
+	return Plugin_Continue;
+}
+
+stock void ReturnPlayerToSaferoom(int client, bool flagsSet = true)
 {
 	int warp_flags;
-	int give_flags;
 	if (!flagsSet)
 	{
 		warp_flags = GetCommandFlags("warp_to_start_area");
 		SetCommandFlags("warp_to_start_area", warp_flags & ~FCVAR_CHEAT);
-		give_flags = GetCommandFlags("give");
-		SetCommandFlags("give", give_flags & ~FCVAR_CHEAT);
 	}
 
 	if (GetEntProp(client, Prop_Send, "m_isHangingFromLedge"))
 	{
-		FakeClientCommand(client, "give health");
+		L4D_ReviveSurvivor(client);
 	}
 
 	FakeClientCommand(client, "warp_to_start_area");
@@ -479,24 +467,9 @@ void ReturnPlayerToSaferoom(int client, bool flagsSet = true)
 	if (!flagsSet)
 	{
 		SetCommandFlags("warp_to_start_area", warp_flags);
-		SetCommandFlags("give", give_flags);
 	}
-}
-
-void ReturnToSaferoom(int client)
-{
-	int warp_flags = GetCommandFlags("warp_to_start_area");
-	SetCommandFlags("warp_to_start_area", warp_flags & ~FCVAR_CHEAT);
-	int give_flags = GetCommandFlags("give");
-	SetCommandFlags("give", give_flags & ~FCVAR_CHEAT);
-
-	if (IsClientInGame(client) && GetClientTeam(client) == 2)
-	{
-		ReturnPlayerToSaferoom(client, true);
-	}
-
-	SetCommandFlags("warp_to_start_area", warp_flags);
-	SetCommandFlags("give", give_flags);
+	
+	TeleportEntity(client, NULL_VECTOR, NULL_VECTOR, NULL_VELOCITY);
 }
 
 bool isAnyClientLoading()
