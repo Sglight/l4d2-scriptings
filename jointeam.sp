@@ -30,7 +30,7 @@ public Plugin myinfo =
 	name 			= "Jointeam",
 	author 			= "海洋空氣",
 	description 	= "加入生还者 + 等待玩家读图加载 + 出门发药 + 过关重置生还状态 + 自杀",
-	version 		= "1.3",
+	version 		= "1.4",
 	url 			= "https://steamcommunity.com/id/larkspur2017/"
 }
 
@@ -55,8 +55,8 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_zs", Suicide_Cmd);
 
 	HookEvent("round_start", Event_RoundStart);
-	HookEvent("mission_lost", Event_MissionLost);
-	HookEvent("round_end", Event_MissionLost);
+	// HookEvent("mission_lost", Event_MissionLost);
+	// HookEvent("round_end", Event_MissionLost);
 	HookEvent("map_transition", Event_MapTransition);
 
 	LoadTranslations("smac.phrases");
@@ -68,7 +68,7 @@ public void OnMapStart()
 	gameStarted = false;
 	countDown = -1;
 	isCountDownEnd = false;
-	GodMode(true);
+	setGodMode(true);
 
 	for (int i = 1; i <= MaxClients; ++i)
 	{
@@ -120,11 +120,12 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 		return Plugin_Handled;
 	}
 	gameStarted = true;
-	GodMode(false);
+	setGodMode(false);
 
 	/****** JoinTeam ******/
-	SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
 	KickBots();
+	SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
+	SetConVarInt(FindConVar("survivor_limit"), getHumanSurvivors());
 
 	/****** StartingPills ******/
 	ResetInventory(false);
@@ -214,7 +215,7 @@ public Action Spectate_Cmd(int client, int args)
 
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
-	GodMode(true);
+	setGodMode(true);
 	gameStarted = false;
 
 	for (int i = 1; i <= MaxClients; i++)
@@ -261,17 +262,13 @@ public Action MoveToSurTimer(Handle timer, int client)
 	FakeClientCommand(client, "jointeam 2");
 }
 
-public Action Event_MissionLost(Handle event, const char[] name, bool dontBroadcast)
-{
-	SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
-}
-
 public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 {
 	SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
+	SetConVarInt(FindConVar("survivor_limit"), 4);
 }
 
-public void GodMode(bool boolean)
+public void setGodMode(bool boolean)
 {
 	int flags = GetCommandFlags("god");
 	SetCommandFlags("god", flags & ~FCVAR_NOTIFY);
@@ -282,9 +279,13 @@ public void GodMode(bool boolean)
 
 public void KickBots()
 {
-	for (int i = 1; i <= MaxClients; ++i) {
-		if (IsClientInGame(i) && GetClientTeam(i) == 2 && IsFakeClient(i)) {
-			KickClient(i, "kick bots");
+	for (int i = 1; i <= MaxClients; i++) {
+		if (IsClientInGame(i) && GetClientTeam(i) == TEAM_SURVIVORS && IsFakeClient(i)) { // 是 AI 生还
+			if (getTotalSurvivors() > 1) { // 总人数大于 1
+				KickClient(i, "kick bots");
+			} else { // 总人数为 1 直接处死
+				ForcePlayerSuicide(i);
+			}
 		}
 	}
 }
@@ -573,7 +574,7 @@ public void giveStartingItem(const char strItemName[32])
 
 public void ResetInventory(bool resetWeapon) {
 	for (int client = 1; client <= MaxClients; ++client) {
-		if ( isClientValid(client) && GetClientTeam(client) == TEAM_SURVIVORS  && IsPlayerAlive(client)) {
+		if ( isSurvivor(client) && IsPlayerAlive(client) ) {
 			// Reset survivor inventories so they only hold dual pistols
 			if (resetWeapon) {
 				for (int slot = 0; slot < 5; ++slot) {  // 清空所有

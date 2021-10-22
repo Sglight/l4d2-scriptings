@@ -37,11 +37,18 @@ public void OnPluginStart()
 
 public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 {
+	PrintToChatAll("L4D2_OnEndVersusModeRound");
 	SetConVarString(gameMode, "coop");
 	return Plugin_Handled;
 }
 
+public void L4D2_OnEndVersusModeRound_Post() {
+	PrintToChatAll("L4D2_OnEndVersusModeRound_Post");
+	SetConVarString(gameMode, "versus");
+}
+
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
+	PrintToChatAll("Event_RoundStart");
 	SetConVarString(gameMode, "versus");
 }
