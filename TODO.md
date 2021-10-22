@@ -26,3 +26,4 @@
         >\*/  
         >forward Action L4D_OnSpawnMob(int &amount);  
 
+4. Stripper
