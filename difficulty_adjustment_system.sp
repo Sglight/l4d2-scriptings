@@ -2,7 +2,7 @@
 #include <sourcemod>
 #pragma semicolon 1
 #pragma newdecls required
-#define DAS_VERSION "14.0"
+#define DAS_VERSION "14.0 + 1.0"
 #define DAS_URL "https://forums.alliedmods.net/showthread.php?t=303117"
 
 public Plugin myinfo =
@@ -48,6 +48,7 @@ public void OnPluginStart()
 	//AutoExecConfig(true, "difficulty_adjustment_system");
 	
 	HookEvent("player_team", OnClientChangeTeam);
+	HookEvent("round_start", OnRoundStart);
 }
 
 public void OnMapStart()
@@ -245,6 +246,13 @@ public void OnClientChangeTeam(Event event, const char[] name, bool dontBroadcas
 	if (newteam == 2 && client > 0) {
 		CreateTimer(1.0, tTimerUpdatePlayerCount);
 	}
+}
+
+public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+	int iFakeDifficulty = g_cvDASConVars[2].IntValue;
+	g_cvDASConVars[2].SetInt(0);
+	g_cvDASConVars[2].SetInt(iFakeDifficulty);
 }
 
 stock int iGetPlayerCount()

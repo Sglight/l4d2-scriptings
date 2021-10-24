@@ -13,12 +13,11 @@
  */
 
 #include <sourcemod>
-#include <sdktools>
 #include <left4dhooks>
 
 #pragma newdecls required
 
-Handle gameMode;
+Handle hGameMode;
 
 public Plugin myinfo =
 {
@@ -31,24 +30,18 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	gameMode = FindConVar("mp_gamemode");
+	hGameMode = FindConVar("mp_gamemode");
+
 	HookEvent("round_start",  Event_RoundStart, EventHookMode_Pre);
 }
 
 public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 {
-	PrintToChatAll("L4D2_OnEndVersusModeRound");
-	SetConVarString(gameMode, "coop");
+	SetConVarString(hGameMode, "coop");
 	return Plugin_Handled;
-}
-
-public void L4D2_OnEndVersusModeRound_Post() {
-	PrintToChatAll("L4D2_OnEndVersusModeRound_Post");
-	SetConVarString(gameMode, "versus");
 }
 
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
-	PrintToChatAll("Event_RoundStart");
-	SetConVarString(gameMode, "versus");
+	SetConVarString(hGameMode, "versus");
 }

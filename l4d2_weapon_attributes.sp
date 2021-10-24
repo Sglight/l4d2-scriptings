@@ -451,8 +451,6 @@ public Action Cmd_Melee(int args)
 		PrintDebug(eLogError|eServerPrint, "Bad attribute name: %s.", sAttrName);
 		return Plugin_Handled;
 	}
-
-	PrintToServer("iAttrIdx: %d", iAttrIdx);
 	
 	char sAttrValue[MAX_ATTRS_VALUE_LENGTH];
 	GetCmdArg(3, sAttrValue, sizeof(sAttrValue));

@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <left4dhooks>
+#include <colors>
 
 #define TEAM_SPECTATORS 1
 #define TEAM_SURVIVORS 2
@@ -22,8 +23,8 @@ int countDown; // 倒计时
 bool isClientLoading[MAXPLAYERS + 1] = false;
 bool isCountDownEnd = false;
 
-//bool surClient[MAXPLAYERS + 1];
-
+int tankAttackConVarInt[3] = 0;
+float tankAttackConVarFloat[1] = 0.0;
 
 public Plugin myinfo =
 {
@@ -38,7 +39,7 @@ public void OnPluginStart()
 {
 	hMaxSurvivors = CreateConVar("ast_maxsurvivors", "4");
 	hMaxInfected = CreateConVar("ast_maxinfected", "0");
-	hAllowHumanTank = CreateConVar("ast_allowhumantank", "1");
+	hAllowHumanTank = CreateConVar("ast_allowhumantank", "0");
 	hHumanTankHp = CreateConVar("ast_humantankhp", "2750");
 
 	RegConsoleCmd("sm_join", JoinTeam_Cmd, "Moves you to the survivor team");
@@ -80,6 +81,9 @@ public void OnMapStart()
 	PrecacheSound("player/survivor/voice/coach/worldc2m2b06.wav");
 
 	CreateTimer(1.0, LoadingTimer, _, TIMER_FLAG_NO_MAPCHANGE|TIMER_REPEAT); // 开始无限循环判断是否全部加载完毕
+
+	/****** JoinTeam ******/
+	storeBotTankAttackConVar();
 }
 
 public void OnClientPutInServer(int client)
@@ -108,14 +112,14 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 	/******  Doorlock ******/
 	if (!isFinishedLoading())
 	{
-		ReturnPlayerToSaferoom(client, true);
+		ReturnPlayerToSaferoom(client, false);
 		EmitSoundToClient(client, "ui/beep_error01.wav");
 		PrintHintTextToAll("等待其他玩家加载中...");
 		return Plugin_Handled;
 	}
 	if (!isCountDownEnd)
 	{
-		ReturnPlayerToSaferoom(client, true);
+		ReturnPlayerToSaferoom(client, false);
 		EmitSoundToClient(client, "ui/beep_error01.wav");
 		return Plugin_Handled;
 	}
@@ -125,7 +129,6 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 	/****** JoinTeam ******/
 	KickBots();
 	SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
-	SetConVarInt(FindConVar("survivor_limit"), getHumanSurvivors());
 
 	/****** StartingPills ******/
 	ResetInventory(false);
@@ -196,21 +199,21 @@ public int CharactersMenuHandler(Menu menu, MenuAction action, int client, int p
 
 public Action Spectate_Cmd(int client, int args)
 {
-	if (!isClientValid(client)) return;
+	if (!isClientValid(client)) return Plugin_Handled;
 	int team = GetClientTeam(client);
 	if (team == TEAM_SPECTATORS)
 	{
-		FakeClientCommand(client, "jointeam %d", TEAM_INFECTED);
-		return;
+		reSpec(client);
+		return Plugin_Handled;
 	}
 	else if (team == TEAM_SURVIVORS && gameStarted && getHumanSurvivors() == 1)
 	{
 		PrintToChat(client, "\x04[AstMod] \x03请结束回合再旁观.");
-		return;
+		return Plugin_Handled;
 	}
 	ChangeClientTeam(client, 1);
 	PrintToChatAll("\x04[AstMod] \x03%N \x01已旁观.", client);
-	return;
+	return Plugin_Handled;
 }
 
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
@@ -225,12 +228,14 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 			FakeClientCommand(i, "jointeam %d", TEAM_INFECTED);
 		}
 	}
+
+	setBotTankAttackConVar();
 }
 
 public Action L4D_OnEnterGhostStatePre(int client)
 {
 	int maxInfected = GetConVarInt(hMaxInfected);
-	if ( maxInfected > 0 || getHumanInfected() < maxInfected) {
+	if ( maxInfected > 0 && getHumanInfected() < maxInfected + 1) {
 		return Plugin_Continue;
 	}
 
@@ -242,30 +247,70 @@ public Action L4D_OnEnterGhostStatePre(int client)
 	return Plugin_Continue;
 }
 
+// Is used for displaying the "X gets Tank" window and transferring Tank control
 public Action L4D_OnTryOfferingTankBot(int tank_index, bool &enterStasis)
 {
-	if ( GetConVarInt(hMaxInfected) > 0 && GetConVarBool(hAllowHumanTank) ) {
-		SetEntityHealth(tank_index, GetConVarInt(hHumanTankHp));
-		return Plugin_Continue;
+	// 第一次给克
+	if (IsFakeClient(tank_index)) {
+		// 允许加入特感 && 允许玩家当 Tank && 特感方有人
+		if ( GetConVarInt(hMaxInfected) > 0 && GetConVarBool(hAllowHumanTank) && getHumanInfected() >= 1 ) {
+			SetEntityHealth(tank_index, GetConVarInt(hHumanTankHp));
+			setHumanTankAttackConVar();
+			return Plugin_Continue;
+		}
+		return Plugin_Handled;
+	} else { // 控制权移交给队友，拦截
+        PrintHintText(tank_index, "Rage Meter Refilled");
+        for (int i = 1; i <= MaxClients; i++) 
+        {
+            if (! IsClientInGame(i) || GetClientTeam(i) != 3)
+                continue;
+
+            if (tank_index == i) CPrintToChat(i, "{red}<{default}Tank Rage{red}> {olive}Rage Meter {red}Refilled");
+            else CPrintToChat(i, "{red}<{default}Tank Rage{red}> {default}({green}%N{default}'s) {olive}Rage Meter {red}Refilled", tank_index);
+        }
+        
+        SetTankFrustration(tank_index, 100);
+        L4D2Direct_SetTankPassedCount(L4D2Direct_GetTankPassedCount() + 1);
+        
+        return Plugin_Handled;
 	}
-	else return Plugin_Handled;
+}
+
+void SetTankFrustration(int iTankClient, int iFrustration) {
+    if (iFrustration < 0 || iFrustration > 100) {
+        return;
+    }
+    
+    SetEntProp(iTankClient, Prop_Send, "m_frustration", 100-iFrustration);
 }
 
 public Action MoveToSurTimer(Handle timer, int client)
 {
-	if (!isClientValid(client)) return;
+	if (!isClientValid(client)) return Plugin_Handled;
 	if (GetClientTeam(client) == TEAM_SURVIVORS)
 	{
 		Menu_SwitchCharacters(client);
-		return;
+		return Plugin_Handled;
 	}
 	FakeClientCommand(client, "jointeam 2");
+	return Plugin_Handled;
+}
+
+public void reSpec(int client) {
+	FakeClientCommand(client, "jointeam %d", TEAM_INFECTED);
+	CreateTimer(0.1, MoveToSpecTimer, client);
+}
+
+public Action MoveToSpecTimer(Handle timer, int client) {
+	if (!isClientValid(client)) return Plugin_Handled;
+	ChangeClientTeam(client, TEAM_SPECTATORS);
+	return Plugin_Handled;
 }
 
 public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 {
 	SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
-	SetConVarInt(FindConVar("survivor_limit"), 4);
 }
 
 public void setGodMode(bool boolean)
@@ -326,8 +371,33 @@ int getHumanInfected() // infected players
 	return count;
 }
 
+void storeBotTankAttackConVar()
+{
+	tankAttackConVarInt[0] = GetConVarInt(FindConVar("tank_attack_range"));
+	tankAttackConVarInt[1] = GetConVarInt(FindConVar("tank_swing_range"));
+	tankAttackConVarInt[2] = GetConVarInt(FindConVar("tank_fist_radius"));
+	tankAttackConVarFloat[0] = GetConVarFloat(FindConVar("z_tank_attack_interval"));
+}
+
+void setHumanTankAttackConVar()
+{
+	SetConVarInt(FindConVar("tank_attack_range"), 50);
+	SetConVarInt(FindConVar("tank_swing_range"), 56);
+	SetConVarInt(FindConVar("tank_fist_radius"), 15);
+	SetConVarFloat(FindConVar("z_tank_attack_interval"), 1.5);
+}
+
+void setBotTankAttackConVar()
+{
+	SetConVarInt(FindConVar("tank_attack_range"), tankAttackConVarInt[0]);
+	SetConVarInt(FindConVar("tank_swing_range"), tankAttackConVarInt[1]);
+	SetConVarInt(FindConVar("tank_fist_radius"), tankAttackConVarInt[2]);
+	SetConVarFloat(FindConVar("z_tank_attack_interval"), tankAttackConVarFloat[0]);
+}
+
 bool isClientValid(int client)
-{ 	if (client <= 0 || client > MaxClients) return false;
+{
+	if (client <= 0 || client > MaxClients) return false;
 	if (!IsClientConnected(client)) return false;
 	if (!IsClientInGame(client)) return false;
 	if (IsFakeClient(client)) return false;
@@ -410,11 +480,12 @@ public Action Timer_KickFakeBot(Handle timer, int fakeclient)
 
 public Action Return_Cmd(int client, int args)
 {
-	if (client > 0 && !gameStarted && GetClientTeam(client) == TEAM_SURVIVORS)
+	if ( isSurvivor(client) )
 	{
-		ReturnPlayerToSaferoom(client, true);
+		ReturnPlayerToSaferoom(client, false);
+		return Plugin_Handled;
 	}
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action LoadingTimer(Handle timer)
