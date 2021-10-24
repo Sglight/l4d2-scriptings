@@ -521,7 +521,7 @@ public Menu_TPMenuHandler(Handle:menu, MenuAction:action, cindex, itempos)
 		new String:number[12];
 		if (itempos == 0) {
 			StripAndExecuteClientCommand(cindex, "warp_all_survivors_to_checkpoint", "");
-		} else if (itempos > 1) {
+		} else if (itempos > 0) {
 			new Handle:hMenu = CreateMenu(Menu_TPMenuHandler2);
 			SetMenuTitle(hMenu, "传送到谁身边?");
 			SetMenuExitBackButton(hMenu, true);

@@ -52,7 +52,6 @@ Handle hDmgModifyEnable = INVALID_HANDLE;
 Handle hDmgThreshold = INVALID_HANDLE;
 Handle hRatioDamage = INVALID_HANDLE;
 Handle hFastGetup = INVALID_HANDLE;
-Handle hSharpenAllMelee = INVALID_HANDLE;
 
 public Plugin myinfo =
 {
@@ -83,7 +82,6 @@ public void OnPluginStart()
 	hDmgThreshold = CreateConVar("ast_dma_dmg", "12.0", "被控扣血数值");
 	hRatioDamage = CreateConVar("ast_ratio_damage", "0", "按比例扣血开关");
 	hFastGetup = CreateConVar("ast_fast_getup", "1", "快速起身开关");
-	hSharpenAllMelee = CreateConVar("ast_sharpen_melee", "1", "所有近战都是锐器");
 }
 
 public Action challengeRequest(int client, int args)
