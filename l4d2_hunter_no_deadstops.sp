@@ -58,7 +58,7 @@ Action Shove_Handler(int shover, int shovee)
 	// 海洋空氣 add, allow specific weapon deadstops hunter
 	bool isWeaponAllowDeadstop = false;
 
-	char allowM2WeaponAll[32];
+	char allowM2WeaponAll[256];
 	cvarWeaponAllowM2Hunter.GetString(allowM2WeaponAll, sizeof(allowM2WeaponAll));
 	char allowM2WeaponArray[32][32];
 	ExplodeString(allowM2WeaponAll, ",", allowM2WeaponArray, 32, 32, false); // 拆分为数组

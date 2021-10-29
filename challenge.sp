@@ -40,6 +40,12 @@ char SI_Names[][] =
 
 int tempTankDmg;
 int tempSITimer;
+int tempTankBhop;
+int tempTankRock;
+int tempPlayerInfected;
+int tempPlayerTank;
+char tempM2HunterWeapon[256];
+
 bool bIsPouncing[MAXPLAYERS + 1];		  // if a hunter player is currently pouncing
 bool bIsUsingAbility[MAXPLAYERS + 1];
 float fDmgPrint = 0.0;
@@ -82,6 +88,8 @@ public void OnPluginStart()
 	hDmgThreshold = CreateConVar("ast_dma_dmg", "12.0", "被控扣血数值");
 	hRatioDamage = CreateConVar("ast_ratio_damage", "0", "按比例扣血开关");
 	hFastGetup = CreateConVar("ast_fast_getup", "1", "快速起身开关");
+
+	RegConsoleCmd("sm_laser", laserCommand, "激光瞄准器开关");
 }
 
 public Action challengeRequest(int client, int args)
@@ -99,110 +107,137 @@ public Action drawPanel(int client)
 	SetMenuTitle(menu, "难度控制 Difficulty Controller");
 	SetMenuExitButton(menu, true);
 
-	// 1
+	// 1  0
 	if (GetConVarBool(hRatioDamage))
 		Format(buffer, sizeof(buffer), "按特感血量扣血 [已启用]");
 	else Format(buffer, sizeof(buffer), "按特感血量扣血");
 	AddMenuItem(menu, "hp", buffer);
 
-	// 2
+	// 2  1
 	Format(buffer, sizeof(buffer), "修改 Tank 伤害 [%i]", GetConVarInt(FindConVar("vs_tank_damage")));
 	AddMenuItem(menu, "td", buffer);
 
-	// 3
+	// 3  2
 	AddMenuItem(menu, "st", "修改特感刷新速率");
 
-	// 4
+	// 4  3
 	Format(buffer, sizeof(buffer), "修改特感基础伤害 [%i]", GetConVarInt(hDmgThreshold));
 	AddMenuItem(menu, "sd", buffer);
 
-	// 5
+	// 5  4
 	if (GetConVarBool(hRehealth))
 		AddMenuItem(menu, "rh", "击杀特感回血 [已启用]");
 	else AddMenuItem(menu, "rh", "击杀特感回血");
 
-	// 6
+	// 6  5
 	AddMenuItem(menu, "wc", "天气控制");
 
-	// 7
+	// 7  6
 	AddMenuItem(menu, "rs", "恢复默认设置");
 
 	// 翻页
-	// 1
+	// 1  7
 	AddMenuItem(menu, "", "猎头者");
 
-	// 2
-	AddMenuItem(menu, "", "枪械参数设定");
+	// 2  8
+	AddMenuItem(menu, "", "枪械参数设定（待定）");
 
-	// 3
+	// 3  9
 	AddMenuItem(menu, "", "Tank 设定");
 
-	// 4
+	// 4  10
 	AddMenuItem(menu, "", "推 Hunter 设定");
 
-	// 5
+	// 5  11
 	AddMenuItem(menu, "", "玩家特感设定");
 
-	// 6
-	AddMenuItem(menu, "", "");
+	// 6  12
+	AddMenuItem(menu, "", "激光瞄准器");
 
-	// 7
+	// 7  13
 	AddMenuItem(menu, "rs", "恢复默认设置");
 
 
 	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+
+	// 清除已选未投票状态
+	ConVar hM2HunterWeapon = FindConVar("weapon_allow_m2_hunter");
+	GetConVarString(hM2HunterWeapon, tempM2HunterWeapon, sizeof(tempM2HunterWeapon));
 }
 
 public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 {
 	if (action == MenuAction_Select) {
-		if (GetClientTeam(client) == TEAM_SURVIVORS) {
-			switch (param) {
-				case 0: {
-					if (GetConVarBool(hRatioDamage)) {
-						SetConVarBool(hRatioDamage, false);
-					}
-					else {
-						SetConVarBool(hRatioDamage, true);
-					}
-					drawPanel(client);
+		if (GetClientTeam(client) != TEAM_SURVIVORS) {
+			PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
+			return;
+		}
+		switch (param) {
+			case 0: {
+				if (GetConVarBool(hRatioDamage)) {
+					SetConVarBool(hRatioDamage, false);
 				}
-				case 1: {
-					Menu_TankDmg(client, false);
+				else {
+					SetConVarBool(hRatioDamage, true);
 				}
-				case 2: {
-					Menu_SITimer(client, false);
-				}
-				case 3: {
-					if (GetDifficulty() == 1)
-						Menu_SIDamage(client, false);
-					else {
-						PrintToChat(client, "\x04[SM] \x01当前模式不支持调整特感伤害.");
-						drawPanel(client);
-					}
-				}
-				case 4: {
-					if (GetConVarBool(hRehealth)) {
-						SetConVarBool(hRehealth, false);
-						PrintToChatAll("\x04[SM] \x01有人关闭了击杀回血.");
-					}
-					else {
-						SetConVarBool(hRehealth, true);
-						PrintToChatAll("\x04[SM] \x01有人打开了击杀回血.");
-					}
-					drawPanel(client);
-				} case 5: {
-					FakeClientCommand(client, "sm_weather");
-				}
-				case 6:{
-					ResetSettings();
-					if (GetDifficulty() == 1)
-						SIDamage(12.0);
+				drawPanel(client);
+			}
+			case 1: {
+				Menu_TankDmg(client, false);
+			}
+			case 2: {
+				Menu_SITimer(client, false);
+			}
+			case 3: {
+				if (GetDifficulty() == 1)
+					Menu_SIDamage(client, false);
+				else {
+					PrintToChat(client, "\x04[SM] \x01当前模式不支持调整特感伤害.");
 					drawPanel(client);
 				}
 			}
+			case 4: {
+				if (GetConVarBool(hRehealth)) {
+					SetConVarBool(hRehealth, false);
+					PrintToChatAll("\x04[SM] \x01有人关闭了击杀回血.");
+				}
+				else {
+					SetConVarBool(hRehealth, true);
+					PrintToChatAll("\x04[SM] \x01有人打开了击杀回血.");
+				}
+				drawPanel(client);
+			} case 5: {
+				FakeClientCommand(client, "sm_weather");
+			}
+			case 6, 13:{
+				ResetSettings();
+				if (GetDifficulty() == 1)
+					SIDamage(12.0);
+				drawPanel(client);
+			}
+			case 7:{
+				// 三个选择，关闭，小僵尸 + witch，除 tank 外全感染者
+				L4D2_ExecVScriptCode("Director.cm_HeadshotOnly=1;");
+				// z_non_head_damage_factor_normal
+				drawPanel(client);
+			}
+			case 8:{ // 枪械 / 待定
+				drawPanel(client);
+			}
+			case 9:{ // Tank
+				Menu_Tank(client, false);
+			}
+			case 10:{ // 推 ht
+				Menu_HunterM2(client, false);
+			}
+			case 11:{ // 玩家特感
+				Menu_PlayerInfected(client, false);
+			}
+			case 12:{ // 激光
+				// 开、关
+				Menu_Laser(client, false);
+			}
 		}
-		else PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
 	}
 }
 
@@ -223,19 +258,18 @@ public Action Menu_TankDmg(int client, int args)
 public int Menu_TankDmgHandler(Handle vote, MenuAction action, int client, int param)
 {
 	if (action == MenuAction_Select) {
-		switch (param)
-		{
+		switch (param) {
 			case 0: {
-				TZ_CallVote(client, 24);
+				TZ_CallVote(client, 1, 24);
 			}
 			case 1: {
-				TZ_CallVote(client, 36);
+				TZ_CallVote(client, 1, 36);
 			}
 			case 2: {
-				TZ_CallVote(client, 48);
+				TZ_CallVote(client, 1, 48);
 			}
 			case 3: {
-				TZ_CallVote(client, 100);
+				TZ_CallVote(client, 1, 100);
 			}
 		}
 		drawPanel(client);
@@ -243,7 +277,7 @@ public int Menu_TankDmgHandler(Handle vote, MenuAction action, int client, int p
 	else if (action == MenuAction_Cancel) drawPanel(client);
 }
 
-public void TZ_CallVote(int client, int param1)
+public void TZ_CallVote(int client, int target, int value)
 {
 	if ( IsNewBuiltinVoteAllowed() ) {
 		int iNumPlayers;
@@ -256,13 +290,42 @@ public void TZ_CallVote(int client, int param1)
 		}
 
 		char sBuffer[64];
-		Format(sBuffer, sizeof(sBuffer), "修改 Tank 伤害为 [%i]", param1);
-		tempTankDmg = param1;
+		g_hVote = CreateBuiltinVote(VoteHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
+		
+		switch (target) {
+			case 1: { // Tank 伤害
+				Format(sBuffer, sizeof(sBuffer), "修改 Tank 伤害为 [%i]", value);
+				tempTankDmg = value;
+				SetBuiltinVoteResultCallback(g_hVote, TankDmgVoteResultHandler);
+			}
+			case 2: { // Tank 连跳
+				value ? Format(sBuffer, sizeof(sBuffer), "开启 Tank 连跳") : Format(sBuffer, sizeof(sBuffer), "关闭 Tank 连跳");
+				tempTankBhop = value;
+				SetBuiltinVoteResultCallback(g_hVote, TankBhopVoteResultHandler);
+			}
+			case 3: { // Tank 石头
+				value ? Format(sBuffer, sizeof(sBuffer), "开启 Tank 丢石头") : Format(sBuffer, sizeof(sBuffer), "关闭 Tank 丢石头");
+				tempTankRock = value;
+				SetBuiltinVoteResultCallback(g_hVote, TankRockVoteResultHandler);
+			}
+			case 4: { // 玩家特感
+				if (value == 0) {
+					Format(sBuffer, sizeof(sBuffer), "禁止玩家加入特感");
+				} else {
+					Format(sBuffer, sizeof(sBuffer), "允许 %d 名玩家加入特感", value);
+				}
+				tempPlayerInfected = value;
+				SetBuiltinVoteResultCallback(g_hVote, PlayerInfectedVoteResultHandler);
+			}
+			case 5: { // 玩家 Tank
+				value ? Format(sBuffer, sizeof(sBuffer), "禁止玩家扮演 Tank") : Format(sBuffer, sizeof(sBuffer), "允许玩家扮演 Tank");
+				tempPlayerTank = value;
+				SetBuiltinVoteResultCallback(g_hVote, PlayerTankVoteResultHandler);
+			}
+		}
 
-		g_hVote = CreateBuiltinVote(TankDmgHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
 		SetBuiltinVoteArgument(g_hVote, sBuffer);
 		SetBuiltinVoteInitiator(g_hVote, client);
-		SetBuiltinVoteResultCallback(g_hVote, TankDmgVoteResultHandler);
 		DisplayBuiltinVote(g_hVote, iPlayers, iNumPlayers, MENU_DISPLAY_TIME);
 	}
 }
@@ -281,7 +344,68 @@ public int TankDmgVoteResultHandler(Handle vote, int num_votes, int num_clients,
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
 }
 
-public int TankDmgHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
+public int TankBhopVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+{
+	for (int i = 0; i < num_items; i++) {
+		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
+			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
+				DisplayBuiltinVotePass(vote, "正在更改 Tank 连跳...");
+				SetConVarInt(FindConVar("ai_tank_bhop"), tempTankBhop);
+				return;
+			}
+		}
+	}
+	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+}
+
+public int TankRockVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+{
+	for (int i = 0; i < num_items; i++) {
+		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
+			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
+				DisplayBuiltinVotePass(vote, "正在更改 Tank 丢石头...");
+				SetConVarInt(FindConVar("ai_tank_rock"), tempTankRock);
+				return;
+			}
+		}
+	}
+	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+}
+
+public int PlayerInfectedVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+{
+	for (int i = 0; i < num_items; i++) {
+		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
+			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
+				char sBuffer[64];
+				Format(sBuffer, sizeof(sBuffer), "正在更改特感玩家数量为 %d ...", tempPlayerInfected);
+				DisplayBuiltinVotePass(vote, sBuffer);
+				SetConVarInt(FindConVar("ast_maxinfected"), tempPlayerInfected);
+				return;
+			}
+		}
+	}
+	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+}
+
+public int PlayerTankVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+{
+	for (int i = 0; i < num_items; i++) {
+		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
+			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
+				char sBuffer[64];
+				tempPlayerTank == 0 ? Format(sBuffer, sizeof(sBuffer), "禁止") : Format(sBuffer, sizeof(sBuffer), "允许");
+				Format(sBuffer, sizeof(sBuffer), "%s玩家扮演 Tank", sBuffer);
+				DisplayBuiltinVotePass(vote, sBuffer);
+				SetConVarInt(FindConVar("ast_allowhumantank"), tempPlayerTank);
+				return;
+			}
+		}
+	}
+	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+}
+
+public int VoteHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
 {
 	switch (action) {
 		case BuiltinVoteAction_End: {
@@ -332,29 +456,29 @@ public int Menu_SITimerHandler(Handle menu, MenuAction action, int client, int p
 			case 0: {
 				tempSITimer = 0;
 				Format(buffer, sizeof(buffer),"较慢");
-				TZ_CallVoteStr(client, buffer);
+				TZ_CallVoteStr(client, 1, buffer);
 			}
 			case 1: {
 				tempSITimer = 1;
 				Format(buffer, sizeof(buffer),"默认");
-				TZ_CallVoteStr(client, buffer);
+				TZ_CallVoteStr(client, 1, buffer);
 			}
 			case 2: {
 				tempSITimer = 2;
 				Format(buffer, sizeof(buffer),"较快");
-				TZ_CallVoteStr(client, buffer);
+				TZ_CallVoteStr(client, 1, buffer);
 			}
 			case 3: {
 				tempSITimer = 3;
 				Format(buffer, sizeof(buffer),"特感速递？");
-				TZ_CallVoteStr(client, buffer);
+				TZ_CallVoteStr(client, 1, buffer);
 			}
 		}
 	}
 	else if (action == MenuAction_Cancel) drawPanel(client);
 }
 
-public void TZ_CallVoteStr(int client, char[] param1)
+public void TZ_CallVoteStr(int client,int target, char[] param1)
 {
 	if ( IsNewBuiltinVoteAllowed() ) {
 		int iNumPlayers;
@@ -369,12 +493,47 @@ public void TZ_CallVoteStr(int client, char[] param1)
 		}
 
 		char sBuffer[64];
-		Format(sBuffer, sizeof(sBuffer), "修改特感刷新速度为 [%s]", param1);
+		g_hVote = CreateBuiltinVote(VoteHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
+		switch (target) {
+			case 1: {
+				Format(sBuffer, sizeof(sBuffer), "修改特感刷新速度为 [%s]", param1);
+				SetBuiltinVoteResultCallback(g_hVote, SITimerVoteResultHandler);
+			}
+			case 2: {
+				char sWeaponSMG[64] = "weapon_smg,weapon_smg_silenced";
+				char sWeaponSG[64] = "weapon_pumpshotgun,shotgun_chrome";
+				char sWeaponSniper[64] = "weapon_sniper_scout";
+				int flag = 0; // 0 完全禁止，1 允许机枪，2 允许喷子，4 允许狙击
+				if (StrContains(tempM2HunterWeapon, sWeaponSMG) >= 0) {
+					flag += 1;
+				}
+				if ((StrContains(tempM2HunterWeapon, sWeaponSG) >= 0)) {
+					flag += 2;
+				}
+				if ((StrContains(tempM2HunterWeapon, sWeaponSniper) >= 0)) {
+					flag += 4;
+				}
+				
+				if (flag == 0) {
+					Format(sBuffer, sizeof(sBuffer), "禁止所有武器推 Hunter");
+				} else {
+					Format(sBuffer, sizeof(sBuffer), "允许 ");
+					if (flag & 1) {
+						Format(sBuffer, sizeof(sBuffer), "机枪 ");
+					}
+					if (flag & 2) {
+						Format(sBuffer, sizeof(sBuffer), "喷子 ");
+					}
+					if (flag & 4) {
+						Format(sBuffer, sizeof(sBuffer), "狙击 ");
+					}
+					Format(sBuffer, sizeof(sBuffer), "推 Hunter");
+				}
+			}
+		}
 
-		g_hVote = CreateBuiltinVote(SITimerHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
 		SetBuiltinVoteArgument(g_hVote, sBuffer);
 		SetBuiltinVoteInitiator(g_hVote, client);
-		SetBuiltinVoteResultCallback(g_hVote, SITimerVoteResultHandler);
 		DisplayBuiltinVote(g_hVote, iPlayers, iNumPlayers, MENU_DISPLAY_TIME);
 	}
 }
@@ -392,22 +551,6 @@ public int SITimerVoteResultHandler(Handle vote, int num_votes, int num_clients,
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-}
-
-public int SITimerHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
-{
-	switch (action)
-	{
-		case BuiltinVoteAction_End:
-		{
-			g_hVote = INVALID_HANDLE;
-			CloseHandle(vote);
-		}
-		case BuiltinVoteAction_Cancel:
-		{
-			DisplayBuiltinVoteFail(vote, view_as<BuiltinVoteFailReason>(param1) );
-		}
-	}
 }
 
 public Action Menu_SIDamage(int client, int args)
@@ -448,6 +591,214 @@ public void ResetSettings()
 	ServerCommand("sm_reloadscript");
 }
 
+public Action Menu_Tank(int client, int args)
+{
+	// 连跳，石头
+	Handle menu = CreateMenu(Menu_LaserHandler);
+	SetMenuTitle(menu, "Tank 设定");
+	SetMenuExitBackButton(menu, true);
+
+	char sBuffer[32];
+	ConVar hAITankBhop = FindConVar("ai_tank_bhop");
+	hAITankBhop ? Format(sBuffer, sizeof(sBuffer), "✔连跳") : Format(sBuffer, sizeof(sBuffer), "连跳");
+	AddMenuItem(menu, "", sBuffer);
+
+	ConVar hAITankRock = FindConVar("ai_tank_rock");
+	hAITankRock ? Format(sBuffer, sizeof(sBuffer), "✔石头") : Format(sBuffer, sizeof(sBuffer), "石头");
+	AddMenuItem(menu, "", sBuffer);
+
+	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+	return Plugin_Handled;
+}
+
+public int Menu_TankHandler(Handle menu, MenuAction action, int client, int param)
+{
+	if (action == MenuAction_Select) {
+		switch (param)
+		{
+			case 0: {
+				ConVar hAITankBhop = FindConVar("ai_tank_bhop");
+
+				if (hAITankBhop) {
+					TZ_CallVote(client, 2, 0);
+					// SetConVarInt(hAITankBhop, 0);
+				} else {
+					TZ_CallVote(client, 2, 1);
+					// SetConVarInt(hAITankBhop, 1);
+				}
+			}
+			case 1: {
+				ConVar hAITankRock = FindConVar("ai_tank_rock");
+				if (hAITankRock) {
+					TZ_CallVote(client, 3, 1);
+				} else {
+					TZ_CallVote(client, 3, 0);
+				}
+			}
+		}
+		drawPanel(client);
+	}
+	else if (action == MenuAction_Cancel) drawPanel(client);
+}
+
+public Action Menu_HunterM2(int client, int args)
+{
+	// 完全禁，允许机枪推，允许喷子推，允许狙击推
+	Handle menu = CreateMenu(Menu_LaserHandler);
+	SetMenuTitle(menu, "推 Hunter 设定");
+	SetMenuExitBackButton(menu, true);
+
+	ConVar hM2HunterWeapon = FindConVar("weapon_allow_m2_hunter");
+	char sM2HunterWeapon[256];
+	GetConVarString(hM2HunterWeapon, sM2HunterWeapon, sizeof(sM2HunterWeapon));
+	char sWeaponSMG[64] = "weapon_smg,weapon_smg_silenced";
+	char sWeaponSG[64] = "weapon_pumpshotgun,shotgun_chrome";
+	char sWeaponSniper[64] = "weapon_sniper_scout";
+
+	StrContains(sM2HunterWeapon, sWeaponSMG) >= 0 ? 
+		AddMenuItem(menu, "", "✔允许机枪推") : AddMenuItem(menu, "", "允许机枪推");
+	
+	StrContains(sM2HunterWeapon, sWeaponSG) >= 0 ? 
+		AddMenuItem(menu, "", "✔允许喷子推") : AddMenuItem(menu, "", "允许喷子推");
+	
+	StrContains(sM2HunterWeapon, sWeaponSniper) >= 0 ? 
+		AddMenuItem(menu, "", "✔允许狙击推") : AddMenuItem(menu, "", "允许狙击推");
+
+	AddMenuItem(menu, "", "发起投票");
+	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+	return Plugin_Handled;
+}
+
+public int Menu_HunterM2Handler(Handle menu, MenuAction action, int client, int param)
+{
+	if (action == MenuAction_Select) {
+		char sWeaponSMG[64] = "weapon_smg,weapon_smg_silenced";
+		char sWeaponSG[64] = "weapon_pumpshotgun,shotgun_chrome";
+		char sWeaponSniper[64] = "weapon_sniper_scout";
+		switch (param)
+		{
+			case 0: {
+				if (StrContains(tempM2HunterWeapon, sWeaponSMG) >= 0) {
+					ReplaceString(tempM2HunterWeapon, sizeof(tempM2HunterWeapon), sWeaponSMG, "", false);
+				} else {
+					Format(tempM2HunterWeapon, sizeof(tempM2HunterWeapon), "%s,", sWeaponSMG);
+				}
+				DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+			}
+			case 1: {
+				if (StrContains(tempM2HunterWeapon, sWeaponSG) >= 0) {
+					ReplaceString(tempM2HunterWeapon, sizeof(tempM2HunterWeapon), sWeaponSG, "", false);
+				} else {
+					Format(tempM2HunterWeapon, sizeof(tempM2HunterWeapon), "%s,", sWeaponSG);
+				}
+				DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+			}
+			case 2: {
+				if (StrContains(tempM2HunterWeapon, sWeaponSniper) >= 0) {
+					ReplaceString(tempM2HunterWeapon, sizeof(tempM2HunterWeapon), sWeaponSniper, "", false);
+				} else {
+					Format(tempM2HunterWeapon, sizeof(tempM2HunterWeapon), "%s,", sWeaponSniper);
+				}
+				DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+			}
+			case 3: {
+				TZ_CallVoteStr(client, 2, tempM2HunterWeapon);
+				drawPanel(client);
+			}
+		}
+	}
+	else if (action == MenuAction_Cancel) drawPanel(client);
+}
+
+public Action Menu_PlayerInfected(int client, int args)
+{
+	Handle menu = CreateMenu(Menu_PlayerInfectedHandler);
+	SetMenuTitle(menu, "玩家特感设定");
+	SetMenuExitBackButton(menu, true);
+	AddMenuItem(menu, "", "禁止玩家加入特感");
+	AddMenuItem(menu, "", "允许 1 名玩家加入特感");
+	AddMenuItem(menu, "", "允许 2 名玩家加入特感");
+	AddMenuItem(menu, "", "允许 3 名玩家加入特感");
+	AddMenuItem(menu, "", "允许 4 名玩家加入特感");
+	AddMenuItem(menu, "", "禁止玩家扮演 Tank");
+	AddMenuItem(menu, "", "允许玩家扮演 Tank");
+	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+	return Plugin_Handled;
+}
+
+public int Menu_PlayerInfectedHandler(Handle menu, MenuAction action, int client, int param)
+{
+	if (action == MenuAction_Select) {
+		switch (param)
+		{
+			case 0: {
+				TZ_CallVote(client, 4, 0);
+			}
+			case 1: {
+				TZ_CallVote(client, 4, 1);
+			}
+			case 2: {
+				TZ_CallVote(client, 4, 2);
+			}
+			case 3: {
+				TZ_CallVote(client, 4, 3);
+			}
+			case 4: {
+				TZ_CallVote(client, 4, 4);
+			}
+			case 5: {
+				TZ_CallVote(client, 5, 0);
+			}
+			case 6: {
+				TZ_CallVote(client, 5, 1);
+			}
+		}
+		DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+	}
+	else if (action == MenuAction_Cancel) drawPanel(client);
+}
+
+public Action laserCommand(int client, int args) {
+	if (!IsClientAndInGame(client) || GetClientTeam(client) != TEAM_SURVIVORS) return;
+	ToggleLaser(client, true);
+}
+
+public void ToggleLaser(int client, bool on) {
+	if (on){
+		BypassAndExecuteCommand(client, "upgrade_add", "LASER_SIGHT");
+	} else {
+		BypassAndExecuteCommand(client, "upgrade_remove", "LASER_SIGHT");
+	}
+}
+
+public Action Menu_Laser(int client, int args)
+{
+	Handle menu = CreateMenu(Menu_LaserHandler);
+	SetMenuTitle(menu, "激光瞄准器");
+	SetMenuExitBackButton(menu, true);
+	AddMenuItem(menu, "", "为当前武器安装激光瞄准器");
+	AddMenuItem(menu, "", "为当前武器卸载激光瞄准器");
+	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+	return Plugin_Handled;
+}
+
+public int Menu_LaserHandler(Handle menu, MenuAction action, int client, int param)
+{
+	if (action == MenuAction_Select) {
+		switch (param)
+		{
+			case 0: {
+				ToggleLaser(client, true);
+			}
+			case 1: {
+				ToggleLaser(client, false);
+			}
+		}
+		DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+	}
+	else if (action == MenuAction_Cancel) drawPanel(client);
+}
+
 ///////////////////////////
 //           Event           //
 //////////////////////////
@@ -463,11 +814,11 @@ public void OnAbilityUse(Handle event, const char[] name, bool dontBroadcast)
 
 	if( IsClientAndInGame(user) )
 	{
-		if ( strcmp(abilityName,"ability_lunge",false) == 0 && !bIsPouncing[user] ) {
+		if ( StrEqual(abilityName,"ability_lunge",false) && !bIsPouncing[user] ) {
 			bIsPouncing[user] = true;
 			CreateTimer(0.1, groundTouchTimer, user, TIMER_REPEAT);
 		}
-		if ( strcmp(abilityName, "ability_tongue", false) == 0 && !bIsUsingAbility[user] ) {
+		if ( StrEqual(abilityName, "ability_tongue", false) && !bIsUsingAbility[user] ) {
 			bIsUsingAbility[user] = true;
 			CreateTimer(2.0, Timer_ResetTongue, user);
 		}
@@ -559,10 +910,17 @@ public Action OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 			} 		// Smoker
 			case 2: {} 		// Boomer
 			case 3: { 		// Hunter
-				if (strcmp(weapon, "pistol_magnum", false) == 0 || strcmp(weapon, "pistol", false) == 0|| strcmp(weapon, "smg",false) == 0 || strcmp(weapon, "smg_silenced", false) == 0)
+				if (StrEqual(weapon, "pistol_magnum", false) || 
+				StrEqual(weapon, "pistol", false) || 
+				StrEqual(weapon, "smg",false) || 
+				StrEqual(weapon, "smg_silenced", false) ) {
 					addHP += 2;
-				else if (strcmp(weapon, "pumpshotgun", false) == 0 || strcmp(weapon, "shotgun_chrome", false) == 0 || strcmp(weapon, "sniper_scout", false) == 0)
+				}
+				else if (StrEqual(weapon, "pumpshotgun", false) || 
+				StrEqual(weapon, "shotgun_chrome", false) || 
+				StrEqual(weapon, "sniper_scout", false) ) {
 					addHP++;
+				}
 				if (bIsPouncing[victim]) addHP++;
 				bIsPouncing[victim] = false;
 			}
@@ -621,7 +979,9 @@ public void SIDamage(float damage)
 	SetConVarFloat(hDmgThreshold, damage);
 }
 
-stock int GetZombieClass(int client) { return GetEntProp(client, Prop_Send, "m_zombieClass"); }
+stock int GetZombieClass(int client) {
+	return GetEntProp(client, Prop_Send, "m_zombieClass");
+}
 
 stock bool IsClientAndInGame(int index) {
 	return (index > 0 && index <= MaxClients && IsClientInGame(index));
@@ -630,6 +990,14 @@ stock bool IsClientAndInGame(int index) {
 public int GetDifficulty() {
 	int difficulty = GetConVarInt(FindConVar("das_fakedifficulty"));
 	return difficulty;
+}
+
+public void BypassAndExecuteCommand(int client, char[] strCommand, char[] strParam1)
+{
+	int flags = GetCommandFlags(strCommand);
+	SetCommandFlags(strCommand, flags & ~FCVAR_CHEAT);
+	FakeClientCommand(client, "%s %s", strCommand, strParam1);
+	SetCommandFlags(strCommand, flags);
 }
 
 /**
@@ -728,6 +1096,7 @@ stock bool isInfected(int client) {
 stock void _CancelGetup(int client) {
     CreateTimer(0.4, CancelGetup, client);
 }
+
 public Action CancelGetup(Handle timer, int client) {
     SetEntPropFloat(client, Prop_Send, "m_flCycle", 1000.0); // Jumps to frame 1000 in the animation, effectively skipping it.
     return Plugin_Continue;
