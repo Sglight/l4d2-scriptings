@@ -138,7 +138,7 @@ public Action drawPanel(int client)
 
 	// 翻页
 	// 1  7
-	AddMenuItem(menu, "", "猎头者");
+	AddMenuItem(menu, "", "待定");
 
 	// 2  8
 	AddMenuItem(menu, "", "枪械参数设定（待定）");
@@ -226,35 +226,32 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 			} case 5: {
 				FakeClientCommand(client, "sm_weather");
 			}
-			case 6:{
+			case 6: {
 				ResetSettings();
 				if (GetDifficulty() == 1)
 					SIDamage(12.0);
 				drawPanel(client);
 			}
-			case 7:{
-				// 三个选择，关闭，小僵尸 + witch，除 tank 外全感染者
-				L4D2_ExecVScriptCode("Director.cm_HeadshotOnly=1;");
-				// z_non_head_damage_factor_normal
+			case 7: {
 				drawPanel(client);
 			}
-			case 8:{ // 枪械 / 待定
+			case 8: { // 枪械 / 待定
 				drawPanel(client);
 			}
-			case 9:{ // Tank
+			case 9: { // Tank
 				Menu_Tank(client, false);
 			}
-			case 10:{ // 推 ht
+			case 10: { // 推 ht
 				Menu_HunterM2(client, false);
 			}
-			case 11:{ // 玩家特感
+			case 11: { // 玩家特感
 				Menu_PlayerInfected(client, false);
 			}
-			case 12:{ // 激光
+			case 12: { // 激光
 				// 开、关
 				Menu_Laser(client, false);
 			}
-			case 13:{
+			case 13: {
 				ResetSettings();
 				if (GetDifficulty() == 1)
 					SIDamage(12.0);
