@@ -44,7 +44,6 @@ int tempTankBhop;
 int tempTankRock;
 int tempPlayerInfected;
 int tempPlayerTank;
-// char tempM2HunterWeapon[256];
 int tempM2HunterFlag;
 
 bool bIsPouncing[MAXPLAYERS + 1];		  // if a hunter player is currently pouncing
@@ -62,10 +61,10 @@ Handle hFastGetup = INVALID_HANDLE;
 
 public Plugin myinfo =
 {
-	name = "Challenge Amethyst",
+	name = "Amethyst Challenge",
 	author = "海洋空氣",
 	description = "Difficulty Controller for Amethyst Mod.",
-	version = "1.9",
+	version = "2.0",
 	url = "https://steamcommunity.com/id/larkspur2017/"
 };
 
@@ -388,6 +387,7 @@ public void TZ_CallVote(int client, int target, int value)
 		SetBuiltinVoteArgument(g_hVote, sBuffer);
 		SetBuiltinVoteInitiator(g_hVote, client);
 		DisplayBuiltinVote(g_hVote, iPlayers, iNumPlayers, MENU_DISPLAY_TIME);
+		FakeClientCommand(client, "Vote Yes");
 	}
 }
 
@@ -604,6 +604,7 @@ public void TZ_CallVoteStr(int client, int target, char[] param1)
 		SetBuiltinVoteArgument(g_hVote, sBuffer);
 		SetBuiltinVoteInitiator(g_hVote, client);
 		DisplayBuiltinVote(g_hVote, iPlayers, iNumPlayers, MENU_DISPLAY_TIME);
+		FakeClientCommand(client, "Vote Yes");
 	}
 }
 
@@ -837,29 +838,34 @@ public Action Menu_PlayerInfected(int client, int args)
 public int Menu_PlayerInfectedHandler(Handle menu, MenuAction action, int client, int param)
 {
 	if (action == MenuAction_Select) {
-		switch (param)
-		{
-			case 0: {
-				TZ_CallVote(client, 4, 0);
-			}
-			case 1: {
-				TZ_CallVote(client, 4, 1);
-			}
-			case 2: {
-				TZ_CallVote(client, 4, 2);
-			}
-			case 3: {
-				TZ_CallVote(client, 4, 3);
-			}
-			case 4: {
-				TZ_CallVote(client, 4, 4);
-			}
-			case 5: {
-				TZ_CallVote(client, 5, 0);
-			}
-			case 6: {
-				TZ_CallVote(client, 5, 1);
-			}
+		// switch (param)
+		// {
+		// 	case 0: {
+		// 		TZ_CallVote(client, 4, 0);
+		// 	}
+		// 	case 1: {
+		// 		TZ_CallVote(client, 4, 1);
+		// 	}
+		// 	case 2: {
+		// 		TZ_CallVote(client, 4, 2);
+		// 	}
+		// 	case 3: {
+		// 		TZ_CallVote(client, 4, 3);
+		// 	}
+		// 	case 4: {
+		// 		TZ_CallVote(client, 4, 4);
+		// 	}
+		// 	case 5: {
+		// 		TZ_CallVote(client, 5, 0);
+		// 	}
+		// 	case 6: {
+		// 		TZ_CallVote(client, 5, 1);
+		// 	}
+		// }
+		if (param >= 0 && param <= 4) {
+			TZ_CallVote(client, 4, param);
+		} else if (param >= 5 && param <= 6) {
+			TZ_CallVote(client, 5, param - 5);
 		}
 		DisplayMenu(menu, client, MENU_DISPLAY_TIME);
 	}
