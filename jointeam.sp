@@ -232,23 +232,6 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 	setBotTankAttackConVar();
 }
 
-public Action L4D_OnIsTeamFull(int team, bool &full)
-{
-	if (gameStarted && team == TEAM_SURVIVORS) {
-		// full = true;
-		// return Plugin_Changed;
-		return Plugin_Handled;
-	}
-
-	int maxInfected = GetConVarInt(hMaxInfected);
-	if (getHumanInfected() >= maxInfected && team == TEAM_INFECTED) { // 特感满人
-		// full = true;
-		// return Plugin_Changed;
-		return Plugin_Handled;
-	}
-	return Plugin_Continue;
-}
-
 public Action L4D_OnEnterGhostStatePre(int client)
 {
 	int maxInfected = GetConVarInt(hMaxInfected);

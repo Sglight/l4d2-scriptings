@@ -184,12 +184,12 @@ public Action drawPanel(int client)
 public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 {
 	if (action == MenuAction_Select) {
-		if (GetClientTeam(client) != TEAM_SURVIVORS) {
-			PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
-			return;
-		}
 		switch (param) {
 			case 0: {
+				if (GetClientTeam(client) != TEAM_SURVIVORS) {
+					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
+					return;
+				}
 				if (GetConVarBool(hRatioDamage)) {
 					SetConVarBool(hRatioDamage, false);
 				}
@@ -213,6 +213,10 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 				}
 			}
 			case 4: {
+				if (GetClientTeam(client) != TEAM_SURVIVORS) {
+					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
+					return;
+				}
 				if (GetConVarBool(hRehealth)) {
 					SetConVarBool(hRehealth, false);
 					PrintToChatAll("\x04[SM] \x01有人关闭了击杀回血.");
@@ -226,15 +230,22 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 				FakeClientCommand(client, "sm_weather");
 			}
 			case 6: {
+				if (GetClientTeam(client) != TEAM_SURVIVORS) {
+					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
+					return;
+				}
 				ResetSettings();
 				if (GetDifficulty() == 1)
 					SIDamage(12.0);
 				drawPanel(client);
 			}
 			case 7: {
+				L4D2_ExecVScriptCode("Mutations/mutation2.nut");
+				PrintToChat(client, "此项待定");
 				drawPanel(client);
 			}
 			case 8: { // 枪械 / 待定
+				PrintToChat(client, "此项待定");
 				drawPanel(client);
 			}
 			case 9: { // Tank
@@ -248,9 +259,17 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 			}
 			case 12: { // 激光
 				// 开、关
+				if (GetClientTeam(client) != TEAM_SURVIVORS) {
+					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
+					return;
+				}
 				Menu_Laser(client, false);
 			}
 			case 13: {
+				if (GetClientTeam(client) != TEAM_SURVIVORS) {
+					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
+					return;
+				}
 				ResetSettings();
 				if (GetDifficulty() == 1)
 					SIDamage(12.0);
@@ -321,6 +340,11 @@ public int Menu_TankDmgHandler(Handle vote, MenuAction action, int client, int p
 
 public void TZ_CallVote(int client, int target, int value)
 {
+	if (GetClientTeam(client) != TEAM_SURVIVORS) {
+		PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
+		return;
+	}
+	
 	if ( IsNewBuiltinVoteAllowed() ) {
 		int iNumPlayers;
 		int iPlayers[MAXPLAYERS];
@@ -580,6 +604,11 @@ public int Menu_SITimerHandler(Handle menu, MenuAction action, int client, int p
 
 public void TZ_CallVoteStr(int client, int target, char[] param1)
 {
+	if (GetClientTeam(client) != TEAM_SURVIVORS) {
+		PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
+		return;
+	}
+
 	if ( IsNewBuiltinVoteAllowed() ) {
 		int iNumPlayers;
 		int iPlayers[MAXPLAYERS];
