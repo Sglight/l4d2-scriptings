@@ -56,8 +56,6 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_zs", Suicide_Cmd);
 
 	HookEvent("round_start", Event_RoundStart);
-	// HookEvent("mission_lost", Event_MissionLost);
-	// HookEvent("round_end", Event_MissionLost);
 	HookEvent("map_transition", Event_MapTransition);
 
 	LoadTranslations("smac.phrases");
@@ -129,6 +127,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 	/****** JoinTeam ******/
 	KickBots();
 	SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
+	SetConVarInt(FindConVar("survivor_limit"), getHumanSurvivors());
 
 	/****** StartingPills ******/
 	ResetInventory(false);
@@ -311,6 +310,7 @@ public Action MoveToSpecTimer(Handle timer, int client) {
 public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 {
 	SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
+	SetConVarInt(FindConVar("survivor_limit"), 4);
 }
 
 public void setGodMode(bool boolean)

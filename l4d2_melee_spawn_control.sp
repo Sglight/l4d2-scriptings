@@ -60,8 +60,8 @@ public void OnPluginStart()
 	hMapInitMelee = new StringMap()
 
 	CloseHandle(h)
-	hCvarMeleeSpawn = CreateConVar("l4d2_melee_spawn", "", "Melee weapon list for unlock, use ',' to separate between names, e.g: pitchfork,shovel. Empty for no change");
-	hCvarAddMelee = CreateConVar("l4d2_add_melee", "", "Add melee weapons to map basis melee spawn or l4d2_melee_spawn, use ',' to separate between names. Empty for don't add");
+	hCvarMeleeSpawn = CreateConVar("l4d2_melee_spawn", "fireaxe,frying_pan,machete,baseball_bat,crowbar,cricket_bat,tonfa,katana,electric_guitar,knife,golfclub,pitchfork,shovel", "Melee weapon list for unlock, use ',' to separate between names, e.g: pitchfork,shovel. Empty for no change");
+	hCvarAddMelee = CreateConVar("l4d2_add_melee", "fireaxe,frying_pan,machete,baseball_bat,crowbar,cricket_bat,tonfa,katana,electric_guitar,knife,golfclub,pitchfork,shovel", "Add melee weapons to map basis melee spawn or l4d2_melee_spawn, use ',' to separate between names. Empty for don't add");
 }
 
 public MRESReturn DH_OnGetMissionInfo(Handle hReturn)

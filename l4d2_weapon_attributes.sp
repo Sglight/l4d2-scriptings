@@ -429,7 +429,7 @@ int GetWeaponAttributeIndex(const char[] sAttrName)
 public Action Cmd_Melee(int args)
 {
 	if (args < 3) {
-		PrintDebug(eLogError|eServerPrint, "Syntax: sm_melee <melee> <attr> <value>.");
+		PrintDebug(eServerPrint, "Syntax: sm_melee <melee> <attr> <value>.");
 		return Plugin_Handled;
 	}
 
@@ -438,7 +438,7 @@ public Action Cmd_Melee(int args)
 	int iMeleeId = L4D2_GetMeleeWeaponIndex(sMeleeName);
 	
 	if (iMeleeId == -1) {
-		PrintDebug(eLogError|eServerPrint, "Bad melee name: %s.", sMeleeName);
+		PrintDebug(eServerPrint, "Bad melee name: %s.", sMeleeName);
 		return Plugin_Handled;
 	}
 	
@@ -511,7 +511,7 @@ public Action Cmd_MeleeAttributes(int client, int args)
 	int iMeleeId = L4D2_GetMeleeWeaponIndex(sMeleeName);
 	
 	if (iMeleeId == -1) {
-		PrintDebug(eLogError|eServerPrint, "Bad melee name: %s.", sMeleeName);
+		PrintDebug(eServerPrint, "Bad melee name: %s.", sMeleeName);
 		return Plugin_Handled;
 	}
 

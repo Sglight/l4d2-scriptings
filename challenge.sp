@@ -344,7 +344,7 @@ public void TZ_CallVote(int client, int target, int value)
 		PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
 		return;
 	}
-	
+
 	if ( IsNewBuiltinVoteAllowed() ) {
 		int iNumPlayers;
 		int iPlayers[MAXPLAYERS];
@@ -1158,6 +1158,7 @@ public void BypassAndExecuteCommand(int client, char[] strCommand, char[] strPar
 // 插件重读的时候也重新 Hook
 public void OnMapStart() {
 	for (int i = 1; i < MaxClients; i++) {
+		if (!IsValidEntity(i)) return;
 		SDKHook(i, SDKHook_OnTakeDamage, OnTakeDamage);
 	}
 }
