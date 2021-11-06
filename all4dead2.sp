@@ -24,19 +24,18 @@ Copyright 2009 James Richardson
 // Define constants
 #define PLUGIN_NAME					"All4Dead"
 #define PLUGIN_TAG					"[A4D] "
-#define PLUGIN_VERSION			"2.0.0"
+#define PLUGIN_VERSION			"2.0.1"
 #define MENU_DISPLAY_TIME		15
 
 // Include necessary files
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <left4dhooks>
 // Make the admin menu optional
 #undef REQUIRE_PLUGIN
 #include <adminmenu>
 
-static Handle:hRoundRespawn = INVALID_HANDLE;
-static Handle:hGameConf = INVALID_HANDLE;
 // Create ConVar Handles
 //new Handle:notify_players = INVALID_HANDLE;
 //new Handle:automatic_placement	= INVALID_HANDLE;
@@ -64,7 +63,6 @@ new String:change_zombie_model_to[128] = "";
 new Float:last_zombie_spawn_location[3];
 //new Handle:refresh_timer = INVALID_HANDLE;
 //new last_zombie_spawned = 0;
-new Float:g_pos[3];
 new g_originClient = -1;
 
 /// Metadata for the mod - used by SourceMod
@@ -111,15 +109,6 @@ public OnPluginStart() {
 	// If the Admin menu has been loaded start adding stuff to it
 	if (LibraryExists("adminmenu") && ((top_menu = GetAdminTopMenu()) != INVALID_HANDLE))
 		OnAdminMenuReady(top_menu);
-
-	hGameConf = LoadGameConfigFile("left4dhooks.l4d2");
-	if (hGameConf != INVALID_HANDLE)
-	{
-		StartPrepSDKCall(SDKCall_Player);
-		PrepSDKCall_SetFromConf(hGameConf, SDKConf_Signature, "RoundRespawn");
-		hRoundRespawn = EndPrepSDKCall();
-		if (hRoundRespawn == INVALID_HANDLE) SetFailState("L4D_SM_Respawn: RoundRespawn Signature broken");
-	}
 }
 
 public OnMapStart() {
@@ -636,13 +625,11 @@ public Menu_RespawnMenuHandler(Handle:menu, MenuAction:action, cindex, itempos)
 		if (action == MenuAction_Select)
 		{
 			new String:sInfo[64];
-			new String:name[32];
 			GetMenuItem(menu, itempos, sInfo, 64);
 			new client = GetClientOfUserId(StringToInt(sInfo, 10));
-			Format(name, 19, "%N", client);
 			if (GetClientTeam(client) == 2 && IsPlayerAlive(client)) return;
-			RespawnPlayer(cindex, client);
-			ShowActivity2(cindex, "[SM] ", "已复活 %s", name);
+			L4D_RespawnPlayer(client);
+			ShowActivity2(cindex, "[SM] ", "已复活 %N", client);
 			Menu_CreateRespawnMenu(cindex, 0);
 		}
 		if (action == MenuAction_Cancel)
@@ -653,16 +640,6 @@ public Menu_RespawnMenuHandler(Handle:menu, MenuAction:action, cindex, itempos)
 			}
 		}
 	}
-}
-
-RespawnPlayer(client, player_id)
-{
-	new bool:canTeleport = SetTeleportEndPoint(client);
-	SDKCall(hRoundRespawn, player_id);
-	Do_SpawnItem(player_id, "shotgun_chrome");
-	Do_SpawnItem(player_id, "pistol_magnum");
-	if (canTeleport)
-		PerformTeleport(client, player_id, g_pos);
 }
 
 /*
@@ -1543,41 +1520,9 @@ public Action:Command_TeleportToZombieSpawn(client, args) {
 	return Plugin_Handled;
 }
 */
-bool:SetTeleportEndPoint(client)
-{
-	decl Float:vAngles[3];
-	decl Float:vOrigin[3];
-	GetClientEyePosition(client, vOrigin);
-	GetClientEyeAngles(client, vAngles);
-	new Handle:trace = TR_TraceRayFilterEx(vOrigin, vAngles, 1174421507, RayType:1, TraceEntityFilterPlayer, any:0);
-	if (TR_DidHit(trace))
-	{
-		decl Float:vBuffer[3];
-		decl Float:vStart[3];
-		TR_GetEndPosition(vStart, trace);
-		GetVectorDistance(vOrigin, vStart, false);
-		new Float:Distance = -35.0;
-		GetAngleVectors(vAngles, vBuffer, NULL_VECTOR, NULL_VECTOR);
-		g_pos[0] = vStart[0] + vBuffer[0] * Distance;
-		g_pos[1] = vStart[1] + vBuffer[1] * Distance;
-		g_pos[2] = vStart[2] + vBuffer[2] * Distance;
-		CloseHandle(trace);
-		return true;
-	}
-	PrintToChat(client, "[SM] %s", "Could not teleport player after respawn");
-	CloseHandle(trace);
-	return false;
-}
+
 
 public bool:TraceEntityFilterPlayer(entity, contentsMask)
 {
 	return entity > MaxClients || !entity;
-}
-
-PerformTeleport(client, target, Float:pos[3])
-{
-	pos[2] += 40.0;
-	TeleportEntity(target, pos, NULL_VECTOR, NULL_VECTOR);
-	LogAction(client, target, "\"%L\" teleported \"%L\" after respawning him", client, target);
-	return 0;
 }

@@ -169,6 +169,7 @@ public void __pl_l4dh_SetNTVOptional()
 	MarkNativeAsOptional("L4D2_SpawnWitchBride");
 
 	// l4d2weapons.inc
+	MarkNativeAsOptional("L4D_GetWeaponID");
 	MarkNativeAsOptional("L4D2_IsValidWeapon");
 	MarkNativeAsOptional("L4D2_GetIntWeaponAttribute");
 	MarkNativeAsOptional("L4D2_GetFloatWeaponAttribute");
@@ -345,6 +346,30 @@ enum
     STATE_WAITING_FOR_RESCUE,
     STATE_GHOST,
     STATE_INTRO_CAMERA
+}
+
+// From: https://developer.valvesoftware.com/wiki/L4D2_Director_Scripts
+// For the "L4D2_ChangeFinaleStage" and "L4D2_GetCurrentFinaleStage" natives and "L4D2_OnChangeFinaleStage" forward.
+enum
+{
+	FINALE_GAUNTLET_1 = 0,
+	FINALE_HORDE_ATTACK_1 = 1,
+	FINALE_HALFTIME_BOSS = 2,
+	FINALE_GAUNTLET_2 = 3,
+	FINALE_HORDE_ATTACK_2 = 4,
+	FINALE_FINAL_BOSS = 5,
+	FINALE_HORDE_ESCAPE    = 6,
+	FINALE_CUSTOM_PANIC    = 7,
+	FINALE_CUSTOM_TANK    = 8,
+	FINALE_CUSTOM_SCRIPTED    = 9,
+	FINALE_CUSTOM_DELAY    = 10,
+	FINALE_CUSTOM_CLEAROUT = 11,
+	FINALE_GAUNTLET_START = 12,
+	FINALE_GAUNTLET_HORDE = 13,
+	FINALE_GAUNTLET_HORDE_BONUSTIME    = 14,
+	FINALE_GAUNTLET_BOSS_INCOMING = 15,
+	FINALE_GAUNTLET_BOSS = 16,
+	FINALE_GAUNTLET_ESCAPE = 17
 }
 
 
@@ -869,7 +894,8 @@ forward Action L4D_OnStartMeleeSwing(int client, bool boolean);
 /**
  * @brief Called whenever CTerrorMeleeWeapon::GetDamageForVictim() is invoked
  * @remarks Called to calculate the damage when a melee weapon hits something
- * @remarks A headshot on Common Infected will still kill them
+ * @remarks A headshot on Common Infected will still kill them.
+ * @remarks Could maybe set the weapon attribute "L4D2BoolMeleeWeapon_Decapitates" to avoid killing on headshot. Please report success if you try
  *
  * @param client	the client swinging the melee weapon
  * @param weapon	the weapon entity index
@@ -893,11 +919,12 @@ forward Action L4D2_OnSendInRescueVehicle();
 
 /**
  * @brief Called whenever CDirectorScriptedEventManager::ChangeFinaleStage is invoked
- *
- * @param FinaleStageType	integer value
  * @remarks Called when the director stage changes
  * @remarks some values for FinaleStageType: 1 - Finale Started; 6 - Rescue Vehicle Ready; 7 - Zombie Hordes; 8 - Tank; 10 - Combat Respite (nothing spawns)
  * @remarks SendInRescueVehicle does not depend on Finale Stage being 6, that only signals endless Hordes/Tanks
+ * @remarks Can use the "FINALE_*" enums (search for them above) for the finaleType value.
+ *
+ * @param FinaleStageType	integer value
  *
  * @return			Plugin_Handled to block, Plugin_Changed to change finaleType, Plugin_Continue otherwise
  */
@@ -1110,6 +1137,101 @@ forward void L4D_PipeBombProjectile_Post(int client, int projectile, float vecPo
  * @return					Plugin_Handled to block extinguishing, Plugin_Continue otherwise
  */
 forward Action L4D_PlayerExtinguish(int client);
+
+/**
+ * @brief Called whenever CBreakableProp::Break() is invoked
+ * @remarks Called when a physics prop is broken
+ * @note When a propanetank explodes, it will create and explode another prop_physics and the attacker entity will be 0. Maybe only L4D2 has this issue.
+ *
+ * @param prop				the physics entity index which broke
+ * @param entity			the client or entity who caused the prop to break (could be 0)
+ *
+ * @noreturn
+ */
+forward void L4D_CBreakableProp_Break(int prop, int entity);
+
+/**
+ * @brief Called whenever CGasCan::Event_Killed() is invoked
+ * @remarks Called when a gascan is broken
+ *
+ * @param gascan			the gascan entity index
+ *
+ * @noreturn
+ */
+ // L4D2 only.
+forward void L4D2_CGasCan_EventKilled(int gascan, int inflictor, int attacker);
+
+/**
+ * @brief Called whenever CGasCan::OnActionComplete() is invoked
+ * @remarks Called when someone completes pouring a gascan into a nozzle
+ *
+ * @param client			the client pouring
+ * @param gascan			the gascan entity index that is being consumed
+ * @param nozzle			the nozzle being poured into
+ *
+ * @return					Plugin_Handled to block adding to Scavenge score (see "Scavenge Score Fix" plugin for more details), Plugin_Continue otherwise
+ */
+ // L4D2 only.
+forward Action L4D2_CGasCan_ActionComplete(int client, int gascan, int nozzle);
+
+/**
+ * @brief Called whenever CInsectSwarm::CanHarm() is invoked
+ * @remarks Called when Spitter Acid is determining if a client or entity can be damaged
+ *
+ * @param acid				the acid entity index causing the damage
+ * @param spitter			the Spitter or client who created the acid (can be 0)
+ * @param entity			the client or entity index being checked if it can be damaged
+ *
+ * @return					Plugin_Handled to block allowing damage to an entity, Plugin_Continue otherwise
+ */
+ // L4D2 only.
+forward Action L4D2_CInsectSwarm_CanHarm(int acid, int spitter, int entity);
+
+/**
+ * @brief Called whenever CTerrorPlayer::OnPouncedOnSurvivor() is invoked
+ * @remarks Called when a Survivor player is about to be pounced on by a Hunter
+ *
+ * @param victim			the client who's being pounced
+ * @param attacker			the Hunter pouncing on someone
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+forward Action L4D_OnPouncedOnSurvivor(int victim, int attacker);
+
+/**
+ * @brief Called whenever CTerrorPlayer::GrabVictimWithTongue() is invoked
+ * @remarks Called when a Survivor player is about to be grabbed by a Smoker
+ *
+ * @param victim			the client who's being grabbed
+ * @param attacker			the Smoker grabbing someone
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+forward Action L4D_OnGrabWithTongue(int victim, int attacker);
+
+/**
+ * @brief Called whenever CTerrorPlayer::OnLeptOnSurvivor() is invoked
+ * @remarks Called when a Survivor player is about to be ridden by a Jockey
+ *
+ * @param victim			the client who's being grabbed
+ * @param attacker			the Jockey grabbing someone
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+ // L4D2 only.
+forward Action L4D2_OnJockeyRide(int victim, int attacker);
+
+/**
+ * @brief Called whenever CTerrorPlayer::OnStartCarryingVictim() is invoked
+ * @remarks Called when a Survivor player is about to be carried by a Charger
+ *
+ * @param victim			the client who's being grabbed
+ * @param attacker			the Charger picking up someone
+ *
+ * @return					Plugin_Handled to block, Plugin_Continue otherwise
+ */
+ // L4D2 only.
+forward Action L4D2_OnStartCarryingVictim(int victim, int attacker);
 
 /**
  * @brief Called whenever CTerrorPlayer::OnVomitedUpon is invoked
@@ -1615,6 +1737,7 @@ native bool L4D_IsFinaleEscapeInProgress();
  * @brief Returns the current Finale stage type.
  * @remarks some values for FinaleStageType: 1 - Finale Started; 6 - Rescue Vehicle Ready; 7 - Zombie Hordes; 8 - Tank; 10 - Combat Respite (nothing spawns)
  * @remarks Seems to return 18 for non-finale maps
+ * @remarks Can use the "FINALE_*" enums (search for them above) for the finaleType value.
  *
  * @return			finaleType stage value
  */
@@ -1960,6 +2083,7 @@ native void L4D2_SendInRescueVehicle();
  * @remarks Changes the Finale stage
  * @remarks some values for FinaleStageType: 1 - Finale Started; 6 - Rescue Vehicle Ready; 7 - Zombie Hordes; 8 - Tank; 10 - Combat Respite (nothing spawns)
  * @remarks will fire the forward of the same function
+ * @remarks Can use the "FINALE_*" enums (search for them above) for the finaleType value.
  *
  * @param FinaleStageType	integer value
  *
@@ -2359,7 +2483,7 @@ native float L4D2_ITimerGetElapsedTime(L4D2IntervalTimer timer);
  * 2020 Update2: Now works in Left4DHooks. Glitchy animation bug when reloading an already full weapon.
  * 2021 Update3: Fix plugin for modified ammo clips found here: https://forums.alliedmods.net/showthread.php?t=327105
 
-A note regarding Clipsize: Any nonstandard value will NOT be in effect at weapon pickup, which means the client
+A note regarding Clipsize: Any non-standard value will NOT be in effect at weapon pickup, which means the client
 has to reload once to achieve the modified value. To fix this, add a weapon pickup hook in your plugin (eg "player_use")
 and use something like this with a small timer delay of 0.1 seconds or more (dont you love this engine).
 
@@ -2423,6 +2547,16 @@ enum L4D2FloatMeleeWeaponAttributes
 
 
 /**
+ * @brief Returns the weapon ID for a specific classname
+ * @remarks Can specify either "rifle" or "weapon_rifle" for example
+ *
+ * @param weaponName 	Weapon classname to check up on
+ *
+ * @return				-1 if not found, otherwise returns weaponID
+ */
+native int L4D_GetWeaponID(const char[] weaponName);
+
+/**
  * @brief Checks for a given weapon string to exist in the WeaponInformationDatabase
  * @remarks Throws an error if Database is unavailable
  *
@@ -2430,7 +2564,6 @@ enum L4D2FloatMeleeWeaponAttributes
  *
  * @return				True if weapon is found, false if not
  */
-// L4D2 only.
 native bool L4D2_IsValidWeapon(const char[] weaponName);
 
 /**
@@ -2442,7 +2575,6 @@ native bool L4D2_IsValidWeapon(const char[] weaponName);
  *
  * @return				The value read.
  */
-// L4D2 only.
 native int L4D2_GetIntWeaponAttribute(const char[] weaponName, L4D2IntWeaponAttributes attr);
 
 /**
@@ -2454,7 +2586,6 @@ native int L4D2_GetIntWeaponAttribute(const char[] weaponName, L4D2IntWeaponAttr
  *
  * @return				The value read.
  */
-// L4D2 only.
 native float L4D2_GetFloatWeaponAttribute(const char[] weaponName, L4D2FloatWeaponAttributes attr);
 
 /**
@@ -2467,7 +2598,6 @@ native float L4D2_GetFloatWeaponAttribute(const char[] weaponName, L4D2FloatWeap
  *
  * @noreturn
  */
-// L4D2 only.
 native void L4D2_SetIntWeaponAttribute(const char[] weaponName, L4D2IntWeaponAttributes attr, int value);
 
 /**
@@ -2480,7 +2610,6 @@ native void L4D2_SetIntWeaponAttribute(const char[] weaponName, L4D2IntWeaponAtt
  *
  * @noreturn
  */
-// L4D2 only.
 native void L4D2_SetFloatWeaponAttribute(const char[] weaponName, L4D2FloatWeaponAttributes attr, float value);
 
 
@@ -3472,6 +3601,7 @@ native bool L4D_BecomeGhost(int client);
 /**
  * @brief Enter ghost/dead mode. Some state values may have different results. Unknown.
  * @remarks 6 and 8 are commonly used by the game.
+ * @remarks Can use the "STATE_*" enums (search for them above).
  *
  * @param client			Client ID of the player to affect
  *
