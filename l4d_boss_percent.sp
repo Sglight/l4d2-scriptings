@@ -3,8 +3,6 @@
 
 #include <sourcemod>
 #include <left4dhooks>
-#define L4D2UTIL_STOCKS_ONLY
-#include <l4d2util>
 
 #define MAX(%0,%1) (((%0) > (%1)) ? (%0) : (%1))
 
@@ -83,7 +81,7 @@ public Action SaveBossFlows(Handle timer)
 
 stock void PrintBossPercents()
 {
-	int boss_proximity = RoundToNearest(GetBossProximity() * 100.0);
+	int boss_proximity = RoundToNearest(GetSurvivorsCurrent() * 100.0);
 	if (iTankPercent)
 		PrintToChatAll("\x01<\x05Current\x01> \x04%d%%    \x01<\x05Tank\x01> \x04%d%%    \x01<\x05Witch\x01> \x04%d%", boss_proximity, iTankPercent, iWitchPercent);
 	else
@@ -106,7 +104,7 @@ stock float GetWitchFlow(int round)
 	return L4D2Direct_GetVSWitchFlowPercent(round);
 }
 
-stock float GetBossProximity()
+stock float GetSurvivorsCurrent()
 {
 	float proximity = GetMaxSurvivorCompletion() + GetConVarFloat(g_hVsBossBuffer) / L4D2Direct_GetMapMaxFlowDistance();
 	return proximity;
@@ -123,4 +121,8 @@ stock float GetMaxSurvivorCompletion()
 		}
 	}
 	return (flow / L4D2Direct_GetMapMaxFlowDistance());
+}
+
+bool IsSurvivor(int client) {
+	return client > 0 && client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == 2;
 }
