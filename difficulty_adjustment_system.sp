@@ -48,7 +48,7 @@ public void OnPluginStart()
 	//AutoExecConfig(true, "difficulty_adjustment_system");
 	
 	HookEvent("player_team", OnClientChangeTeam);
-	HookEvent("round_start", OnRoundStart);
+	// HookEvent("round_start", OnRoundStart);
 }
 
 public void OnMapStart()
@@ -248,12 +248,12 @@ public void OnClientChangeTeam(Event event, const char[] name, bool dontBroadcas
 	}
 }
 
-public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
-{
-	int iFakeDifficulty = g_cvDASConVars[2].IntValue;
-	g_cvDASConVars[2].SetInt(0);
-	g_cvDASConVars[2].SetInt(iFakeDifficulty);
-}
+// public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
+// {
+// 	int iFakeDifficulty = g_cvDASConVars[2].IntValue;
+// 	g_cvDASConVars[2].SetInt(0);
+// 	g_cvDASConVars[2].SetInt(iFakeDifficulty);
+// }
 
 stock int iGetPlayerCount()
 {
