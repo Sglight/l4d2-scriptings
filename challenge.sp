@@ -45,6 +45,8 @@ int tempTankRock;
 int tempPlayerInfected;
 int tempPlayerTank;
 int tempM2HunterFlag;
+int tempMorePills;
+int tempKillMapPills;
 
 bool bIsPouncing[MAXPLAYERS + 1];		  // if a hunter player is currently pouncing
 bool bIsUsingAbility[MAXPLAYERS + 1];
@@ -83,7 +85,6 @@ public void OnPluginStart()
 
 	hRehealth = CreateConVar("ast_rehealth",       "0", "击杀特感回血开关");
 	hSITimer = CreateConVar("ast_sitimer",       "1", "特感刷新速率");
-
 	hDmgModifyEnable = CreateConVar("ast_dmgmodify", "1", "伤害修改总开关");
 	hDmgThreshold = CreateConVar("ast_dma_dmg", "12.0", "被控扣血数值");
 	hRatioDamage = CreateConVar("ast_ratio_damage", "0", "按比例扣血开关");
@@ -137,7 +138,7 @@ public Action drawPanel(int client)
 
 	// 翻页
 	// 1  7
-	AddMenuItem(menu, "", "待定");
+	AddMenuItem(menu, "", "额外发药设定");
 
 	// 2  8
 	AddMenuItem(menu, "", "枪械参数设定（待定）");
@@ -240,8 +241,7 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 				drawPanel(client);
 			}
 			case 7: {
-				L4D2_ExecVScriptCode("Mutations/mutation2.nut");
-				PrintToChat(client, "此项待定");
+				Menu_MorePills(client, false);
 				drawPanel(client);
 			}
 			case 8: { // 枪械 / 待定
@@ -357,7 +357,7 @@ public void TZ_CallVote(int client, int target, int value)
 
 		char sBuffer[64];
 		g_hVote = CreateBuiltinVote(VoteHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
-		
+
 		switch (target) {
 			case 1: { // Tank 伤害
 				Format(sBuffer, sizeof(sBuffer), "修改 Tank 伤害为 [%i]", value);
@@ -405,6 +405,16 @@ public void TZ_CallVote(int client, int target, int value)
 					Format(sBuffer, sizeof(sBuffer), "%s 推 Hunter", sBuffer);
 				}
 				SetBuiltinVoteResultCallback(g_hVote, M2HunterVoteResultHandler);
+			}
+			case 7: { // 额外发药
+				value ? Format(sBuffer, sizeof(sBuffer), "开启额外发药") : Format(sBuffer, sizeof(sBuffer), "关闭额外发药");
+				tempMorePills = value;
+				SetBuiltinVoteResultCallback(g_hVote, MorePillsVoteResultHandler);
+			}
+			case 8: { // 删除地图药
+				value ? Format(sBuffer, sizeof(sBuffer), "删除地图药（下回合生效）") : Format(sBuffer, sizeof(sBuffer), "保留地图药（下回合生效）");
+				tempKillMapPills = value;
+				SetBuiltinVoteResultCallback(g_hVote, KillMapPillsVoteResultHandler);
 			}
 		}
 
@@ -496,7 +506,7 @@ public int M2HunterVoteResultHandler(Handle vote, int num_votes, int num_clients
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
 			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
 				DisplayBuiltinVotePass(vote, "正在修改推 Hunter 设定 ...");
-				
+
 				char sWeaponSMG[64] = "weapon_smg,weapon_smg_silenced";
 				char sWeaponSG[64] = "weapon_pumpshotgun,shotgun_chrome";
 				char sWeaponSniper[64] = "weapon_sniper_scout";
@@ -513,6 +523,40 @@ public int M2HunterVoteResultHandler(Handle vote, int num_votes, int num_clients
 				}
 
 				SetConVarString(FindConVar("weapon_allow_m2_hunter"), sBuffer);
+				return;
+			}
+		}
+	}
+	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+}
+
+public int MorePillsVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+{
+	for (int i = 0; i < num_items; i++) {
+		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
+			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
+				char sBuffer[64];
+				tempMorePills == 0 ? Format(sBuffer, sizeof(sBuffer), "关闭") : Format(sBuffer, sizeof(sBuffer), "开启");
+				Format(sBuffer, sizeof(sBuffer), "正在 %s 额外发药...", sBuffer);
+				DisplayBuiltinVotePass(vote, sBuffer);
+				SetConVarInt(FindConVar("ast_pills_enabled"), tempMorePills);
+				return;
+			}
+		}
+	}
+	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+}
+
+public int KillMapPillsVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+{
+	for (int i = 0; i < num_items; i++) {
+		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
+			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
+				char sBuffer[64];
+				tempKillMapPills == 0 ? Format(sBuffer, sizeof(sBuffer), "保留") : Format(sBuffer, sizeof(sBuffer), "删除");
+				Format(sBuffer, sizeof(sBuffer), "已设置为 %s 地图药", sBuffer);
+				DisplayBuiltinVotePass(vote, sBuffer);
+				SetConVarInt(FindConVar("ast_pills_map_kill"), tempKillMapPills);
 				return;
 			}
 		}
@@ -702,6 +746,54 @@ public void ResetSettings()
 	SetConVarInt(FindConVar("ast_sitimer"), 1);
 	SetConVarBool(hRehealth, false);
 	ServerCommand("sm_reloadscript");
+}
+
+public Action Menu_MorePills(int client, int args)
+{
+	// 开关，删除地图药
+	Handle menu = CreateMenu(Menu_MorePillsHandler);
+	SetMenuTitle(menu, "额外发药设定");
+	SetMenuExitBackButton(menu, true);
+
+	char sBuffer[32];
+	bool bPillsEnabled = GetConVarBool(FindConVar("ast_pills_enabled"));
+	bPillsEnabled ? Format(sBuffer, sizeof(sBuffer), "✔自动发药") : Format(sBuffer, sizeof(sBuffer), "自动发药");
+	AddMenuItem(menu, "", sBuffer);
+
+	bool bPillsMapKill = GetConVarBool(FindConVar("ast_pills_map_kill"));
+	bPillsMapKill ? Format(sBuffer, sizeof(sBuffer), "✔删除地图药") : Format(sBuffer, sizeof(sBuffer), "删除地图药");
+	AddMenuItem(menu, "", sBuffer);
+
+	DisplayMenu(menu, client, MENU_DISPLAY_TIME);
+	return Plugin_Handled;
+}
+
+public int Menu_MorePillsHandler(Handle menu, MenuAction action, int client, int param)
+{
+	if (action == MenuAction_Select) {
+		switch (param)
+		{
+			case 0: {
+				bool bPillsEnabled = GetConVarBool(FindConVar("ast_pills_enabled"));
+
+				if (bPillsEnabled) {
+					TZ_CallVote(client, 7, 0);
+				} else {
+					TZ_CallVote(client, 7, 1);
+				}
+			}
+			case 1: {
+				bool bPillsMapKill = GetConVarBool(FindConVar("ast_pills_map_kill"));
+				if (bPillsMapKill) {
+					TZ_CallVote(client, 8, 0);
+				} else {
+					TZ_CallVote(client, 8, 1);
+				}
+			}
+		}
+		drawPanel(client);
+	}
+	else if (action == MenuAction_Cancel) drawPanel(client);
 }
 
 public Action Menu_Tank(int client, int args)
@@ -1053,14 +1145,14 @@ public Action OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 			} 		// Smoker
 			case 2: {} 		// Boomer
 			case 3: { 		// Hunter
-				if (StrEqual(weapon, "pistol_magnum", false) || 
-				StrEqual(weapon, "pistol", false) || 
-				StrEqual(weapon, "smg",false) || 
+				if (StrEqual(weapon, "pistol_magnum", false) ||
+				StrEqual(weapon, "pistol", false) ||
+				StrEqual(weapon, "smg",false) ||
 				StrEqual(weapon, "smg_silenced", false) ) {
 					addHP += 2;
 				}
-				else if (StrEqual(weapon, "pumpshotgun", false) || 
-				StrEqual(weapon, "shotgun_chrome", false) || 
+				else if (StrEqual(weapon, "pumpshotgun", false) ||
+				StrEqual(weapon, "shotgun_chrome", false) ||
 				StrEqual(weapon, "sniper_scout", false) ) {
 					addHP++;
 				}

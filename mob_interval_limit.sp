@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <left4dhooks>
 
+ConVar hMobLimitEnabled;
 ConVar hMobInterval;
 ConVar hDebug;
 ConVar hMegaMobSize;
@@ -17,6 +18,7 @@ bool bAllowMobsChange = true;
 
 public void OnPluginStart()
 {
+	hMobLimitEnabled = CreateConVar("mob_spawn_limit_enabled", "0");
 	hMobInterval = CreateConVar("mob_spawn_block_interval", "8.0");
 	hDebug = CreateConVar("mob_spawn_debug", "0");
 
@@ -34,6 +36,8 @@ public void OnPluginStart()
 
 public Action L4D_OnSpawnMob(int &amount)
 {
+	if (!hMobLimitEnabled) return Plugin_Continue;
+	
 	int mobSize = GetConVarInt(FindConVar("z_mega_mob_size"));
 	float mobInterval = GetConVarFloat(hMobInterval);
 	bool iDebug = GetConVarBool(hDebug);

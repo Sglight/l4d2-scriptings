@@ -11,12 +11,13 @@
 
 #define MAP_NAME_MAX_LENGTH 64
 #define LEFT4FRAMEWORK_GAMEDATA "left4dhooks.l4d2"
+#define SECTION_NAME "L4DD::CTerrorGameRules::SetCampaignScores"
 
 StringMap hMapTransitionPair = null;
 
 bool g_bHasTransitioned = false;
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
 	name = "Map Transitions",
 	author = "Derpduck, Forgetest",
@@ -29,7 +30,7 @@ public void OnPluginStart()
 {
 	CheckGame();
 	LoadSDK();
-	
+
 	hMapTransitionPair = new StringMap();
 	RegServerCmd("sm_add_map_transition", AddMapTransition);
 	HookEvent("map_transition", Event_MapTransition);
@@ -52,14 +53,14 @@ void LoadSDK()
 	}
 
 	StartPrepSDKCall(SDKCall_GameRules);
-	if (!PrepSDKCall_SetFromConf(conf, SDKConf_Signature, "SetCampaignScores"))
+	if (!PrepSDKCall_SetFromConf(conf, SDKConf_Signature, SECTION_NAME))
 	{
 		SetFailState("Function 'SetCampaignScores' not found.");
 	}
-	
+
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	
+
 	delete conf;
 }
 
@@ -73,18 +74,18 @@ public Action OnRoundEnd_Post(Handle timer)
 	//Check if map has been registered for a map transition
 	char currentMapName[MAP_NAME_MAX_LENGTH];
 	char nextMapName[MAP_NAME_MAX_LENGTH];
-	
+
 	GetCurrentMap(currentMapName, sizeof(currentMapName));
-	
+
 	//We have a map to transition to
 	if (hMapTransitionPair.GetString(currentMapName, nextMapName, sizeof(nextMapName)))
 	{
 		g_bHasTransitioned = true;
-		
+
 		#if DEBUG
 			LogMessage("Map transitioned from: %s to: %s", currentMapName, nextMapName);
 		#endif
-		
+
 		CPrintToChatAll("{olive}[MT]{default} Starting transition from: {blue}%s{default} to: {blue}%s", currentMapName, nextMapName);
 		ForceChangeLevel(nextMapName, "Map Transitions");
 	}
@@ -113,14 +114,14 @@ public Action AddMapTransition(int args)
 		LogError("Usage: sm_add_map_transition <starting map name> <ending map name>");
 		return Plugin_Handled;
 	}
-	
+
 	//Read map pair names
 	char mapStart[MAP_NAME_MAX_LENGTH];
 	char mapEnd[MAP_NAME_MAX_LENGTH];
 	GetCmdArg(1, mapStart, sizeof(mapStart));
 	GetCmdArg(2, mapEnd, sizeof(mapEnd));
-	
+
 	hMapTransitionPair.SetString(mapStart, mapEnd, true);
-	
+
 	return Plugin_Handled;
 }

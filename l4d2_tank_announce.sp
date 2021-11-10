@@ -6,7 +6,7 @@
 #include <dhooks>
 #include <colors>
 #define L4D2UTIL_STOCKS_ONLY 1
-#include <l4d2util>
+#include <l4d2util_tanks>
 #undef REQUIRE_PLUGIN
 #include <l4d_tank_control_eq>
 //#define REQUIRE_PLUGIN

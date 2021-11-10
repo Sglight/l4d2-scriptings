@@ -16,7 +16,6 @@ Handle hTankGain;
 Handle hFFLose;
 Handle hOtherGain;
 
-Handle hDoublePills;
 Handle hKillAmmoPack;
 
 Handle hZeusX27Enabled;
@@ -27,12 +26,9 @@ Handle hZeusX27Frequency;
 
 bool grenade[MAXPLAYERS] = false;
 int money[MAXPLAYERS];
-bool gavePills[MAXPLAYERS] = false;
 
 int zx27[MAXPLAYERS];
 bool isUsingZX27[MAXPLAYERS];
-
-//bool GameStarted = false;
 
 // 　　单手枪 - $300
 // 　　双手枪 - $200
@@ -40,8 +36,8 @@ bool isUsingZX27[MAXPLAYERS];
 //　　 鸟狙 - $200
 //　　 大狙 - $150
 //　　 连狙 - $100
-//	 近战 - $250
-//	 击杀 Tank - $1400
+//　　 近战 - $250
+//　　 击杀 Tank - $1400
 // 　　黑枪 - $-100
 // 　　其他击杀 - $100
 
@@ -57,16 +53,13 @@ public Plugin myinfo =
 public void OnPluginStart() {
 	HookEvent("player_team", Event_PlayerTeam, EventHookMode_Post);
 	HookEvent("round_start", Event_RoundStart, EventHookMode_Post);
-	//HookEvent("mission_lost", Event_MissionLost);
 	HookEvent("player_hurt", Event_PlayerHurt, EventHookMode_Post);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Post);
-	HookEvent("weapon_drop", Event_WeaponDrop, EventHookMode_Post);
-	HookEvent("weapon_given", Event_WeaponGive, EventHookMode_Post);
-	
+
 	RegConsoleCmd("sm_buy", BuyWeapons, "Open shop menu");
 	RegConsoleCmd("sm_b", BuyWeapons, "Open shop menu");
 	RegAdminCmd("sm_ineedmoney", GiveMoney, ADMFLAG_ROOT, "白给");
-	
+
 	hStartMoney = CreateConVar("gp_startmoney", "500", "起始现金.", FCVAR_PROTECTED, true, 0.0, false);
 	hSinglePistolGain = CreateConVar("gp_spgain", "300", "单手枪击杀获得的现金.", FCVAR_PROTECTED, true, 0.0, false);
 	hDualPistolGain = CreateConVar("gp_dpgain", "200", "双手枪击杀获得的现金.", FCVAR_PROTECTED, true, 0.0, false);
@@ -78,10 +71,9 @@ public void OnPluginStart() {
 	hTankGain = CreateConVar("gp_tankgain", "1400", "击杀 Tank 获得的现金.", FCVAR_PROTECTED, true, 0.0, false);
 	hFFLose = CreateConVar("gp_fflose", "100", "攻击队友时扣除的现金.", FCVAR_PROTECTED, true, 0.0, false);
 	hOtherGain = CreateConVar("gp_othergain", "100", "其他击杀获得的现金.", FCVAR_PROTECTED, true, 0.0, false);
-	
-	hDoublePills = CreateConVar("gp_doublepills", "1", "第一个药用了再发一个.", FCVAR_PROTECTED, true, 0.0, false);
+
 	hKillAmmoPack = CreateConVar("gp_killammopack", "1", "删除子弹堆.", FCVAR_PROTECTED, true, 0.0, false);
-	
+
 	hZeusX27Enabled = CreateConVar("gp_zx27nabled", "1", "电击枪开关", FCVAR_PROTECTED, true, 0.0, false, 0.0);
 	hZeusX27Weapon = CreateConVar("gp_zx27weapon", "weapon_melee, weapon_pistol_magnum, weapon_pistol, weapon_dual_pistols", "附加电击枪的武器，支持多武器，逗号分隔", FCVAR_PROTECTED, true, 0.0, false, 0.0);
 	hZeusX27Range = CreateConVar("gp_zx27range", "300", "电击枪的最大距离", FCVAR_PROTECTED, true, 0.0, false, 0.0);
@@ -122,46 +114,6 @@ public Action Event_PlayerTeam(Handle event, const char[] name, bool dontBroadca
 	}
 }
 
-public Action Event_WeaponDrop(Handle event, const char[] name, bool dontBroadcast)
-{
-	if (GetConVarInt(hDoublePills))
-	{
-		int client = GetClientOfUserId(GetEventInt(event, "userid"));
-		if (!gavePills[client])
-		{
-			char weapon[32];
-			GetEventString(event, "item", weapon, sizeof(weapon));
-			if (StrEqual(weapon, "pain_pills", false))
-			{
-				CreateTimer(1.0, Timer_GivePill, client);
-				gavePills[client] = true;
-			}
-		}
-	}
-}
-
-public Action Event_WeaponGive(Handle event, const char[] name, bool dontBroadcast)
-{
-	if (GetConVarInt(hDoublePills))
-	{
-		int client = GetClientOfUserId(GetEventInt(event, "giver"));
-		if (!gavePills[client])
-		{
-			int weapon = GetEventInt(event, "weapon");
-			if (weapon == 15)
-			{
-				CreateTimer(1.0, Timer_GivePill, client);
-				gavePills[client] = true;
-			}
-		}
-	}
-}
-
-public Action Timer_GivePill(Handle timer, int client)
-{
-	Do_SpawnItem(client, "pain_pills");
-}
-
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
 	for (int client = 1; client <= MaxClients; client++) {
@@ -169,7 +121,6 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 			Menu_CreateWeaponMenu(client, false);
 		}
 		grenade[client] = false;
-		gavePills[client] = false;
 	}
 
 	if ( GetConVarBool(hKillAmmoPack) ) {
@@ -181,14 +132,14 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
 {
 	int victim = GetClientOfUserId(GetEventInt(event, "userid"));
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
-	
+
 	char victimname[64];
 	char weapon[64];
 	GetEventString(event, "victimname", victimname, sizeof(victimname));
 	GetEventString(event, "weapon", weapon, sizeof(weapon));
-	
+
 	int gain = 0;
-	
+
 	if (bIsInfected(victim) && bIsSurvior(attacker)) {
 		if (StrEqual(weapon, "pistol", false)) { // 单手枪
 			gain = GetConVarInt(hSinglePistolGain);
@@ -207,7 +158,7 @@ public Action Event_PlayerDeath(Handle event, const char[] name, bool dontBroadc
 		} else if (StrEqual(weapon, "melee", false)) { // 近战
 			gain = GetConVarInt(hMeleeGain);
 		} else gain = GetConVarInt(hOtherGain); // 其他
-		
+
 		int zombie = GetZombieClass(victim);
 		switch (zombie) {
 			case 1: {} 		// Smoker
@@ -421,7 +372,7 @@ Action Timer_KillAmmoPack(Handle timer)
 	for (int i = 1; i <= entityCount; i++)
 	{
 		if (!IsValidEntity(i)) { continue; }
-		
+
 		// check item type
 		GetEdictClassname(i, classname, sizeof(classname));
 		if ( StrEqual(classname, "weapon_ammo_spawn") ) {
@@ -446,7 +397,7 @@ void SendDeathMessage(int attacker, int victim, const char[] weapon, bool headsh
 
 void Do_SpawnItem(int client, const char[] type) {
 	if (client == 0) {
-		ReplyToCommand(client, "Can not use this command from the console."); 
+		ReplyToCommand(client, "Can not use this command from the console.");
 	} else {
 		StripAndExecuteClientCommand(client, "give", type);
 	}
