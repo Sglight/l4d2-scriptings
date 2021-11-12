@@ -1,14 +1,10 @@
 #pragma semicolon 1
 
-#include <sourcemod.inc>
+#include <sourcemod>
 #include <sdkhooks>
 #include <sdktools>
-#include <sdktools_functions>
 #include <left4dhooks>
-#include <timers.inc>
 #include <colors>
-
-#define MAX(%0,%1) (((%0) > (%1)) ? (%0) : (%1))
 
 #define TEAM_SPECTATOR          1 
 #define TEAM_SURVIVOR           2 
@@ -144,9 +140,9 @@ new                 ttlPinnedDuringTank[MAXPLAYERS + 1];        // The total tim
 
 new                 iTotalKills;                                // prolly more efficient to store than to recalculate
 new                 iTotalCommon;
-new                 iTotalDamage;
-new                 iTotalDamageTank;
-new                 iTotalDamageWitch;
+//new                 iTotalDamage;
+//new                 iTotalDamageTank;
+//new                 iTotalDamageWitch;
 new                 iTotalDamageAll;
 new                 iTotalFF;
 
@@ -240,10 +236,10 @@ public OnPluginStart()
     //HookEvent("door_close", DoorClose_Event);
     //HookEvent("finale_vehicle_leaving", FinaleVehicleLeaving_Event, EventHookMode_PostNoCopy);
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
-    HookEvent("round_end", RoundEnd_Event, EventHookMode_PostNoCopy);
-    HookEvent("map_transition", RoundEnd_Event, EventHookMode_PostNoCopy);
-    HookEvent("scavenge_round_start", EventHook:ScavRoundStart);
-    HookEvent("player_left_start_area", PlayerLeftStartArea);
+    // HookEvent("round_end", RoundEnd_Event, EventHookMode_PostNoCopy);
+    // HookEvent("map_transition", RoundEnd_Event, EventHookMode_PostNoCopy);
+    HookEvent("scavenge_round_start", ScavRoundStart, EventHookMode_PostNoCopy);
+    HookEvent("player_left_start_area", PlayerLeftStartArea, EventHookMode_PostNoCopy);
     HookEvent("pills_used", pillsUsedEvent);
     HookEvent("boomer_exploded", boomerExploded);
     HookEvent("charger_carry_end", chargerCarryEnd);
@@ -275,8 +271,6 @@ public OnPluginStart()
     bCountWitchDamage = GetConVarBool(hCountWitchDamage);
     bTrackFF =          GetConVarBool(hTrackFF);
     iBrevityFlags =     GetConVarInt(hBrevityFlags);
-    
-    
     
     // for now, force FF tracking on:
     bTrackFF = true;
@@ -402,7 +396,7 @@ public OnMapEnd()
     bInRound = false;
 }
 
-public ScavRoundStart(Handle:event)
+public void ScavRoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
     // clear mvp stats
     new i, maxplayers = MaxClients;
@@ -432,9 +426,9 @@ public ScavRoundStart(Handle:event)
     }
     iTotalKills = 0;
     iTotalCommon = 0;
-    iTotalDamage = 0;
-    iTotalDamageTank = 0;
-    iTotalDamageWitch = 0;
+    //iTotalDamage = 0;
+    //iTotalDamageTank = 0;
+    //iTotalDamageWitch = 0;
     iTotalDamageAll = 0;
     iTotalFF = 0;
     ttlSiDmgDuringTank = 0;
@@ -483,38 +477,50 @@ public RoundStart_Event(Handle:event, const String:name[], bool:dontBroadcast)
     }
     iTotalKills = 0;
     iTotalCommon = 0;
-    iTotalDamage = 0;
+    //iTotalDamage = 0;
     iTotalDamageAll = 0;
     iTotalFF = 0;
     ttlSiDmgDuringTank = 0;
     ttlCommonKilledDuringTank = 0;
-    iTotalDamageTank = 0;
+    //iTotalDamageTank = 0;
     tankThrow = false;
     
     tankSpawned = false;
 }
 
-public RoundEnd_Event(Handle:event, const String:name[], bool:dontBroadcast)
+// public RoundEnd_Event(Handle:event, const String:name[], bool:dontBroadcast)
+// {
+//     if (StrEqual(sGameMode, "coop", false))
+//     {
+//         if (bInRound)
+//         {
+//             if (GetConVarBool(hPluginEnabled))
+//                 CreateTimer(0.01, delayedMVPPrint);   // shorter delay for scavenge.
+//             bInRound = false;
+//         }
+//     }
+//     else
+//     {
+//         // versus or other
+//         if (bInRound && !StrEqual(name, "map_transition", false))
+//         {
+//             // only show / log stuff when the round is done "the first time"
+//             if (GetConVarBool(hPluginEnabled))
+//                 CreateTimer(2.0, delayedMVPPrint);
+//             bInRound = false;
+//         }
+//     }
+    
+//     tankSpawned = false;
+// }
+
+public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 {
-    if (StrEqual(sGameMode, "coop", false))
+    if (bInRound)
     {
-        if (bInRound)
-        {
-            if (GetConVarBool(hPluginEnabled))
-                CreateTimer(0.01, delayedMVPPrint);   // shorter delay for scavenge.
-            bInRound = false;
-        }
-    }
-    else
-    {
-        // versus or other
-        if (bInRound && !StrEqual(name, "map_transition", false))
-        {
-            // only show / log stuff when the round is done "the first time"
-            if (GetConVarBool(hPluginEnabled))
-                CreateTimer(2.0, delayedMVPPrint);
-            bInRound = false;
-        }
+        if (GetConVarBool(hPluginEnabled))
+            CreateTimer(2.0, delayedMVPPrint);   // shorter delay for scavenge.
+        bInRound = false;
     }
     
     tankSpawned = false;
@@ -543,7 +549,7 @@ public Action:SurvivorMVP_Cmd(client, args)
     decl String:printBuffer[4096];
     new String:strLines[8][192];
     
-    printBuffer = GetMVPString();
+    GetMVPString(printBuffer, sizeof(printBuffer));
     
     // PrintToChat has a max length. Split it in to individual lines to output separately
     new intPieces = ExplodeString(printBuffer, "\n", strLines, sizeof(strLines), sizeof(strLines[]));
@@ -554,10 +560,6 @@ public Action:SurvivorMVP_Cmd(client, args)
         {
             CPrintToChat(client, "%s", strLines[i]);
         }
-    }
-    else
-    {
-        PrintToServer("\x01%s", printBuffer);
     }
     PrintLoserz(true, client);
 }
@@ -572,8 +574,7 @@ public Action:delayedMVPPrint(Handle:timer)
     decl String:printBuffer[4096];
     new String:strLines[8][192];
     
-    printBuffer = GetMVPString();
-    PrintToServer("\x01%s", printBuffer);
+    GetMVPString(printBuffer, sizeof(printBuffer));
     
     // PrintToChatAll has a max length. Split it in to individual lines to output separately
     new intPieces = ExplodeString(printBuffer, "\n", strLines, sizeof(strLines), sizeof(strLines[]));
@@ -888,14 +889,14 @@ public PlayerHurt_Event(Handle:event, const String:name[], bool:dontBroadcast)
                 
                 iDidDamage[attacker] += damageDone;
                 iDidDamageAll[attacker] += damageDone;
-                iTotalDamage += damageDone;
+               // iTotalDamage += damageDone;
                 iTotalDamageAll += damageDone;
             }
             else if (zombieClass == ZC_TANK && damageDone != 5000) // For some reason the last attacker does 5k damage?
             {
                 // We want to track tank damage even if we're not factoring it in to our mvp result
                 iDidDamageTank[attacker] += damageDone;
-                iTotalDamageTank += damageDone;
+                //iTotalDamageTank += damageDone;
                 
                 // If we're factoring it in, include it in our overall damage
                 if (bCountTankDamage)
@@ -950,7 +951,7 @@ public InfectedHurt_Event(Handle:event, const String:name[], bool:dontBroadcast)
         {
             // We want to track the witch damage regardless of whether we're counting it in our mvp stat
             iDidDamageWitch[attacker] += damageDone;
-            iTotalDamageWitch += damageDone;
+            //iTotalDamageWitch += damageDone;
             
             // If we're counting witch damage in our mvp stat, lets add the amount of damage done to the witch
             if (bCountWitchDamage) 
@@ -1025,24 +1026,20 @@ public InfectedDeath_Event(Handle:event, const String:name[], bool:dontBroadcast
     }
 }
 
-
-
 /*
 *      MVP string & 'sorting'
 *      ======================
 */
-
-String: GetMVPString()
+void GetMVPString(char[] printBuffer, const int iSize)
 {
-    decl String:printBuffer[4096];
     decl String:tmpBuffer[1024];
-    
+    printBuffer[0] = '\0';
+
     decl String:tmpName[64];
     decl String:mvp_SI_name[64];
     decl String:mvp_Common_name[64];
     decl String:mvp_FF_name[64];
     
-    printBuffer = "";
     new mvp_SI = 0;
     new mvp_Common = 0;
     new mvp_FF = 0;
@@ -1125,7 +1122,7 @@ String: GetMVPString()
     if (mvp_SI == 0 && mvp_Common == 0 && !(iBrevityFlags & BREV_SI && iBrevityFlags & BREV_CI))
     {
         Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}]{default} {blue}({default}not enough action yet{blue}){default}\n");
-        StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+        StrCat(printBuffer, iSize, tmpBuffer);
     }
     else
     {
@@ -1140,11 +1137,11 @@ String: GetMVPString()
                 } else {
                     Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}] SI: {olive}%s {blue}({default}%d {green}dmg {blue}[{default}%.0f%%{blue}]{olive}, {default}%d {green}kills {blue}[{default}%.0f%%{blue}])\n", mvp_SI_name, iDidDamageAll[mvp_SI], (float(iDidDamageAll[mvp_SI]) / float(iTotalDamageAll)) * 100, iGotKills[mvp_SI], (float(iGotKills[mvp_SI]) / float(iTotalKills)) * 100);
                 }
-                StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+                StrCat(printBuffer, iSize, tmpBuffer);
             }
             else
             {
-                StrCat(printBuffer, sizeof(printBuffer), "{blue}[{default}MVP{blue}] SI: {blue}({default}nobody{blue}){default}\n");
+                StrCat(printBuffer, iSize, "{blue}[{default}MVP{blue}] SI: {blue}({default}nobody{blue}){default}\n");
             }
         }
         
@@ -1159,7 +1156,7 @@ String: GetMVPString()
                 } else {
                     Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}MVP{blue}] CI: {olive}%s {blue}({default}%d {green}common {blue}[{default}%.0f%%{blue}])\n", mvp_Common_name, iGotCommon[mvp_Common], (float(iGotCommon[mvp_Common]) / float(iTotalCommon)) * 100);
                 }
-                StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+                StrCat(printBuffer, iSize, tmpBuffer);
             }
         }
     }
@@ -1170,7 +1167,7 @@ String: GetMVPString()
         if (mvp_FF == 0)
         {
             Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}LVP{blue}] FF{default}: {green}no friendly fire at all!{default}\n");
-            StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+            StrCat(printBuffer, iSize, tmpBuffer);
         }
         else
         {
@@ -1181,11 +1178,9 @@ String: GetMVPString()
             } else {
                 Format(tmpBuffer, sizeof(tmpBuffer), "{blue}[{default}LVP{blue}] FF{default}: {olive}%s {blue}({default}%d {green}friendly fire {blue}[{default}%.0f%%{blue}]){default}\n", mvp_FF_name, iDidFF[mvp_FF], (float(iDidFF[mvp_FF]) / float(iTotalFF)) * 100);
             }
-            StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+            StrCat(printBuffer, iSize, tmpBuffer);
         }
     }
-    
-    return printBuffer;
 }
 
 
