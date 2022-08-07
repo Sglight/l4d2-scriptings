@@ -5,7 +5,8 @@ enum CVSEntry
 {
 	Handle:CVSE_cvar,
 	String:CVSE_oldval[CVS_CVAR_MAXLEN],
-	String:CVSE_newval[CVS_CVAR_MAXLEN]
+	String:CVSE_newval[CVS_CVAR_MAXLEN],
+	CVSE_lock
 }
 
 static Handle:CvarSettingsArray;
@@ -21,7 +22,8 @@ CVS_OnModuleStart()
 	RegServerCmd("confogl_setcvars", CVS_SetCvars_Cmd, "Starts enforcing ConVars that have been added.");
 	RegServerCmd("confogl_resetcvars", CVS_ResetCvars_Cmd, "Resets enforced ConVars.  Cannot be used during a match!");
 	
-	
+	RegServerCmd("confogl_lockcvar", CVS_LockCvar_Cmd, "Lock a ConVar to be set by Confogl");
+	RegServerCmd("confogl_changecvar", CVS_ChangeCvar_Cmd, "Change a locked ConVar to be set by Confogl");
 }
 
 CVS_OnModuleEnd()
@@ -159,6 +161,62 @@ public Action:CVS_CvarDiff_Cmd(client, args)
 	return Plugin_Handled;
 }
 
+// 海洋空氣 add
+public Action:CVS_LockCvar_Cmd(args)
+{
+	if (args != 2)
+	{
+		PrintToServer("Usage: confogl_lockcvar <cvar> <newValue>");
+		if (IsDebugEnabled())
+		{
+			decl String:cmdbuf[MAX_NAME_LENGTH];
+			GetCmdArgString(cmdbuf, sizeof(cmdbuf));
+			LogError("[Confogl] Invalid Cvar Add: %s", cmdbuf);
+		}
+		return Plugin_Handled;
+	}
+	
+	decl String:cvar[CVS_CVAR_MAXLEN], String:newval[CVS_CVAR_MAXLEN];
+	GetCmdArg(1, cvar, sizeof(cvar));
+	GetCmdArg(2, newval, sizeof(newval));
+	
+	AddCvar(cvar, newval, 1);
+	
+	return Plugin_Handled;
+}
+
+// 海洋空氣 add
+public Action:CVS_ChangeCvar_Cmd(args)
+{
+	if (args != 2)
+	{
+		PrintToServer("Usage: confogl_changecvar <cvar> <newValue>");
+		if (IsDebugEnabled())
+		{
+			decl String:cmdbuf[MAX_NAME_LENGTH];
+			GetCmdArgString(cmdbuf, sizeof(cmdbuf));
+			LogError("[Confogl] Invalid Cvar Add: %s", cmdbuf);
+		}
+		return Plugin_Handled;
+	}
+	
+	decl String:cvar[CVS_CVAR_MAXLEN], String:newval[CVS_CVAR_MAXLEN];
+	GetCmdArg(1, cvar, sizeof(cvar));
+	GetCmdArg(2, newval, sizeof(newval));
+	
+	// 海洋空氣 add，先 unhook 再修改值，并从数组中删除，最后重新 addCvar
+	new Handle:newCvar = FindConVar(cvar);
+	UnhookConVarChange(newCvar, CVS_ConVarChange);
+	SetConVarString(newCvar, newval);
+
+	new index = GetCvarIndex(cvar);
+	RemoveFromArray(CvarSettingsArray, index);
+
+	AddCvar(cvar, newval, 1);
+	
+	return Plugin_Handled;
+}
+
 static ClearAllSettings()
 {
 	bTrackingStarted = false;
@@ -188,15 +246,15 @@ static SetEnforcedCvars()
 	}
 }
 
-static AddCvar(const String:cvar[], const String:newval[])
+static AddCvar(const String:cvar[], const String:newval[], const lock = 0)
 {
-	if (bTrackingStarted)
-	{
-		#if CVARS_DEBUG
-		LogMessage("[Confogl] CvarSettings: Attempt to track new cvar %s during a match!", cvar);
-		#endif
-		return;
-	}
+	// if (bTrackingStarted)
+	// {
+	// 	#if CVARS_DEBUG
+	// 	LogMessage("[Confogl] CvarSettings: Attempt to track new cvar %s during a match!", cvar);
+	// 	#endif
+	// 	return;
+	// }
 	
 	if (strlen(cvar) >= CVS_CVAR_MAXLEN)
 	{
@@ -235,6 +293,9 @@ static AddCvar(const String:cvar[], const String:newval[])
 	newEntry[CVSE_cvar] = newCvar;
 	strcopy(newEntry[CVSE_oldval], CVS_CVAR_MAXLEN, cvarBuffer);
 	strcopy(newEntry[CVSE_newval], CVS_CVAR_MAXLEN, newval);
+
+	// 海洋空氣 add
+	newEntry[CVSE_lock] = lock;
 	
 	HookConVarChange(newCvar, CVS_ConVarChange);
 	
@@ -245,12 +306,41 @@ static AddCvar(const String:cvar[], const String:newval[])
 	PushArrayArray(CvarSettingsArray, newEntry[0]);
 }
 
+
 public CVS_ConVarChange(Handle:convar, const String:oldValue[], const String:newValue[])
 {
 	if (bTrackingStarted)
 	{
 		decl String:name[CVS_CVAR_MAXLEN];
 		GetConVarName(convar, name, sizeof(name));
-		CPrintToChatAll("{blue}[{default}Confogl{blue}] {default}Tracked Server CVar \"{green}%s{default}\" changed from \"{blue}%s{default}\" to \"{blue}%s{default}\"", name, oldValue, newValue);
+
+		// 海洋空氣 add
+		new index = GetCvarIndex(name);
+		new tmpEntry[CVSEntry];
+		GetArrayArray(CvarSettingsArray, index, tmpEntry[CVSE_cvar]);
+
+		if (!tmpEntry[CVSE_lock])
+			CPrintToChatAll("{blue}[{default}Confogl{blue}] {default}Tracked Server CVar \"{green}%s{default}\" changed from \"{blue}%s{default}\" to \"{blue}%s{default}\"", name, oldValue, newValue);
+
+		// 海洋空氣 add，如果参数被锁定
+		if(!StrEqual(tmpEntry[CVSE_newval], newValue) && tmpEntry[CVSE_lock])
+		{
+			PrintToServer("尝试修改被保护参数 %s (从 %s 至 %s)，已被拦截", name, tmpEntry[CVSE_newval], newValue);
+			SetConVarString(tmpEntry[CVSE_cvar], tmpEntry[CVSE_newval]);
+		}
 	}
+}
+
+GetCvarIndex(const String:cvar[])
+{
+	decl tmpEntry[CVSEntry];
+	decl String:s_CvarName[64];
+	for(new i = 0;i < GetArraySize(CvarSettingsArray);i++)
+	{
+		GetArrayArray(CvarSettingsArray, i, tmpEntry[0]);
+		GetConVarName(tmpEntry[CVSE_cvar], s_CvarName, 64);
+		if(StrEqual(cvar, s_CvarName, false))
+			return i;
+	}
+	return 0;
 }
