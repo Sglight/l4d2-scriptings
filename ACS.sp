@@ -1,5 +1,6 @@
 #include <sourcemod>
 #include <sdktools>
+#include <left4dhooks>
 
 #define PLUGIN_VERSION	"v1.2.2"
 
@@ -580,6 +581,15 @@ public Action:Event_PlayerDisconnect(Handle:hEvent, const String:strName[], bool
 	return Plugin_Continue;
 }
 
+// public Action:L4D2_OnChangeFinaleStage(int &finaleType, const char[] arg)
+// {
+// 	// PrintToChatAll("L4D2_OnChangeFinaleStage");
+// 	if (L4D_IsFinaleEscapeInProgress()){
+// 		// PrintToChatAll("L4D_IsFinaleEscapeInProgress");
+// 		CheckMapForChange();
+// 	}
+// }
+
 /*======================================================================================
 #################              F I N D   G A M E   M O D E             #################
 ======================================================================================*/
@@ -667,50 +677,45 @@ FindGameMode()
 //Check to see if the current map is a finale, and if so, switch to the next campaign
 CheckMapForChange()
 {
-	decl String:strCurrentMap[32];
-	GetCurrentMap(strCurrentMap,32);					//Get the current map from the game
-
-	for(new iMapIndex = 0; iMapIndex < NUMBER_OF_CAMPAIGNS; iMapIndex++)
+	if(L4D_IsMissionFinalMap())
 	{
-		if(StrEqual(strCurrentMap, g_strCampaignLastMap[iMapIndex]) == true)
+		//Check to see if someone voted for a campaign, if so, then change to the winning campaign
+		if(g_bVotingEnabled == true && g_iWinningMapVotes > 0 && g_iWinningMapIndex >= 0)
 		{
-			//Check to see if someone voted for a campaign, if so, then change to the winning campaign
-			if(g_bVotingEnabled == true && g_iWinningMapVotes > 0 && g_iWinningMapIndex >= 0)
+			if(IsMapValid(g_strCampaignFirstMap[g_iWinningMapIndex]) == true)
 			{
-				if(IsMapValid(g_strCampaignFirstMap[g_iWinningMapIndex]) == true)
-				{
-					PrintToChatAll("\x03[ACS] \x05切换至票数最多的地图: \x04%s", g_strCampaignName[g_iWinningMapIndex]);
-
-					if(g_iGameMode == GAMEMODE_VERSUS)
-						CreateTimer(WAIT_TIME_BEFORE_SWITCH_VERSUS, Timer_ChangeCampaign, g_iWinningMapIndex);
-					else if(g_iGameMode == GAMEMODE_COOP)
-						CreateTimer(WAIT_TIME_BEFORE_SWITCH_COOP, Timer_ChangeCampaign, g_iWinningMapIndex);
-
-					return;
-				}
-				else
-					LogError("Error: %s is an invalid map name, attempting normal map rotation.", g_strCampaignFirstMap[g_iWinningMapIndex]);
-			}
-
-			//If no map was chosen in the vote, then go with the automatic map rotation
-
-			if(iMapIndex == NUMBER_OF_CAMPAIGNS - 1)	//Check to see if its the end of the array
-				iMapIndex = -1;							//If so, start the array over by setting to -1 + 1 = 0
-
-			if(IsMapValid(g_strCampaignFirstMap[iMapIndex + 1]) == true)
-			{
-				PrintToChatAll("\x03[ACS] \x05切换至地图 \x04%s", g_strCampaignName[iMapIndex + 1]);
+				PrintToChatAll("\x03[ACS] \x05切换至票数最多的地图: \x04%s", g_strCampaignName[g_iWinningMapIndex]);
 
 				if(g_iGameMode == GAMEMODE_VERSUS)
-					CreateTimer(WAIT_TIME_BEFORE_SWITCH_VERSUS, Timer_ChangeCampaign, iMapIndex + 1);
+					CreateTimer(WAIT_TIME_BEFORE_SWITCH_VERSUS, Timer_ChangeCampaign, g_iWinningMapIndex);
 				else if(g_iGameMode == GAMEMODE_COOP)
-					CreateTimer(WAIT_TIME_BEFORE_SWITCH_COOP, Timer_ChangeCampaign, iMapIndex + 1);
+					CreateTimer(WAIT_TIME_BEFORE_SWITCH_COOP, Timer_ChangeCampaign, g_iWinningMapIndex);
+
+				return;
 			}
 			else
-				LogError("Error: %s is an invalid map name, unable to switch map.", g_strCampaignFirstMap[iMapIndex + 1]);
-
-			return;
+			{
+				PrintToChatAll("地图不存在");
+				LogError("Error: %s is an invalid map name, attempting normal map rotation.", g_strCampaignFirstMap[g_iWinningMapIndex]);
+			}
 		}
+
+		//If no map was chosen in the vote, then go random map
+		int iMapIndex = RandomMap();
+
+		if(IsMapValid(g_strCampaignFirstMap[iMapIndex]) == true)
+		{
+			PrintToChatAll("\x03[ACS] \x05切换至地图 \x04%s", g_strCampaignName[iMapIndex]);
+
+			if(g_iGameMode == GAMEMODE_VERSUS)
+				CreateTimer(WAIT_TIME_BEFORE_SWITCH_VERSUS, Timer_ChangeCampaign, iMapIndex);
+			else if(g_iGameMode == GAMEMODE_COOP)
+				CreateTimer(WAIT_TIME_BEFORE_SWITCH_COOP, Timer_ChangeCampaign, iMapIndex);
+		}
+		else
+			LogError("Error: %s is an invalid map name, unable to switch map.", g_strCampaignFirstMap[iMapIndex]);
+
+		return;
 	}
 }
 /*
@@ -761,9 +766,9 @@ ChangeScavengeMap()
 }
 */
 
-public int RandomMap(int iCampaignIndex)
+public int RandomMap()
 {
-	iCampaignIndex = GetRandomInt(1, 13);
+	int iCampaignIndex = GetRandomInt(1, 13);
 	if (iCampaignIndex == 1)
 		iCampaignIndex = 13;
 	return iCampaignIndex;
@@ -774,7 +779,7 @@ public Action:Timer_ChangeCampaign(Handle:timer, any:iCampaignIndex)
 {
 	// 随机官图
 	if(iCampaignIndex == 1) {
-		RandomMap(iCampaignIndex);
+		iCampaignIndex = RandomMap();
 	}
 
 	ServerCommand("changelevel %s", g_strCampaignFirstMap[iCampaignIndex]);	//Change the campaign
@@ -890,7 +895,8 @@ public Action:MapVote(iClient, args)
 		return;
 	}
 
-	if(OnFinaleOrScavengeMap() == false)
+	// if(OnFinaleOrScavengeMap() == false)
+	if(L4D_IsMissionFinalMap() == false)
 	{
 		PrintToChat(iClient, "\x03[ACS] \x05只能在救援关投票哦~");
 		return;
@@ -912,7 +918,8 @@ public Action:DisplayCurrentVotes(iClient, args)
 		return;
 	}
 
-	if(OnFinaleOrScavengeMap() == false)
+	// if(OnFinaleOrScavengeMap() == false)
+	if(L4D_IsMissionFinalMap() == false)
 	{
 		PrintToChat(iClient, "\x03[ACS] \x05只能在救援关投票哦~");
 		return;
@@ -967,7 +974,8 @@ public Action:DisplayCurrentVotes(iClient, args)
 
 public OnClientPutInServer(client)
 {
-	if (OnFinaleOrScavengeMap() == true)
+	// if (OnFinaleOrScavengeMap() == true)
+	if (L4D_IsMissionFinalMap() == true)
 		for(new iClient = 1;iClient <= MaxClients; iClient++)
 		{
 			if(g_bClientShownVoteAd[iClient] == false && g_bClientVoted[iClient] == false && IsClientInGame(iClient) == true && IsFakeClient(iClient) == false)
@@ -1180,22 +1188,22 @@ SetTheCurrentVoteWinner()
 }
 
 //Check if the current map is the last in the campaign if not in the Scavenge game mode
-bool:OnFinaleOrScavengeMap()
-{
-	/*if(g_iGameMode == GAMEMODE_SCAVENGE)
-		return true;
+// bool:OnFinaleOrScavengeMap()
+// {
+// 	/*if(g_iGameMode == GAMEMODE_SCAVENGE)
+// 		return true;
 
-	if(g_iGameMode == GAMEMODE_SURVIVAL)
-		return false;
-	*/
+// 	if(g_iGameMode == GAMEMODE_SURVIVAL)
+// 		return false;
+// 	*/
 
-	decl String:strCurrentMap[32];
-	GetCurrentMap(strCurrentMap,32);			//Get the current map from the game
+// 	decl String:strCurrentMap[32];
+// 	GetCurrentMap(strCurrentMap,32);			//Get the current map from the game
 
-	//Run through all the maps, if the current map is a last campaign map, return true
-	for(new iMapIndex = 0; iMapIndex < NUMBER_OF_CAMPAIGNS; iMapIndex++)
-		if(StrEqual(strCurrentMap, g_strCampaignLastMap[iMapIndex]) == true)
-			return true;
+// 	//Run through all the maps, if the current map is a last campaign map, return true
+// 	for(new iMapIndex = 0; iMapIndex < NUMBER_OF_CAMPAIGNS; iMapIndex++)
+// 		if(StrEqual(strCurrentMap, g_strCampaignLastMap[iMapIndex]) == true)
+// 			return true;
 
-	return false;
-}
+// 	return false;
+// }
