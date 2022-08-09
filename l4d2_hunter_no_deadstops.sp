@@ -62,6 +62,10 @@ Action Shove_Handler(int shover, int shovee)
 	cvarWeaponAllowM2Hunter.GetString(allowM2WeaponAll, sizeof(allowM2WeaponAll));
 	char allowM2WeaponArray[32][32];
 	ExplodeString(allowM2WeaponAll, ",", allowM2WeaponArray, 32, 32, false); // 拆分为数组
+	
+	int primaryWeaponId = GetPlayerWeaponSlot(shover, 0); // get survivor's primary weapon
+	char primaryWeapon[32];
+	GetEdictClassname(primaryWeaponId, primaryWeapon, sizeof(primaryWeapon));
 
 	for (int i = 0; i < 32; i++) {
 		char allowM2Weapon[32];
@@ -69,11 +73,7 @@ Action Shove_Handler(int shover, int shovee)
 		if (allowM2Weapon[0] == '\0') { break; } // 遇到空字符串直接退出循环
 		TrimString(allowM2Weapon); // 去首尾空格
 
-		int primaryWeaponId = GetPlayerWeaponSlot(shover, 0); // get survivor's primary weapon
-		char primaryWeapon[32];
-
 		if (IsValidEdict(primaryWeaponId)) {
-			GetEdictClassname(primaryWeaponId, primaryWeapon, sizeof(primaryWeapon));
 			if ( StrEqual(allowM2Weapon, primaryWeapon, false) ) {
 				isWeaponAllowDeadstop = true;
 			}
