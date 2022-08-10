@@ -514,12 +514,12 @@ public RoundStart_Event(Handle:event, const String:name[], bool:dontBroadcast)
 //     tankSpawned = false;
 // }
 
-public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
+public void L4D2_OnEndVersusModeRound_Post()
 {
     if (bInRound)
     {
         if (GetConVarBool(hPluginEnabled))
-            CreateTimer(2.0, delayedMVPPrint);   // shorter delay for scavenge.
+            CreateTimer(0.01, delayedMVPPrint);   // shorter delay for scavenge.
         bInRound = false;
     }
     
