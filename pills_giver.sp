@@ -66,7 +66,7 @@ public Action Event_WeaponGive(Handle event, const char[] name, bool dontBroadca
 public Action Timer_GivePill(Handle timer, int client)
 {
 	if ( ( GetConVarInt(hPillsSurvivor) == -1 || gavePillsSurvivorCount[client] < GetConVarInt(hPillsSurvivor) ) 
-	&& GetGavePillsTeamCount() < GetConVarInt(hPillsTeam) ) {
+	&& ( GetConVarInt(hPillsTeam) == -1 || GetGavePillsTeamCount() < GetConVarInt(hPillsTeam) ) ) {
 		int pill = CreateEntityByName("weapon_pain_pills");
 		EquipPlayerWeapon(client, pill);
 		gavePillsSurvivorCount[client]++;
