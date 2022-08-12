@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <left4dhooks>
 #include <colors>
+#include <l4d2_skill_detect>
 
 #define TEAM_SPECTATOR          1 
 #define TEAM_SURVIVOR           2 
@@ -125,6 +126,7 @@ new                 totalPinned[MAXPLAYERS + 1];                // total times p
 new                 pillsUsed[MAXPLAYERS + 1];                  // total pills eaten
 new                 boomerPops[MAXPLAYERS + 1];                 // total boomer pops
 new                 damageReceived[MAXPLAYERS + 1];             // Damage received
+new                 iHuntSkeets[MAXPLAYERS + 1];                // actual skeets (lunging hunter kills, full/normal)
 
 // Tank stats
 new                tankSpawned = false;                        // When tank is spawned
@@ -562,6 +564,7 @@ public Action:SurvivorMVP_Cmd(client, args)
         }
     }
     PrintLoserz(true, client);
+    PrintDetailedStatistics();
 }
 
 public Action:ShowMVPStats_Cmd(client, args)
@@ -587,6 +590,7 @@ public Action:delayedMVPPrint(Handle:timer)
     }
     
     CreateTimer(0.1, PrintLosers);
+    CreateTimer(0.1, PrintDetailedStatisticsTimer);
 }
 
 public Action:PrintLosers(Handle:timer)
@@ -1332,3 +1336,129 @@ return StrEqual(strClassName, "infected");
 return false;
 }
 */
+
+// 海洋空氣 add
+public Action PrintDetailedStatisticsTimer(Handle timer)
+{
+    PrintDetailedStatistics();
+    return Plugin_Handled;
+}
+
+public void PrintDetailedStatistics() {
+    char printBuffer[4096];
+    char strLines[8][192];
+    int survivorCount = getTotalSurvivors();
+
+    // timesPinned[MAXPLAYERS + 1][ZC_TANK + 1];   // times pinned
+    // totalPinned[MAXPLAYERS + 1];                // total times pinned
+    // pillsUsed[MAXPLAYERS + 1];                  // total pills eaten
+    // boomerPops[MAXPLAYERS + 1];                 // total boomer pops
+    // damageReceived[MAXPLAYERS + 1];             // Damage received
+    // rocksEaten[MAXPLAYERS + 1];                 // The amount of rocks a player 'ate'.
+
+    switch (survivorCount) {
+        case 1:{
+            // [统计] NAME [空爆: 1] [被扑: 1] [被骑: 2] [被撞: 3]
+            char tmpBuffer[1024];
+            for (int i = 1; i <= MaxClients + 1; i++)
+            {
+                if (IsSurvivor(i)) {
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆: \x05%d\x01] [被扑: \x05%d\x01] [被骑: \x05%d\x01] [被撞: \x05%d\x01]\n", i, iHuntSkeets[i], timesPinned[i][ZC_HUNTER], timesPinned[i][ZC_JOCKEY], timesPinned[i][ZC_CHARGER]);
+                    StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+                }
+            }
+        }
+        case 2:{
+            // [统计] NAME [空爆: 1] [被扑: 1] [被骑: 2] [被撞: 3]
+            char tmpBuffer[1024];
+            for (int i = 1; i <= MaxClients + 1; i++)
+            {
+                if (IsSurvivor(i)) {
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆: \x05%d\x01] [被扑: \x05%d\x01] [被骑: \x05%d\x01] [被撞: \x05%d\x01]\n", i, iHuntSkeets[i], timesPinned[i][ZC_HUNTER], timesPinned[i][ZC_JOCKEY], timesPinned[i][ZC_CHARGER]);
+                    StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+                }
+            }
+        }
+        case 3:{
+            // [统计] NAME [空爆: 1] [被控: 1] [被吐: 2] [吃药: 3]
+            char tmpBuffer[1024];
+            for (int i = 1; i <= MaxClients + 1; i++)
+            {
+                if (IsSurvivor(i)) {
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆: \x05%d\x01] [被控: \x05%d\x01] [被吐: \x05%d\x01] [吃药: \x05%d\x01]\n", i, iHuntSkeets[i], totalPinned[i], boomerPops[i], pillsUsed[i]);
+                    StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+                }
+            }
+        }
+        case 4:{
+            // [统计] NAME [空爆: 1] [被控: 1] [被吐: 2] [吃药: 3]
+            char tmpBuffer[1024];
+            for (int i = 1; i <= MaxClients + 1; i++)
+            {
+                if (IsSurvivor(i)) {
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆: \x05%d\x01] [被控: \x05%d\x01] [被吐: \x05%d\x01] [吃药: \x05%d\x01]\n", i, iHuntSkeets[i], totalPinned[i], boomerPops[i], pillsUsed[i]);
+                    StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
+                }
+            }
+        }
+    }
+
+    // PrintToChatAll has a max length. Split it in to individual lines to output separately
+    int intPieces = ExplodeString(printBuffer, "\n", strLines, sizeof(strLines), sizeof(strLines[]));
+    for (int i = 0; i < intPieces; i++) 
+    {
+        for (int client = 1; client <= MaxClients; client++)
+        {
+            if (IsClientInGame(client)) CPrintToChat(client, "{default}%s", strLines[i]);
+        }
+    }
+}
+
+public void OnSkeet(int survivor, int hunter)
+{
+	iHuntSkeets[survivor]++;
+}
+
+public void OnSkeetMelee(int survivor, int hunter)
+{
+	iHuntSkeets[survivor]++;
+}
+
+public void OnSkeetGL(int survivor, int hunter)
+{
+	iHuntSkeets[survivor]++;
+}
+
+public void OnSkeetSniper(int survivor, int hunter)
+{
+	iHuntSkeets[survivor]++;
+}
+
+public void OnSkeetHurt(int survivor, int hunter)
+{
+	iHuntSkeets[survivor]++;
+}
+
+public void OnSkeetMeleeHurt(int survivor, int hunter)
+{
+	iHuntSkeets[survivor]++;
+}
+
+public void OnSkeetSniperHurt(int survivor, int hunter)
+{
+	iHuntSkeets[survivor]++;
+}
+
+int getTotalSurvivors() // total survivors, including bots
+{
+    int count = 0;
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if(IsClientConnected(i))
+        {
+            if(IsClientInGame(i) && (GetClientTeam(i) == 2))
+                count++;
+        }
+    }
+    return count;
+}
