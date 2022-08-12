@@ -1341,10 +1341,10 @@ return false;
 public Action PrintDetailedStatisticsTimer(Handle timer)
 {
     PrintDetailedStatistics();
+    return Plugin_Handled;
 }
 
 public void PrintDetailedStatistics() {
-    // 只作为回合结束的 Round Fact 展示，不在 sm_mvp 指令中展示
     char printBuffer[4096];
     char strLines[8][192];
     int survivorCount = getTotalSurvivors();
@@ -1363,9 +1363,9 @@ public void PrintDetailedStatistics() {
             for (int i = 1; i <= MaxClients + 1; i++)
             {
                 if (IsSurvivor(i)) {
-                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆:\x05%d\x01] [被扑:\x05%d\x01] [被骑:\x05%d\x01] [被撞:\x05%d\x01]\n", i, iHuntSkeets[i], timesPinned[i][ZC_HUNTER], timesPinned[i][ZC_JOCKEY], timesPinned[i][ZC_CHARGER]);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆: \x05%d\x01] [被扑: \x05%d\x01] [被骑: \x05%d\x01] [被撞: \x05%d\x01]\n", i, iHuntSkeets[i], timesPinned[i][ZC_HUNTER], timesPinned[i][ZC_JOCKEY], timesPinned[i][ZC_CHARGER]);
+                    StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
                 }
-                StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
             }
         }
         case 2:{
@@ -1374,9 +1374,9 @@ public void PrintDetailedStatistics() {
             for (int i = 1; i <= MaxClients + 1; i++)
             {
                 if (IsSurvivor(i)) {
-                    Format(printBuffer, sizeof(printBuffer), "[AstMod] \x05%N \x01[空爆:\x05%d\x01] [被扑:\x05%d\x01] [被骑:\x05%d\x01] [被撞:\x05%d\x01]\n", i, iHuntSkeets[i], timesPinned[i][ZC_HUNTER], timesPinned[i][ZC_JOCKEY], timesPinned[i][ZC_CHARGER]);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆: \x05%d\x01] [被扑: \x05%d\x01] [被骑: \x05%d\x01] [被撞: \x05%d\x01]\n", i, iHuntSkeets[i], timesPinned[i][ZC_HUNTER], timesPinned[i][ZC_JOCKEY], timesPinned[i][ZC_CHARGER]);
+                    StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
                 }
-                StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
             }
         }
         case 3:{
@@ -1385,9 +1385,9 @@ public void PrintDetailedStatistics() {
             for (int i = 1; i <= MaxClients + 1; i++)
             {
                 if (IsSurvivor(i)) {
-                    Format(printBuffer, sizeof(printBuffer), "[AstMod] \x05%N \x01[空爆:\x05%d\x01] [被控:\x05%d\x01] [被吐:\x05%d\x01] [吃药:\x05%d\x01]\n", i, iHuntSkeets[i], totalPinned[i], boomerPops[i], pillsUsed[i]);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆: \x05%d\x01] [被控: \x05%d\x01] [被吐: \x05%d\x01] [吃药: \x05%d\x01]\n", i, iHuntSkeets[i], totalPinned[i], boomerPops[i], pillsUsed[i]);
+                    StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
                 }
-                StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
             }
         }
         case 4:{
@@ -1396,9 +1396,9 @@ public void PrintDetailedStatistics() {
             for (int i = 1; i <= MaxClients + 1; i++)
             {
                 if (IsSurvivor(i)) {
-                    Format(printBuffer, sizeof(printBuffer), "[AstMod] \x05%N \x01[空爆:\x05%d\x01] [被控:\x05%d\x01] [被吐:\x05%d\x01] [吃药:\x05%d\x01]\n", i, iHuntSkeets[i], totalPinned[i], boomerPops[i], pillsUsed[i]);
+                    Format(tmpBuffer, sizeof(tmpBuffer), "[AstMod] \x05%N \x01[空爆: \x05%d\x01] [被控: \x05%d\x01] [被吐: \x05%d\x01] [吃药: \x05%d\x01]\n", i, iHuntSkeets[i], totalPinned[i], boomerPops[i], pillsUsed[i]);
+                    StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
                 }
-                StrCat(printBuffer, sizeof(printBuffer), tmpBuffer);
             }
         }
     }
