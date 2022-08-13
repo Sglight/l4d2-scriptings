@@ -5,7 +5,7 @@
 
 #define CVS_MODULE_NAME			"CvarSettings"
 
-#define CVARS_DEBUG				1
+#define CVARS_DEBUG				0
 #define CVS_CVAR_MAXLEN			64
 
 #if SOURCEMOD_V_MINOR > 9

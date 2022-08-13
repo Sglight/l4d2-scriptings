@@ -16,7 +16,7 @@
 
 #pragma newdecls required
 
-Handle hGameMode;
+ConVar hGameMode;
 
 public Plugin myinfo =
 {
@@ -37,11 +37,11 @@ public void OnPluginStart()
 public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 {
 	SetConVarString(hGameMode, "coop");
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
 	SetConVarString(hGameMode, "versus");
-	return Plugin_Handled;
+	return Plugin_Continue;
 }

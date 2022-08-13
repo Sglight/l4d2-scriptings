@@ -4,13 +4,13 @@
 #include <sourcemod>
 #include <left4dhooks>
 
-#define MAX(%0,%1) (((%0) > (%1)) ? (%0) : (%1))
+#define TEAM_SURVIVORS 2
 
 public Plugin myinfo =
 {
 	name = "L4D2 Boss Flow Announce",
 	author = "ProdigySim, Jahze, Stabby, CircleSquared, CanadaRox, Visor",
-	version = "1.6.1",
+	version = "1.6.2",
 	description = "Announce boss flow percents!",
 	url = "https://github.com/ConfoglTeam/ProMod"
 };
@@ -18,7 +18,7 @@ public Plugin myinfo =
 int iWitchPercent = 0;
 int iTankPercent = 0;
 
-Handle g_hVsBossBuffer;
+ConVar g_hVsBossBuffer;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -46,16 +46,19 @@ public void OnPluginStart()
 public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 {
 	PrintBossPercents();
+	return Plugin_Continue;
 }
 
 public Action SetTank_Listener(int client, const char[] command, int argc)
 {
 	CreateTimer(0.1, SaveBossFlows);
+	return Plugin_Continue;
 }
 
 public Action RoundStartEvent(Handle event, const char[] name, bool dontBroadcast)
 {
 	CreateTimer(5.0, SaveBossFlows);
+	return Plugin_Continue;
 }
 
 public int Native_UpdateBossPercents(Handle plugin, int numParams)
@@ -77,11 +80,12 @@ public Action SaveBossFlows(Handle timer)
 	{
 		iTankPercent = RoundToNearest(GetTankFlow(0) * 100.0);
 	}
+	return Plugin_Continue;
 }
 
 stock void PrintBossPercents()
 {
-	int boss_proximity = RoundToNearest(GetSurvivorsCurrent() * 100.0);
+	int boss_proximity = RoundToNearest(GetBossProximity() * 100.0);
 	if (iTankPercent)
 		PrintToChatAll("\x01<\x05Current\x01> \x04%d%%    \x01<\x05Tank\x01> \x04%d%%    \x01<\x05Witch\x01> \x04%d%", boss_proximity, iTankPercent, iWitchPercent);
 	else
@@ -91,7 +95,7 @@ stock void PrintBossPercents()
 public Action BossCmd(int client, int args)
 {
 	PrintBossPercents();
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 stock float GetTankFlow(int round)
@@ -104,25 +108,27 @@ stock float GetWitchFlow(int round)
 	return L4D2Direct_GetVSWitchFlowPercent(round);
 }
 
-stock float GetSurvivorsCurrent()
+float GetBossProximity()
 {
-	float proximity = GetMaxSurvivorCompletion() + GetConVarFloat(g_hVsBossBuffer) / L4D2Direct_GetMapMaxFlowDistance();
-	return proximity;
+	float proximity = GetMaxSurvivorCompletion() + g_hVsBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance();
+
+	return (proximity > 1.0) ? 1.0 : proximity;
 }
 
-stock float GetMaxSurvivorCompletion()
+float GetMaxSurvivorCompletion()
 {
-	float flow = 0.0;
-	for (int i = 1; i <= MaxClients; i++)
-	{
-		if (IsSurvivor(i))
-		{
-			flow = MAX(flow, L4D2Direct_GetFlowDistance(i));
+	float flow = 0.0, tmp_flow = 0.0, origin[3];
+	Address pNavArea;
+	for (int i = 1; i <= MaxClients; i++) {
+		if (IsClientInGame(i) && GetClientTeam(i) == TEAM_SURVIVORS) {
+			GetClientAbsOrigin(i, origin);
+			pNavArea = L4D2Direct_GetTerrorNavArea(origin);
+			if (pNavArea != Address_Null) {
+				tmp_flow = L4D2Direct_GetTerrorNavAreaFlow(pNavArea);
+				flow = (flow > tmp_flow) ? flow : tmp_flow;
+			}
 		}
 	}
-	return (flow / L4D2Direct_GetMapMaxFlowDistance());
-}
 
-bool IsSurvivor(int client) {
-	return client > 0 && client <= MaxClients && IsClientInGame(client) && GetClientTeam(client) == 2;
+	return (flow / L4D2Direct_GetMapMaxFlowDistance());
 }

@@ -18,13 +18,13 @@ Handle hHumanTankHp = INVALID_HANDLE;
 
 bool gameStarted;
 
-int clientTimeout[MAXPLAYERS + 1] = 0; // 加载超时时间
+int clientTimeout[MAXPLAYERS + 1] = {0, ...}; // 加载超时时间
 int countDown; // 倒计时
-bool isClientLoading[MAXPLAYERS + 1] = false;
+bool isClientLoading[MAXPLAYERS + 1] = {false, ...};
 bool isCountDownEnd = false;
 
-int tankAttackConVarInt[3] = 0;
-float tankAttackConVarFloat[1] = 0.0;
+int tankAttackConVarInt[3] = {0, ...};
+float tankAttackConVarFloat = 0.0;
 
 public Plugin myinfo =
 {
@@ -153,7 +153,7 @@ public Action JoinTeam_Cmd(int client, int args)
 		SpawnFakeClientAndTeleport();
 	}
 	CreateTimer(0.7, MoveToSurTimer, client);
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action Menu_SwitchCharacters(int client)
@@ -184,6 +184,7 @@ public Action Menu_SwitchCharacters(int client)
 		}
 	}
 	DisplayMenu(menu, client, MENU_TIME_FOREVER);
+	return Plugin_Continue;
 }
 
 public int CharactersMenuHandler(Menu menu, MenuAction action, int client, int param)
@@ -194,6 +195,7 @@ public int CharactersMenuHandler(Menu menu, MenuAction action, int client, int p
 		ChangeClientTeam(client, 1);
 		ClientCommand(client, "jointeam 2 %s", BotName);
 	}
+	return 1;
 }
 
 public Action Spectate_Cmd(int client, int args)
@@ -203,7 +205,7 @@ public Action Spectate_Cmd(int client, int args)
 	if (team == TEAM_SPECTATORS)
 	{
 		reSpec(client);
-		return Plugin_Handled;
+		return Plugin_Continue;
 	}
 	else if (team == TEAM_SURVIVORS && gameStarted && getHumanSurvivors() == 1)
 	{
@@ -212,7 +214,7 @@ public Action Spectate_Cmd(int client, int args)
 	}
 	ChangeClientTeam(client, 1);
 	PrintToChatAll("\x04[AstMod] \x03%N \x01已旁观.", client);
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
@@ -229,6 +231,7 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 	}
 
 	setBotTankAttackConVar();
+	return Plugin_Continue;
 }
 
 public Action L4D_OnEnterGhostStatePre(int client)
@@ -293,7 +296,7 @@ public Action MoveToSurTimer(Handle timer, int client)
 		return Plugin_Handled;
 	}
 	FakeClientCommand(client, "jointeam 2");
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public void reSpec(int client) {
@@ -304,13 +307,14 @@ public void reSpec(int client) {
 public Action MoveToSpecTimer(Handle timer, int client) {
 	if (!isClientValid(client)) return Plugin_Handled;
 	ChangeClientTeam(client, TEAM_SPECTATORS);
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 {
 	SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
 	SetConVarInt(FindConVar("survivor_limit"), 4);
+	return Plugin_Continue;
 }
 
 public void setGodMode(bool boolean)
@@ -376,7 +380,7 @@ void storeBotTankAttackConVar()
 	tankAttackConVarInt[0] = GetConVarInt(FindConVar("tank_attack_range"));
 	tankAttackConVarInt[1] = GetConVarInt(FindConVar("tank_swing_range"));
 	tankAttackConVarInt[2] = GetConVarInt(FindConVar("tank_fist_radius"));
-	tankAttackConVarFloat[0] = GetConVarFloat(FindConVar("z_tank_attack_interval"));
+	tankAttackConVarFloat = GetConVarFloat(FindConVar("z_tank_attack_interval"));
 }
 
 void setHumanTankAttackConVar()
@@ -392,7 +396,7 @@ void setBotTankAttackConVar()
 	SetConVarInt(FindConVar("tank_attack_range"), tankAttackConVarInt[0]);
 	SetConVarInt(FindConVar("tank_swing_range"), tankAttackConVarInt[1]);
 	SetConVarInt(FindConVar("tank_fist_radius"), tankAttackConVarInt[2]);
-	SetConVarFloat(FindConVar("z_tank_attack_interval"), tankAttackConVarFloat[0]);
+	SetConVarFloat(FindConVar("z_tank_attack_interval"), tankAttackConVarFloat);
 }
 
 bool isClientValid(int client)
@@ -623,6 +627,7 @@ bool isCountDownStoppedOrRunning()
 public Action Event_MapTransition(Handle event, char[] name, bool dontBroadcast)
 {
 	ResetInventory(true);
+	return Plugin_Continue;
 }
 
 public void giveStartingItem(const char strItemName[32])
@@ -697,7 +702,7 @@ public Action Suicide_Cmd(int client, int args)
 	}
 
 	ForcePlayerSuicide(client);
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 ///////////////////////////////////////////////////
