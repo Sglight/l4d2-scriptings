@@ -98,6 +98,7 @@ public Action challengeRequest(int client, int args)
 	if (client) {
 		drawPanel(client);
 	}
+	return Plugin_Handled;
 }
 
 public Action drawPanel(int client)
@@ -180,6 +181,7 @@ public Action drawPanel(int client)
 	if ((StrContains(sM2HunterWeapon, sWeaponSniper) >= 0)) {
 		tempM2HunterFlag += 4;
 	}
+	return Plugin_Handled;
 }
 
 public int MenuHandler(Handle menu, MenuAction action, int client, int param)
@@ -189,7 +191,7 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 			case 0: {
 				if (GetClientTeam(client) != TEAM_SURVIVORS) {
 					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
-					return;
+					return 1;
 				}
 				if (GetConVarBool(hRatioDamage)) {
 					SetConVarBool(hRatioDamage, false);
@@ -216,7 +218,7 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 			case 4: {
 				if (GetClientTeam(client) != TEAM_SURVIVORS) {
 					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
-					return;
+					return 1;
 				}
 				if (GetConVarBool(hRehealth)) {
 					SetConVarBool(hRehealth, false);
@@ -233,7 +235,7 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 			case 6: {
 				if (GetClientTeam(client) != TEAM_SURVIVORS) {
 					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
-					return;
+					return 1;
 				}
 				ResetSettings();
 				if (GetDifficulty() == 1)
@@ -261,14 +263,14 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 				// 开、关
 				if (GetClientTeam(client) != TEAM_SURVIVORS) {
 					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
-					return;
+					return 1;
 				}
 				Menu_Laser(client, false);
 			}
 			case 13: {
 				if (GetClientTeam(client) != TEAM_SURVIVORS) {
 					PrintToChat(client, "\x04[SM] \x01仅限生还者选择!");
-					return;
+					return 1;
 				}
 				ResetSettings();
 				if (GetDifficulty() == 1)
@@ -277,6 +279,7 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 			}
 		}
 	}
+	return 1;
 }
 
 public Action Menu_TankDmg(int client, int args)
@@ -336,6 +339,7 @@ public int Menu_TankDmgHandler(Handle vote, MenuAction action, int client, int p
 		drawPanel(client);
 	}
 	else if (action == MenuAction_Cancel) drawPanel(client);
+	return 1;
 }
 
 public void TZ_CallVote(int client, int target, int value)
@@ -432,11 +436,12 @@ public int TankDmgVoteResultHandler(Handle vote, int num_votes, int num_clients,
 			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
 				DisplayBuiltinVotePass(vote, "正在更改 Tank 伤害...");
 				SetConVarInt(FindConVar("vs_tank_damage"), tempTankDmg);
-				return;
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public int TankBhopVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
@@ -446,11 +451,12 @@ public int TankBhopVoteResultHandler(Handle vote, int num_votes, int num_clients
 			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
 				DisplayBuiltinVotePass(vote, "正在更改 Tank 连跳...");
 				SetConVarInt(FindConVar("ai_tank_bhop"), tempTankBhop);
-				return;
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public int TankRockVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
@@ -460,11 +466,12 @@ public int TankRockVoteResultHandler(Handle vote, int num_votes, int num_clients
 			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
 				DisplayBuiltinVotePass(vote, "正在更改 Tank 丢石头...");
 				SetConVarInt(FindConVar("ai_tank_rock"), tempTankRock);
-				return;
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public int PlayerInfectedVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
@@ -476,11 +483,12 @@ public int PlayerInfectedVoteResultHandler(Handle vote, int num_votes, int num_c
 				Format(sBuffer, sizeof(sBuffer), "正在更改特感玩家数量为 %d ...", tempPlayerInfected);
 				DisplayBuiltinVotePass(vote, sBuffer);
 				SetConVarInt(FindConVar("ast_maxinfected"), tempPlayerInfected);
-				return;
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public int PlayerTankVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
@@ -493,11 +501,12 @@ public int PlayerTankVoteResultHandler(Handle vote, int num_votes, int num_clien
 				Format(sBuffer, sizeof(sBuffer), "%s玩家扮演 Tank", sBuffer);
 				DisplayBuiltinVotePass(vote, sBuffer);
 				SetConVarInt(FindConVar("ast_allowhumantank"), tempPlayerTank);
-				return;
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public int M2HunterVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
@@ -523,11 +532,12 @@ public int M2HunterVoteResultHandler(Handle vote, int num_votes, int num_clients
 				}
 
 				SetConVarString(FindConVar("weapon_allow_m2_hunter"), sBuffer);
-				return;
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public int MorePillsVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
@@ -540,11 +550,12 @@ public int MorePillsVoteResultHandler(Handle vote, int num_votes, int num_client
 				Format(sBuffer, sizeof(sBuffer), "正在 %s 额外发药...", sBuffer);
 				DisplayBuiltinVotePass(vote, sBuffer);
 				SetConVarInt(FindConVar("ast_pills_enabled"), tempMorePills);
-				return;
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public int KillMapPillsVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
@@ -556,12 +567,13 @@ public int KillMapPillsVoteResultHandler(Handle vote, int num_votes, int num_cli
 				tempKillMapPills == 0 ? Format(sBuffer, sizeof(sBuffer), "保留") : Format(sBuffer, sizeof(sBuffer), "删除");
 				Format(sBuffer, sizeof(sBuffer), "已设置为 %s 地图药", sBuffer);
 				DisplayBuiltinVotePass(vote, sBuffer);
-				SetConVarInt(FindConVar("ast_pills_map_kill"), tempKillMapPills);
-				return;
+				// SetConVarInt(FindConVar("ast_pills_map_kill"), tempKillMapPills);
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public int VoteHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
@@ -570,11 +582,14 @@ public int VoteHandler(Handle vote, BuiltinVoteAction action, int param1, int pa
 		case BuiltinVoteAction_End: {
 			g_hVote = INVALID_HANDLE;
 			CloseHandle(vote);
+			return 1;
 		}
 		case BuiltinVoteAction_Cancel: {
 			DisplayBuiltinVoteFail( vote, view_as<BuiltinVoteFailReason>(param1) );
+			return 0;
 		}
 	}
+	return 0;
 }
 
 public Action Menu_SITimer(int client, int args)
@@ -644,6 +659,7 @@ public int Menu_SITimerHandler(Handle menu, MenuAction action, int client, int p
 		drawPanel(client);
 	}
 	else if (action == MenuAction_Cancel) drawPanel(client);
+	return 1;
 }
 
 public void TZ_CallVoteStr(int client, int target, char[] param1)
@@ -689,11 +705,12 @@ public int SITimerVoteResultHandler(Handle vote, int num_votes, int num_clients,
 				DisplayBuiltinVotePass(vote, "正在更改特感刷新速率...");
 				SetConVarInt(hSITimer, tempSITimer);
 				ServerCommand("sm_reloadscript");
-				return;
+				return 1;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+	return 0;
 }
 
 public Action Menu_SIDamage(int client, int args)
@@ -738,6 +755,7 @@ public int Menu_SIDamageHandler(Handle menu, MenuAction action, int client, int 
 		}
 		drawPanel(client);
 	} else if (action == MenuAction_Cancel) drawPanel(client);
+	return 1;
 }
 
 public void ResetSettings()
@@ -794,6 +812,7 @@ public int Menu_MorePillsHandler(Handle menu, MenuAction action, int client, int
 		drawPanel(client);
 	}
 	else if (action == MenuAction_Cancel) drawPanel(client);
+	return 1;
 }
 
 public Action Menu_Tank(int client, int args)
@@ -844,6 +863,7 @@ public int Menu_TankHandler(Handle menu, MenuAction action, int client, int para
 		drawPanel(client);
 	}
 	else if (action == MenuAction_Cancel) drawPanel(client);
+	return 1;
 }
 
 public Action Menu_HunterM2(int client, int args)
@@ -898,6 +918,7 @@ public int Menu_HunterM2Handler(Handle menu, MenuAction action, int client, int 
 		Menu_HunterM2(client, false);
 	}
 	else if (action == MenuAction_Cancel) drawPanel(client);
+	return 1;
 }
 
 public Action Menu_PlayerInfected(int client, int args)
@@ -991,11 +1012,13 @@ public int Menu_PlayerInfectedHandler(Handle menu, MenuAction action, int client
 		DisplayMenu(menu, client, MENU_DISPLAY_TIME);
 	}
 	else if (action == MenuAction_Cancel) drawPanel(client);
+	return 1;
 }
 
 public Action laserCommand(int client, int args) {
-	if (!IsClientAndInGame(client) || GetClientTeam(client) != TEAM_SURVIVORS) return;
+	if (!IsClientAndInGame(client) || GetClientTeam(client) != TEAM_SURVIVORS) return Plugin_Handled;
 	ToggleLaser(client, true);
+	return Plugin_Handled;
 }
 
 public void ToggleLaser(int client, bool on) {
@@ -1032,6 +1055,7 @@ public int Menu_LaserHandler(Handle menu, MenuAction action, int client, int par
 		drawPanel(client);
 	}
 	else if (action == MenuAction_Cancel) drawPanel(client);
+	return 1;
 }
 
 ///////////////////////////
@@ -1067,6 +1091,7 @@ public Action groundTouchTimer(Handle timer, int client)
 		bIsPouncing[client] = false;
 		KillTimer(timer);
 	}
+	return Plugin_Handled;
 }
 
 public bool isGrounded(int client)
@@ -1088,6 +1113,7 @@ public void OnPlayerShoved(Handle event, const char[] name, bool dontBroadcast)
 public Action Timer_ResetTongue(Handle timer, int client)
 {
 	bIsUsingAbility[client] = false;
+	return Plugin_Handled;
 }
 
 public Action OnTongueRelease(Handle event, const char[] name, bool dontBroadcast)
@@ -1095,6 +1121,7 @@ public Action OnTongueRelease(Handle event, const char[] name, bool dontBroadcas
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	if (isInfected(client) && GetZombieClass(client) == ZC_SMOKER)
 		bIsUsingAbility[client] = false;
+	return Plugin_Handled;
 }
 
 public void OnTongueCut(int survivor, int smoker)
@@ -1133,7 +1160,7 @@ public Action OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 		char weapon[64];
 		GetEventString(event, "weapon", weapon, sizeof(weapon));
 
-		if (attacker == 0 || victim == 0 || GetClientTeam(attacker) == TEAM_SPECTATORS) return;
+		if (attacker == 0 || victim == 0 || GetClientTeam(attacker) == TEAM_SPECTATORS) return Plugin_Handled;
 
 		int zombie = GetZombieClass(victim);
 		int HP = GetEntProp(attacker, Prop_Data, "m_iHealth");
@@ -1188,6 +1215,7 @@ public Action OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 		bIsUsingAbility[victim] = false;
 		SDKUnhook(victim, SDKHook_OnTakeDamage, OnTakeDamage);
 	}
+	return Plugin_Handled;
 }
 
 // While a Charger is carrying a Survivor, undo any friendly fire done to them
@@ -1311,11 +1339,11 @@ public Action OnTakeDamage(int victim, int& attacker, int& inflictor, float& dam
 
 public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
 {
-	if ( !GetConVarBool(hDmgModifyEnable) ) return;
+	if ( !GetConVarBool(hDmgModifyEnable) ) return Plugin_Handled;
 
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	int victim = GetClientOfUserId(GetEventInt(event, "userid"));
-	if (!IsClientAndInGame(attacker) || !IsClientAndInGame(victim)) return;
+	if (!IsClientAndInGame(attacker) || !IsClientAndInGame(victim)) return Plugin_Handled;
 
 	int damage = GetEventInt(event, "dmg_health");
 	int zombie_class = GetZombieClass(attacker);
@@ -1329,6 +1357,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
             _CancelGetup(victim);
         }
 	}
+	return Plugin_Handled;
 }
 
 stock bool isInfected(int client) {

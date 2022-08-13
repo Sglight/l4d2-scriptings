@@ -2,9 +2,21 @@
 1. [x] 生还与特感人数平衡时，阻止玩家进入服务器自动加入生还
 2. [x] 人挤人
 3. [x] 双人难度降低
-4. [ ] 自动发药延迟 + 删除地图药
-5. [x] 近战刀牛伤害 325 -> 350
-6. [ ] 插件锁定 cvar 
+4. [x] 自动发药延迟
+5. [ ] ~~删除地图药，实体名称为 weapon_spawn，连带着武器一起删~~
+6. [x] 近战刀牛伤害 325 -> 350
+7. [x] 插件锁定 cvar 
+8. [x] 关底 mvp 显示
+9. [ ] 嘟嘟声重复（好像 zone 也这样？）
+10. [x] 更新 Sourcemod 至 1.11.0.6825，同 Zonemod
+11. [ ] 刷特卡
+12. [x] 终章换图
+13. [x] Zonemod 地图改动，救援关刷药点要改
+14. [x] awp
+15. [x] pill_passer GivePlayerItem
+16. [x] zonemod 2.7 weapon
+17. [x] 偶然刷包（编译器版本问题）
+
 
 # 2.5.6
 1. [x] 钝器砍舌
@@ -25,7 +37,7 @@
         >/**
         \* @brief Called whenever ZombieManager::SpawnMob(int) is invoked
         \* @remarks called on natural hordes & z_spawn mob, increases Zombie Spawn
-        \*			Queue, triggers player OnMobSpawned (vocalizations), sets horde
+        \*			Queue, triggers player OnMobSpawned (vocalizaStions), sets horde
         \*			direction, and plays horde music.
         \*
         \* @param amount		Amount of Zombies to add to Queue
@@ -44,6 +56,6 @@
 8. [x] c3m4包
 9. [x] no deadstop cfg
 10. [ ] 重复换图
-11. [ ] 模式重写的参数
+11. [x] 模式重写的参数
 12. [x] tz 菜单补全
 13. [x] C7 删除地图的导演系统脚本
