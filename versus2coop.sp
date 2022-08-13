@@ -43,4 +43,5 @@ public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
 public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadcast)
 {
 	SetConVarString(hGameMode, "versus");
+	return Plugin_Handled;
 }
