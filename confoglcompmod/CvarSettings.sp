@@ -298,7 +298,7 @@ public Action CVS_ChangeCvar_Cmd(args)
 
 	RemoveFromArray(CvarSettingsArray, index);
 
-	AddCvar(cvar, newval, 1);
+	AddCvar(cvar, newval, 1, 1);
 	
 	return Plugin_Handled;
 }
@@ -366,9 +366,9 @@ static void SetEnforcedCvars()
 #endif
 }
 
-static void AddCvar(const char[] cvar, const char[] newval, const int lock = 0)
+static void AddCvar(const char[] cvar, const char[] newval, const int lock = 0, const int change = 0)
 {
-	if (bTrackingStarted && lock != 1) {
+	if (bTrackingStarted && change != 1) {
 		#if CVARS_DEBUG
 			LogMessage("[%s] Attempt to track new cvar %s during a match!", CVS_MODULE_NAME, cvar);
 		#endif
