@@ -64,6 +64,7 @@ Action Shove_Handler(int shover, int shovee)
 	ExplodeString(allowM2WeaponAll, ",", allowM2WeaponArray, 32, 32, false); // 拆分为数组
 	
 	int primaryWeaponId = GetPlayerWeaponSlot(shover, 0); // get survivor's primary weapon
+	if (primaryWeaponId == -1) return Plugin_Handled; // 无主武器不允许推
 	char primaryWeapon[32];
 	GetEdictClassname(primaryWeaponId, primaryWeapon, sizeof(primaryWeapon));
 

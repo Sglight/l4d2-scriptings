@@ -66,7 +66,7 @@ public Plugin myinfo =
 	name = "Amethyst Challenge",
 	author = "海洋空氣",
 	description = "Difficulty Controller for Amethyst Mod.",
-	version = "2.0",
+	version = "2.1",
 	url = "https://steamcommunity.com/id/larkspur2017/"
 };
 
@@ -78,6 +78,8 @@ public void OnPluginStart()
 	HookEvent("player_shoved", OnPlayerShoved, EventHookMode_Post);
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Post);
 	HookEvent("tongue_release", OnTongueRelease);
+	HookEvent("tongue_broke_bent", OnTongueRelease);
+	HookEvent("tongue_pull_stopped", OnTonguePullStopped);
 
 	// 牛起身无敌修复
 	HookEvent("charger_carry_start", Event_ChargerCarryStart, EventHookMode_Post);
@@ -1091,7 +1093,7 @@ public Action groundTouchTimer(Handle timer, int client)
 		bIsPouncing[client] = false;
 		KillTimer(timer);
 	}
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public bool isGrounded(int client)
@@ -1113,7 +1115,7 @@ public void OnPlayerShoved(Handle event, const char[] name, bool dontBroadcast)
 public Action Timer_ResetTongue(Handle timer, int client)
 {
 	bIsUsingAbility[client] = false;
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 public Action OnTongueRelease(Handle event, const char[] name, bool dontBroadcast)
@@ -1121,7 +1123,15 @@ public Action OnTongueRelease(Handle event, const char[] name, bool dontBroadcas
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	if (isInfected(client) && GetZombieClass(client) == ZC_SMOKER)
 		bIsUsingAbility[client] = false;
-	return Plugin_Handled;
+	return Plugin_Continue;
+}
+
+public Action OnTonguePullStopped(Handle event, const char[] name, bool dontBroadcast)
+{
+	int smoker = GetClientOfUserId(GetEventInt(event, "smoker"));
+	if (isInfected(smoker) && GetZombieClass(smoker) == ZC_SMOKER)
+		bIsUsingAbility[smoker] = false;
+	return Plugin_Continue;
 }
 
 public void OnTongueCut(int survivor, int smoker)
@@ -1215,7 +1225,7 @@ public Action OnPlayerDeath(Handle event, const char[] name, bool dontBroadcast)
 		bIsUsingAbility[victim] = false;
 		SDKUnhook(victim, SDKHook_OnTakeDamage, OnTakeDamage);
 	}
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 // While a Charger is carrying a Survivor, undo any friendly fire done to them
@@ -1357,7 +1367,7 @@ public Action OnPlayerHurt(Handle event, const char[] name, bool dontBroadcast)
             _CancelGetup(victim);
         }
 	}
-	return Plugin_Handled;
+	return Plugin_Continue;
 }
 
 stock bool isInfected(int client) {
