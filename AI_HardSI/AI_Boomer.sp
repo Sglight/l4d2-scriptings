@@ -23,13 +23,13 @@ public void Boomer_OnModuleStart() {
 		SetFailState("Couldn't find the offsets and signatures file. Please, check that it is installed correctly.");
 	}
 	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(g_hGameConf, SDKConf_Signature, "CTerrorPlayer_OnVomitedUpon");
+	PrepSDKCall_SetFromConf(g_hGameConf, SDKConf_Signature, "CTerrorPlayer::OnVomitedUpon");
 	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
 	sdkVomitSurvivor = EndPrepSDKCall();
 	if(sdkVomitSurvivor == INVALID_HANDLE)
 	{
-		SetFailState("Unable to find the \"CTerrorPlayer_OnVomitedUpon\" signature, check the file version!");
+		SetFailState("Unable to find the \"CTerrorPlayer::OnVomitedUpon\" signature, check the file version!");
 	}
 }
 
@@ -76,8 +76,8 @@ public Action Boomer_OnPlayerRunCmd( int boomer, int& buttons, float vel[3], flo
 			//buttons &= ~IN_MOVERIGHT;
 			if (flags & FL_ONGROUND) {
 				buttons |= IN_JUMP;
-				TeleportEntity(boomer, NULL_VECTOR, NULL_VECTOR, straightVector);				
-				Client_Push( boomer, clientEyeAngles, BoostForwardBoomer, view_as<VelocityOverride>( {VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
+				TeleportEntity(boomer, NULL_VECTOR, NULL_VECTOR, straightVector);
+				Client_Push( boomer, clientEyeAngles, BoostForwardBoomer);
 				// if(buttons & IN_FORWARD) {
 				// 	Client_Push( boomer, clientEyeAngles, BoostForwardBoomer, view_as<VelocityOverride>( {VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
 				// }
@@ -176,6 +176,7 @@ public void Boomer_OnShoved(int botBoomer) {
 
 public Action Timer_VomitCooldown(Handle timer, int boomer) {
 	bCanVomit[boomer] = true;
+	return Plugin_Continue;
 }
 
 /*public Action:Timer_BoomerAngle( Handle: timer, any:boomer )

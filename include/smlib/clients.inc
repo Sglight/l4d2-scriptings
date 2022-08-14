@@ -715,7 +715,7 @@ stock int Client_GetScore(int client)
  * @param value				Score.
  * @noreturn
  */
-stock int Client_SetScore(int client, int value)
+stock void Client_SetScore(int client, int value)
 {
 	SetEntProp(client, Prop_Data, "m_iFrags", value);
 }

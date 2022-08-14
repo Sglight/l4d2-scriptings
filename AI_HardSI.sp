@@ -6,7 +6,7 @@
 #include <smlib>
 #include <left4dhooks>
 
-Handle hCvarAssaultReminderInterval;
+ConVar hCvarAssaultReminderInterval;
 bool bHasBeenShoved[MAXPLAYERS]; // shoving resets SI movement 
 float g_delay[MAXPLAYERS][8];
 
@@ -31,7 +31,7 @@ public Plugin myinfo =
 	name = "AI: Hard SI",
 	author = "Breezy",
 	description = "Improves the AI behaviour of special infected",
-	version = "1.0",
+	version = "1.1",
 	url = "github.com/breezyplease"
 };
 
@@ -74,10 +74,12 @@ public void OnPluginEnd() {
 
 public Action L4D_OnFirstSurvivorLeftSafeArea(int firstSurvivor) {
 	CreateTimer( float(GetConVarInt(hCvarAssaultReminderInterval)), Timer_ForceInfectedAssault, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE );
+	return Plugin_Continue;
 }
 
 public Action Timer_ForceInfectedAssault(Handle timer) {
 	CheatCommand("nb_assault");
+	return Plugin_Continue;
 }
 
 
@@ -91,8 +93,7 @@ public Action Timer_ForceInfectedAssault(Handle timer) {
 public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3], float angles[3], int& weapon) {
 	if( IsBotInfected(client) && IsPlayerAlive(client) ) { // bots continue to trigger this callback for a few seconds after death
 		int botInfected = client;
-		switch( view_as<L4D2_Infected>( GetInfectedClass(botInfected) ) ) {
-		
+		switch( view_as<int>(GetInfectedClass(botInfected)) ) {
 			case (L4D2Infected_Smoker): {
 				if( !bHasBeenShoved[botInfected] ) return Smoker_OnPlayerRunCmd( botInfected, buttons, impulse, vel, angles, weapon );
 			}
@@ -142,7 +143,7 @@ public Action InitialiseSpecialInfected(Handle event, char[] name, bool dontBroa
 		int botInfected = client;
 		bHasBeenShoved[client] = false;
 		// Process for SI class
-		switch( view_as<L4D2_Infected>( GetInfectedClass(botInfected) ) ) {
+		switch( GetInfectedClass(botInfected) ) {
 		
 			case (L4D2Infected_Hunter): {
 				return Hunter_OnSpawn(botInfected);
@@ -193,6 +194,7 @@ public Action OnTongueRelease(Handle event, char[] name, bool dontBroadcast) {
 	if( IsBotInfected(client) ) {
 		CreateTimer(0.5, Timer_Suicide, client, TIMER_FLAG_NO_MAPCHANGE);
 	}
+	return Plugin_Continue;
 }
 
 public Action Timer_Suicide(Handle timer, int client) {
@@ -205,10 +207,10 @@ public Action OnPlayerShoved(Handle event, char[] name, bool dontBroadcast) {
 	int shovedPlayer = GetClientOfUserId(GetEventInt(event, "userid"));
 	if( IsBotInfected(shovedPlayer) ) {
 		bHasBeenShoved[shovedPlayer] = true;
-		if( view_as<L4D2_Infected>( GetInfectedClass(shovedPlayer) ) == L4D2Infected_Jockey ) {
+		if( GetInfectedClass(shovedPlayer) == L4D2Infected_Jockey ) {
 			Jockey_OnShoved(shovedPlayer);
 		}
-		else if ( view_as<L4D2_Infected>( GetInfectedClass(shovedPlayer) ) == L4D2Infected_Boomer ) {
+		else if ( GetInfectedClass(shovedPlayer) == L4D2Infected_Boomer ) {
 			Boomer_OnShoved(shovedPlayer);
 		}
 	}
@@ -221,6 +223,7 @@ public Action OnPlayerJump(Handle event, char[] name, bool dontBroadcast) {
 	if( IsBotInfected(jumpingPlayer) )  {
 		bHasBeenShoved[jumpingPlayer] = false;
 	}
+	return Plugin_Continue;
 } 
 
 /***********************************************************************************************************************************************************************************

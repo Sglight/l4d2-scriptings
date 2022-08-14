@@ -95,23 +95,21 @@ public Action Tank_OnPlayerRunCmd( int tank, int& buttons, int& impulse, float v
 				buttons |= IN_JUMP;
 				
 				if(buttons & IN_FORWARD) {
-					Client_Push( tank, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
+					clientEyeAngles[1] += 0.0;
 				}	
 				
 				if(buttons & IN_BACK) {
 					clientEyeAngles[1] += 180.0;
-					Client_Push( tank, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
 				}
 				
 				if(buttons & IN_MOVELEFT) {
 					clientEyeAngles[1] += 90.0;
-					Client_Push( tank, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
 				}
 				
 				if(buttons & IN_MOVERIGHT) {
 					clientEyeAngles[1] += -90.0;
-					Client_Push( tank, clientEyeAngles, BoostForward, view_as<VelocityOverride>({VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
 				}
+				Client_Push( tank, clientEyeAngles, BoostForward );
 			}
 			//Block Jumping and Crouching when on ladder
 			if (GetEntityMoveType(tank) & MOVETYPE_LADDER) {
@@ -153,7 +151,7 @@ public Action Tank_OnPlayerRunCmd( int tank, int& buttons, int& impulse, float v
 			}
 		}*/
 	}
-	return Plugin_Continue;	
+	return Plugin_Changed;	
 }
 
 public Action L4D2_OnSelectTankAttack(int client, int& sequence) {

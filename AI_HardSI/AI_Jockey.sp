@@ -100,6 +100,7 @@ public void Jockey_OnShoved(int botJockey) {
 
 public Action Timer_LeapCooldown(Handle timer, int jockey) {
 	bCanLeap[jockey] = true;
+	return Plugin_Continue;
 }
 
 /***********************************************************************************************************************************************************************************

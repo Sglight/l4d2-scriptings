@@ -291,4 +291,5 @@ float GaussianRNG( float mean, float std ) {
 // After the given interval, hunter is allowed to pounce/lunge
 public Action Timer_LungeInterval(Handle timer, int client) {
 	bCanLunge[client] = true;
+	return Plugin_Continue;
 }
