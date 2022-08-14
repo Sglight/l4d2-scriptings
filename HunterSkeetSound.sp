@@ -15,46 +15,46 @@ public void OnMapStart()
 	PrecacheSound("ui/bigreward.wav");
 }
 
-public int OnSkeet(int survivor, int hunter)
+public void OnSkeet(int survivor, int hunter)
 {
 	PlaySkeetSoundToClient(survivor);
 }
 
-public int OnSkeetMelee(int survivor, int hunter)
+public void OnSkeetMelee(int survivor, int hunter)
 {
 	PlaySkeetSoundToClient(survivor);
 }
 
-public int OnSkeetGL(int survivor, int hunter)
+public void OnSkeetGL(int survivor, int hunter)
 {
 	PlaySkeetSoundToClient(survivor);
 }
 
-public int OnSkeetSniper(int survivor, int hunter)
+public void OnSkeetSniper(int survivor, int hunter)
 {
 	PlaySkeetSoundToClient(survivor);
 }
 
-public int OnSkeetHurt(int survivor, int hunter)
+public void OnSkeetHurt(int survivor, int hunter)
 {
 	PlaySkeetSoundToClient(survivor);
 }
 
-public int OnSkeetMeleeHurt(int survivor, int hunter)
+public void OnSkeetMeleeHurt(int survivor, int hunter)
 {
 	PlaySkeetSoundToClient(survivor);
 }
 
-public int OnSkeetSniperHurt(int survivor, int hunter)
+public void OnSkeetSniperHurt(int survivor, int hunter)
 {
 	PlaySkeetSoundToClient(survivor);
 }
 
 stock void PlaySkeetSoundToClient(int client) {
 	if ( !IsClientAndInGame(client) ) return;
-	EmitSoundToClient(client, "ui/bigreward.wav");
+	EmitSoundToClient(client, "ui/bigreward.wav", client);
 }
 
 stock bool IsClientAndInGame(int index) {
-	return ( index > 1 && index <= MaxClients && IsClientInGame(index) );
+	return ( index > 0 && index <= MaxClients + 1 && IsClientInGame(index) );
 }
