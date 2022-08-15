@@ -24,6 +24,10 @@
 #define ZC_WITCH                7
 #define ZC_TANK                 8
 
+#define M2_WEAPON_SMG           1 << 0     // 1
+#define M2_WEAPON_SHOTGUN       1 << 1     // 2
+#define M2_WEAPON_SNIPER        1 << 2     // 4
+
 char SI_Names[][] =
 {
 	"Unknown",
@@ -52,14 +56,14 @@ bool bIsPouncing[MAXPLAYERS + 1];		  // if a hunter player is currently pouncing
 bool bIsUsingAbility[MAXPLAYERS + 1];
 float fDmgPrint = 0.0;
 
-Handle hRehealth = INVALID_HANDLE;
-Handle hSITimer = INVALID_HANDLE;
-Handle g_hVote = INVALID_HANDLE;
+ConVar hRehealth;
+ConVar hSITimer;
+Handle g_hVote;
 
-Handle hDmgModifyEnable = INVALID_HANDLE;
-Handle hDmgThreshold = INVALID_HANDLE;
-Handle hRatioDamage = INVALID_HANDLE;
-Handle hFastGetup = INVALID_HANDLE;
+ConVar hDmgModifyEnable;
+ConVar hDmgThreshold;
+ConVar hRatioDamage;
+ConVar hFastGetup;
 
 public Plugin myinfo =
 {
@@ -175,13 +179,13 @@ public Action drawPanel(int client)
 	// 0 完全禁止，1 允许机枪，2 允许喷子，4 允许狙击
 	tempM2HunterFlag = 0;
 	if (StrContains(sM2HunterWeapon, sWeaponSMG) >= 0) {
-		tempM2HunterFlag += 1;
+		tempM2HunterFlag ^= M2_WEAPON_SMG;
 	}
 	if ((StrContains(sM2HunterWeapon, sWeaponSG) >= 0)) {
-		tempM2HunterFlag += 2;
+		tempM2HunterFlag ^= M2_WEAPON_SHOTGUN;
 	}
 	if ((StrContains(sM2HunterWeapon, sWeaponSniper) >= 0)) {
-		tempM2HunterFlag += 4;
+		tempM2HunterFlag ^= M2_WEAPON_SNIPER;
 	}
 	return Plugin_Handled;
 }
@@ -875,11 +879,11 @@ public Action Menu_HunterM2(int client, int args)
 	SetMenuTitle(menu, "推 Hunter 设定");
 	SetMenuExitBackButton(menu, true);
 
-	tempM2HunterFlag & 1 ?
+	tempM2HunterFlag & M2_WEAPON_SMG ?
 		AddMenuItem(menu, "", "✔允许机枪推") : AddMenuItem(menu, "", "允许机枪推");
-	tempM2HunterFlag & 2 ?
+	tempM2HunterFlag & M2_WEAPON_SHOTGUN ?
 		AddMenuItem(menu, "", "✔允许喷子推") : AddMenuItem(menu, "", "允许喷子推");
-	tempM2HunterFlag & 4 ?
+	tempM2HunterFlag & M2_WEAPON_SNIPER ?
 		AddMenuItem(menu, "", "✔允许狙击推") : AddMenuItem(menu, "", "允许狙击推");
 
 	AddMenuItem(menu, "", "发起投票");
@@ -893,25 +897,13 @@ public int Menu_HunterM2Handler(Handle menu, MenuAction action, int client, int 
 		switch (param)
 		{
 			case 0: {
-				if (tempM2HunterFlag & 1) { // 当前允许机枪推
-					tempM2HunterFlag -= 1;
-				} else {
-					tempM2HunterFlag += 1;
-				}
+					tempM2HunterFlag ^= M2_WEAPON_SMG;
 			}
 			case 1: {
-				if (tempM2HunterFlag & 2) { // 当前允许喷子推
-					tempM2HunterFlag -= 2;
-				} else {
-					tempM2HunterFlag += 2;
-				}
+					tempM2HunterFlag ^= M2_WEAPON_SHOTGUN;
 			}
 			case 2: {
-				if (tempM2HunterFlag & 4) { // 当前允许狙击推
-					tempM2HunterFlag -= 4;
-				} else {
-					tempM2HunterFlag += 4;
-				}
+					tempM2HunterFlag ^= M2_WEAPON_SNIPER;
 			}
 			case 3: {
 				TZ_CallVote(client, 6, 0);
