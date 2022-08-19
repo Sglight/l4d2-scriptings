@@ -1,27 +1,28 @@
+#pragma semicolon 1
+#pragma newdecls required
 #include <sourcemod>
 #include <builtinvotes>
 
 #define FILE_PATH		"configs/cfgs.txt"
 
-new Handle:g_hVote = INVALID_HANDLE;
-new Handle:g_hVoteKick = INVALID_HANDLE;
-new Handle:g_hCfgsKV = INVALID_HANDLE;
-new String:g_sCfg[32];
-new String:kickplayerinfo[MAX_NAME_LENGTH];
-new String:kickplayername[MAX_NAME_LENGTH];
+Handle g_hVote = INVALID_HANDLE;
+Handle g_hVoteKick = INVALID_HANDLE;
+Handle g_hCfgsKV = INVALID_HANDLE;
+char g_sCfg[32];
+char kickplayername[MAX_NAME_LENGTH];
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "投票读取cfg文件",
-	author = "HazukiYuro",
+	author = "HazukiYuro, 海洋空氣",
 	description = "!vote投票",
-	version = "1.1",
+	version = "1.2",
 	url = ""
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-	decl String:sBuffer[128];
+	char sBuffer[128];
 	GetGameFolderName(sBuffer, sizeof(sBuffer));
 	if (!StrEqual(sBuffer, "left4dead2", false))
 	{
@@ -36,41 +37,25 @@ public OnPluginStart()
 
 	RegConsoleCmd("sm_mode", CommondVote);
 	RegConsoleCmd("sm_votekick", Command_Voteskick);
-	
-	RegConsoleCmd("sm_serverhp", Command_ServerHp, _, ADMFLAG_KICK);
 }
 
-stock CheatCommand(Client, const String:command[], const String:arguments[])
+stock void CheatCommand(int client, const char[] command, const char[] arguments)
 {
-	new admindata = GetUserFlagBits(Client);
-	SetUserFlagBits(Client, ADMFLAG_ROOT);
-	new flags = GetCommandFlags(command);
+	int admindata = GetUserFlagBits(client);
+	SetUserFlagBits(client, ADMFLAG_ROOT);
+	int flags = GetCommandFlags(command);
 	SetCommandFlags(command, flags & ~FCVAR_CHEAT);
-	FakeClientCommand(Client, "%s %s", command, arguments);
+	FakeClientCommand(client, "%s %s", command, arguments);
 	SetCommandFlags(command, flags);
-	SetUserFlagBits(Client, admindata);
+	SetUserFlagBits(client, admindata);
 }
 
-public Action:Command_ServerHp(client, args)
-{
-	for(new i = 1; i <= MaxClients; i++)
-	{
-		if(IsClientConnected(i) && IsClientInGame(i))
-		{
-			CheatCommand(i, "give", "health");
-		}
-	}
-	PrintToChatAll("\x03投票回血通过");
-	ReplyToCommand(client, "done");
-	return Plugin_Handled;
-}
-
-public Action:CommondVote(client, args)
+public Action CommondVote(int client, int args)
 {
 	if (!client) return Plugin_Handled;
 	if (args > 0)
 	{
-		decl String:sCfg[64], String:sBuffer[256];
+		char sCfg[64], sBuffer[256];
 		GetCmdArg(1, sCfg, sizeof(sCfg));
 		BuildPath(Path_SM, sBuffer, sizeof(sBuffer), "../../cfg/%s", sCfg);
 		if (DirExists(sBuffer))
@@ -90,7 +75,7 @@ public Action:CommondVote(client, args)
 	return Plugin_Handled;
 }
 
-bool:FindConfigName(const String:cfg[], String:message[], maxlength)
+bool FindConfigName(const char[] cfg, char[] message, int maxlength)
 {
 	KvRewind(g_hCfgsKV);
 	if (KvGotoFirstSubKey(g_hCfgsKV))
@@ -107,77 +92,105 @@ bool:FindConfigName(const String:cfg[], String:message[], maxlength)
 	return false;
 }
 
-ShowVoteMenu(client)
+void ShowVoteMenu(int client)
 {
-	new Handle:hMenu = CreateMenu(VoteMenuHandler);
+	Handle hMenu = CreateMenu(VoteMenuHandler);
 	SetMenuTitle(hMenu, "选择:");
-	new String:sBuffer[64];
+	char sSectionName[64];
 	KvRewind(g_hCfgsKV);
 	if (KvGotoFirstSubKey(g_hCfgsKV))
 	{
 		do
 		{
-			KvGetSectionName(g_hCfgsKV, sBuffer, sizeof(sBuffer));
-			AddMenuItem(hMenu, sBuffer, sBuffer);
+			KvGetSectionName(g_hCfgsKV, sSectionName, sizeof(sSectionName));
+			AddMenuItem(hMenu, sSectionName, sSectionName);
 		} while (KvGotoNextKey(g_hCfgsKV));
 	}
 	DisplayMenu(hMenu, client, 20);
 }
 
-public VoteMenuHandler(Handle:menu, MenuAction:action, param1, param2)
+public int VoteMenuHandler(Handle menu, MenuAction action, int client, int itemPos)
 {
 	if (action == MenuAction_Select)
 	{
-		new String:sInfo[64], String:sBuffer[64];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo));
+		char sSectionName[64], sBuffer[64];
+		GetMenuItem(menu, itemPos, sSectionName, sizeof(sSectionName));
 		KvRewind(g_hCfgsKV);
-		if (KvJumpToKey(g_hCfgsKV, sInfo) && KvGotoFirstSubKey(g_hCfgsKV))
+		if (KvJumpToKey(g_hCfgsKV, sSectionName) && KvGotoFirstSubKey(g_hCfgsKV))
 		{
-			new Handle:hMenu = CreateMenu(ConfigsMenuHandler);
-			Format(sBuffer, sizeof(sBuffer), "选择 %s :", sInfo);
+			Handle hMenu = CreateMenu(ConfigsMenuHandler);
+			Format(sBuffer, sizeof(sBuffer), "选择 %s :", sSectionName);
 			SetMenuTitle(hMenu, sBuffer);
 			do
 			{
-				KvGetSectionName(g_hCfgsKV, sInfo, sizeof(sInfo));
+				KvGetSectionName(g_hCfgsKV, sSectionName, sizeof(sSectionName));
 				KvGetString(g_hCfgsKV, "message", sBuffer, sizeof(sBuffer));
-				AddMenuItem(hMenu, sInfo, sBuffer);
+				AddMenuItem(hMenu, sSectionName, sBuffer);
 			} while (KvGotoNextKey(g_hCfgsKV));
-			DisplayMenu(hMenu, param1, 20);
+			DisplayMenu(hMenu, client, 20);
 		}
 		else
 		{
-			PrintToChat(param1, "没有相关的文件存在.");
-			ShowVoteMenu(param1);
+			PrintToChat(client, "没有相关的文件存在.");
+			ShowVoteMenu(client);
 		}
 	}
 	if (action == MenuAction_End)
 	{
 		CloseHandle(menu);
 	}
+	return 1;
 }
 
-public ConfigsMenuHandler(Handle:menu, MenuAction:action, param1, param2)
+public int ConfigsMenuHandler(Handle menu, MenuAction action, int client, int itemPos)
 {
 	if (action == MenuAction_Select)
 	{
-		new String:sInfo[64], String:sBuffer[64];
-		GetMenuItem(menu, param2, sInfo, sizeof(sInfo), _, sBuffer, sizeof(sBuffer));
-		strcopy(g_sCfg, sizeof(g_sCfg), sInfo);
+		char sSectionName[64], sMessage[64], sType[64];
+		GetMenuItem(menu, itemPos, sSectionName, sizeof(sSectionName), _, sMessage, sizeof(sMessage));
+		strcopy(g_sCfg, sizeof(g_sCfg), sSectionName);
 		
-		if(!StrEqual(g_sCfg, "sm_votekick"))
+		// 获取 type
+		KvRewind(g_hCfgsKV);
+		if (KvJumpToKey(g_hCfgsKV, sSectionName) && KvGotoFirstSubKey(g_hCfgsKV))
 		{
-			if (StartVote(param1, sBuffer))
+			do
 			{
-				FakeClientCommand(param1, "Vote Yes");
-			}
-			else
-			{
-				ShowVoteMenu(param1);
-			}
+				KvGetString(g_hCfgsKV, "type", sType, sizeof(sType));
+			} while (KvGotoNextKey(g_hCfgsKV));
 		}
 		else
 		{
-			FakeClientCommand(param1, "sm_votekick");
+			PrintToChat(client, "没有相关的文件存在.");
+			ShowVoteMenu(client);
+		}
+
+		if (StrEqual(sType, "command"))
+		{
+			if (StartVote(client, sMessage))
+			{
+				FakeClientCommand(client, "Vote Yes");
+			}
+			else
+			{
+				ShowVoteMenu(client);
+			}
+		}
+		else if (StrEqual(sType, "map"))
+		{
+			Format(sSectionName, sizeof(sSectionName), "changelevel %s", sSectionName);
+			if (StartVote(client, sMessage))
+			{
+				FakeClientCommand(client, "Vote Yes");
+			}
+			else
+			{
+				ShowVoteMenu(client);
+			}
+		}
+		else if (StrEqual(sType, "panel"))
+		{
+			FakeClientCommand(client, sSectionName);
 		}
 	}
 	if (action == MenuAction_End)
@@ -186,18 +199,19 @@ public ConfigsMenuHandler(Handle:menu, MenuAction:action, param1, param2)
 	}
 	if (action == MenuAction_Cancel)
 	{
-		ShowVoteMenu(param1);
+		ShowVoteMenu(client);
 	}
+	return 1;
 }
 
-bool:StartVote(client, const String:cfgname[])
+bool StartVote(int client, const char[] cfgname)
 {
 	if (!IsBuiltinVoteInProgress())
 	{
-		new iNumPlayers;
-		decl iPlayers[MaxClients];
+		int iNumPlayers;
+		int[] iPlayers = new int[MaxClients];
 		
-		for (new i = 1; i <= MaxClients; i++)
+		for (int i = 1; i <= MaxClients; i++)
 		{
 			if (!IsClientInGame(i) || IsFakeClient(i))
 			{
@@ -205,7 +219,7 @@ bool:StartVote(client, const String:cfgname[])
 			}
 			iPlayers[iNumPlayers++] = i;
 		}
-		new String:sBuffer[64];
+		char sBuffer[64];
 		g_hVote = CreateBuiltinVote(VoteActionHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
 		Format(sBuffer, sizeof(sBuffer), "执行 '%s' ?", cfgname);
 		SetBuiltinVoteArgument(g_hVote, sBuffer);
@@ -219,7 +233,7 @@ bool:StartVote(client, const String:cfgname[])
 	return false;
 }
 
-public VoteActionHandler(Handle:vote, BuiltinVoteAction:action, param1, param2)
+public void VoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -230,14 +244,14 @@ public VoteActionHandler(Handle:vote, BuiltinVoteAction:action, param1, param2)
 		}
 		case BuiltinVoteAction_Cancel:
 		{
-			DisplayBuiltinVoteFail(vote, BuiltinVoteFailReason:param1);
+			DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Generic);
 		}
 	}
 }
 
-public VoteResultHandler(Handle:vote, num_votes, num_clients, const client_info[][2], num_items, const item_info[][2])
+public void VoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
-	for (new i = 0; i < num_items; i++)
+	for (int i = 0; i < num_items; i++)
 	{
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES)
 		{
@@ -260,7 +274,7 @@ public VoteResultHandler(Handle:vote, num_votes, num_clients, const client_info[
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
 }
 
-public Action:Command_Voteskick(client, args)
+public Action Command_Voteskick(int client, int args)
 {
 	if(client != 0 && client <= MaxClients) 
 	{
@@ -270,14 +284,14 @@ public Action:Command_Voteskick(client, args)
 	return Plugin_Handled;
 }
 
-CreateVotekickMenu(client)
+void CreateVotekickMenu(int client)
 {	
-	new Handle:menu = CreateMenu(Menu_Voteskick);		
-	new String:name[MAX_NAME_LENGTH];
-	new String:info[MAX_NAME_LENGTH + 6];
-	new String:playerid[32];
+	Handle menu = CreateMenu(Menu_Voteskick);		
+	char name[MAX_NAME_LENGTH];
+	char info[MAX_NAME_LENGTH + 6];
+	char playerid[32];
 	SetMenuTitle(menu, "选择踢出玩家");
-	for(new i = 1;i <= MaxClients; i++)
+	for(int i = 1;i <= MaxClients; i++)
 	{
 		if(IsClientInGame(i) && !IsFakeClient(i))
 		{
@@ -291,28 +305,27 @@ CreateVotekickMenu(client)
 	}
 	DisplayMenu(menu, client, 30);
 }
-public Menu_Voteskick(Handle:menu, MenuAction:action, param1, param2)
+public int Menu_Voteskick(Handle menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
-		new String:info[32] , String:name[32];
+		char info[32], name[32];
 		GetMenuItem(menu, param2, info, sizeof(info), _, name, sizeof(name));
-		kickplayerinfo = info;
 		kickplayername = name;
 		PrintToChatAll("\x04%N 发起投票踢出 \x05 %s", param1, kickplayername);
 		if(DisplayVoteKickMenu(param1)) FakeClientCommand(param1, "Vote Yes");
-		
 	}
+	return 1;
 }
 
-public bool:DisplayVoteKickMenu(client)
+public bool DisplayVoteKickMenu(int client)
 {
 	if (!IsBuiltinVoteInProgress())
 	{
-		new iNumPlayers;
-		decl iPlayers[MaxClients];
+		int iNumPlayers;
+		int[] iPlayers = new int[MaxClients];
 		
-		for (new i = 1; i <= MaxClients; i++)
+		for (int i = 1; i <= MaxClients; i++)
 		{
 			if (!IsClientInGame(i) || IsFakeClient(i))
 			{
@@ -320,7 +333,7 @@ public bool:DisplayVoteKickMenu(client)
 			}
 			iPlayers[iNumPlayers++] = i;
 		}
-		new String:sBuffer[64];
+		char sBuffer[64];
 		g_hVoteKick = CreateBuiltinVote(VoteActionHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
 		Format(sBuffer, sizeof(sBuffer), "踢出 '%s' ?", kickplayername);
 		SetBuiltinVoteArgument(g_hVoteKick, sBuffer);

@@ -3,19 +3,21 @@
 2. [x] 人挤人
 3. [x] 双人难度降低
 4. [x] 自动发药延迟
-5. [ ] ~~删除地图药，实体名称为 weapon_spawn，连带着武器一起删~~
+5. [ ] ~~删除地图药，实体名称为 weapon_spawn，连带着武器一起删~~，考虑使用 weapon_rules 
 6. [x] 近战刀牛伤害 325 -> 350
 7. [x] 插件锁定 cvar 
 8. [x] 关底 mvp 显示
-9. [ ] 嘟嘟声重复（好像 zone 也这样？）
+9. [ ] 声音重复
 10. [x] 更新 Sourcemod 至 1.11.0.6825，同 Zonemod
 11. [ ] 刷特卡
 12. [x] 终章换图
 13. [x] Zonemod 地图改动，救援关刷药点要改
-14. [x] awp
+14. [x] awp 为什么只刷一把，用 stripper 替换正常
 15. [x] pill_passer GivePlayerItem
 16. [x] zonemod 2.7 weapon
 17. [x] 偶然刷包（编译器版本问题）
+18. [ ] Tank 默认不连跳？
+19. [ ] vote configs 加上 type
 
 
 # 2.5.6
