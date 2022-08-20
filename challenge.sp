@@ -250,7 +250,6 @@ public int MenuHandler(Handle menu, MenuAction action, int client, int param)
 			}
 			case 7: {
 				Menu_MorePills(client, false);
-				drawPanel(client);
 			}
 			case 8: { // 枪械 / 待定
 				PrintToChat(client, "此项待定");
@@ -573,7 +572,7 @@ public int KillMapPillsVoteResultHandler(Handle vote, int num_votes, int num_cli
 				tempKillMapPills == 0 ? Format(sBuffer, sizeof(sBuffer), "保留") : Format(sBuffer, sizeof(sBuffer), "删除");
 				Format(sBuffer, sizeof(sBuffer), "已设置为 %s 地图药", sBuffer);
 				DisplayBuiltinVotePass(vote, sBuffer);
-				// SetConVarInt(FindConVar("ast_pills_map_kill"), tempKillMapPills);
+				SetConVarInt(FindConVar("ast_pills_map_kill"), tempKillMapPills);
 				return 1;
 			}
 		}

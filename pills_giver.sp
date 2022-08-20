@@ -3,6 +3,8 @@
 
 #include <sourcemod>
 #include <sdktools>
+#define L4D2UTIL_STOCKS_ONLY 1
+#include <l4d2util>
 
 Handle hPillsEnabled;
 Handle hPillsSurvivor;
@@ -26,12 +28,11 @@ public void OnPluginStart()
 	hPillsEnabled = CreateConVar("ast_pills_enabled", "0", "发药开关", FCVAR_PROTECTED, true, 0.0, false);
 	hPillsSurvivor = CreateConVar("ast_pills_survivor", "1", "个人发药次数，-1 不限制，0 不发药", FCVAR_PROTECTED, true, 0.0, false);
 	hPillsTeam = CreateConVar("ast_pills_team", "4", "团队发药次数，-1 不限制，0 不发药", FCVAR_PROTECTED, true, 0.0, false);
-	// hPillsMapKill = CreateConVar("ast_pills_map_kill", "0", "删除地图刷的药", FCVAR_PROTECTED, true, 0.0, false);
+	hPillsMapKill = CreateConVar("ast_pills_map_kill", "0", "删除地图刷的药", FCVAR_PROTECTED, true, 0.0, false);
 	hPillsDelay = CreateConVar("ast_pills_delay", "5.0", "发药延迟时间", FCVAR_PROTECTED, true, 0.0, false);
 
 	HookEvent("round_start", Event_RoundStart, EventHookMode_Post);
 	HookEvent("weapon_drop", Event_WeaponDrop, EventHookMode_Post);
-	// HookEvent("weapon_given", Event_WeaponGive, EventHookMode_Post);
 }
 
 public Action Event_WeaponDrop(Handle event, const char[] name, bool dontBroadcast)
@@ -94,34 +95,21 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 		gavePillsSurvivorCount[client] = 0;
 	}
 
-	// if ( GetConVarBool(hPillsMapKill) ) {
-	// 	CreateTimer(5.0, Timer_KillMapPills, _, TIMER_FLAG_NO_MAPCHANGE);
-	// }
+	if ( GetConVarBool(hPillsMapKill) ) {
+		CreateTimer(5.0, Timer_KillMapPills, _, TIMER_FLAG_NO_MAPCHANGE);
+	}
 	return Plugin_Handled;
 }
 
-// 实体名称为 weapon_spawn，连带着武器一起删
-// Action Timer_KillMapPills(Handle timer)
-// {
-// 	char classname[128];
-// 	int entityCount = GetEntityCount();
-
-// 	for (int i = 1; i <= entityCount; i++)
-// 	{
-// 		if (!IsValidEntity(i)) { continue; }
-
-// 		// check item type
-// 		GetEntityClassname(i, classname, sizeof(classname));
-
-// 		if ( StrContains(classname, "weapon_pain_pills") != -1 || 
-// 		StrContains(classname, "weapon_item") != -1 || 
-// 		StrContains(classname, "weapon_first_aid_kit") != -1 || 
-// 		StrContains(classname, "weapon_defibrillator") != -1 || 
-// 		StrContains(classname, "weapon_adrenaline") != -1 ) { // 开局应该不用判断药是不是在手上吧
-// 			PrintToChatAll("KillMapPills, entity: %d, classname: %s", i, classname);
-// 			// AcceptEntityInput(i, "Kill");
-// 			RemoveEntity(i);
-// 		}
-// 	}
-// 	return Plugin_Handled;
-// }
+// 来自 weaponrules
+Action Timer_KillMapPills(Handle timer)
+{
+	int entcnt = GetEntityCount();
+	for (int ent = 1; ent <= entcnt; ent++) {
+		int source = IdentifyWeapon(ent);
+		if (source == WEPID_PAIN_PILLS) {
+			AcceptEntityInput(ent, "kill");
+		}
+	}
+	return Plugin_Handled;
+}
