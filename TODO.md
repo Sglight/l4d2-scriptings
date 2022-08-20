@@ -17,7 +17,8 @@
 16. [x] zonemod 2.7 weapon
 17. [x] 偶然刷包（编译器版本问题）
 18. [ ] Tank 默认不连跳？
-19. [ ] vote configs 加上 type
+19. [x] vote configs 加上 type
+20. [x] 生还游戏中跑路
 
 
 # 2.5.6
