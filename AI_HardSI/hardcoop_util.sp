@@ -361,14 +361,12 @@ stock void Client_Push(int client, float clientEyeAngle[3], float power, int ove
 	GetAngleVectors(clientEyeAngle, forwardVector, NULL_VECTOR, NULL_VECTOR);
 	NormalizeVector(forwardVector, forwardVector);
 	ScaleVector(forwardVector, power);
-	//PrintToChatAll("Tank velocity: %.2f", forwardVector[1]);
+	// PrintToChatAll("Tank velocity: %.2f", forwardVector[1]);
 	
 	Entity_GetAbsVelocity(client,newVel);
 	
 	for( int i = 0; i < 3; i++ ) {
-		ArrayList list;
-		list.PushArray(override, sizeof(override));
-		switch( list.Get(i) ) {
+		switch( override[i] ) {
 			case VelocityOvr_Velocity: {
 				newVel[i] = 0.0;
 			}

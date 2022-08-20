@@ -78,24 +78,6 @@ public Action Boomer_OnPlayerRunCmd( int boomer, int& buttons, float vel[3], flo
 				buttons |= IN_JUMP;
 				TeleportEntity(boomer, NULL_VECTOR, NULL_VECTOR, straightVector);
 				Client_Push( boomer, clientEyeAngles, BoostForwardBoomer);
-				// if(buttons & IN_FORWARD) {
-				// 	Client_Push( boomer, clientEyeAngles, BoostForwardBoomer, view_as<VelocityOverride>( {VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
-				// }
-				
-				// if(buttons & IN_BACK) {
-				// 	clientEyeAngles[1] += 180.0;
-				// 	Client_Push( boomer, clientEyeAngles, BoostForwardBoomer, view_as<VelocityOverride>( {VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
-				// }
-				
-				// if(buttons & IN_MOVELEFT) {
-				// 	clientEyeAngles[1] += 90.0;
-				// 	Client_Push( boomer, clientEyeAngles, BoostForwardBoomer, view_as<VelocityOverride>( {VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
-				// }
-				
-				// if(buttons & IN_MOVERIGHT) {
-				// 	clientEyeAngles[1] += -90.0;
-				// 	Client_Push( boomer, clientEyeAngles, BoostForwardBoomer, view_as<VelocityOverride>( {VelocityOvr_None,VelocityOvr_None,VelocityOvr_None} ) );
-				// }
 			}
 			//Block Jumping and Crouching when on ladder
 			else if (GetEntityMoveType(boomer) & MOVETYPE_LADDER) {
