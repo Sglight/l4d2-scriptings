@@ -9,6 +9,7 @@ Handle g_hVote = INVALID_HANDLE;
 Handle g_hVoteKick = INVALID_HANDLE;
 Handle g_hCfgsKV = INVALID_HANDLE;
 char g_sCfg[32];
+char g_sType[32];
 char kickplayername[MAX_NAME_LENGTH];
 
 public Plugin myinfo = 
@@ -35,7 +36,7 @@ public void OnPluginStart()
 		SetFailState("无法加载cfgs.txt文件!");
 	}
 
-	RegConsoleCmd("sm_mode", CommondVote);
+	RegConsoleCmd("sm_vote", CommondVote);
 	RegConsoleCmd("sm_votekick", Command_Voteskick);
 }
 
@@ -124,6 +125,7 @@ public int VoteMenuHandler(Handle menu, MenuAction action, int client, int itemP
 			do
 			{
 				KvGetSectionName(g_hCfgsKV, sSectionName, sizeof(sSectionName));
+				KvGetString(g_hCfgsKV, "type", g_sType, sizeof(g_sType));
 				KvGetString(g_hCfgsKV, "message", sBuffer, sizeof(sBuffer));
 				AddMenuItem(hMenu, sSectionName, sBuffer);
 			} while (KvGotoNextKey(g_hCfgsKV));
@@ -131,7 +133,7 @@ public int VoteMenuHandler(Handle menu, MenuAction action, int client, int itemP
 		}
 		else
 		{
-			PrintToChat(client, "没有相关的文件存在.");
+			PrintToChat(client, "没有相关的文件存在1.");
 			ShowVoteMenu(client);
 		}
 	}
@@ -146,29 +148,14 @@ public int ConfigsMenuHandler(Handle menu, MenuAction action, int client, int it
 {
 	if (action == MenuAction_Select)
 	{
-		char sSectionName[64], sMessage[64], sType[64];
+		char sSectionName[64], sMessage[64];
 		GetMenuItem(menu, itemPos, sSectionName, sizeof(sSectionName), _, sMessage, sizeof(sMessage));
-		strcopy(g_sCfg, sizeof(g_sCfg), sSectionName);
 		
-		// 获取 type
-		KvRewind(g_hCfgsKV);
-		if (KvJumpToKey(g_hCfgsKV, sSectionName) && KvGotoFirstSubKey(g_hCfgsKV))
-		{
-			do
-			{
-				KvGetString(g_hCfgsKV, "type", sType, sizeof(sType));
-			} while (KvGotoNextKey(g_hCfgsKV));
-		}
-		else
-		{
-			PrintToChat(client, "没有相关的文件存在.");
-			ShowVoteMenu(client);
-		}
-
-		if (StrEqual(sType, "command"))
+		if (StrEqual(g_sType, "command"))
 		{
 			if (StartVote(client, sMessage))
 			{
+				strcopy(g_sCfg, sizeof(g_sCfg), sSectionName);
 				FakeClientCommand(client, "Vote Yes");
 			}
 			else
@@ -176,11 +163,12 @@ public int ConfigsMenuHandler(Handle menu, MenuAction action, int client, int it
 				ShowVoteMenu(client);
 			}
 		}
-		else if (StrEqual(sType, "map"))
+		else if (StrEqual(g_sType, "map"))
 		{
 			Format(sSectionName, sizeof(sSectionName), "changelevel %s", sSectionName);
 			if (StartVote(client, sMessage))
 			{
+				strcopy(g_sCfg, sizeof(g_sCfg), sSectionName);
 				FakeClientCommand(client, "Vote Yes");
 			}
 			else
@@ -188,7 +176,7 @@ public int ConfigsMenuHandler(Handle menu, MenuAction action, int client, int it
 				ShowVoteMenu(client);
 			}
 		}
-		else if (StrEqual(sType, "panel"))
+		else if (StrEqual(g_sType, "panel"))
 		{
 			FakeClientCommand(client, sSectionName);
 		}

@@ -3,8 +3,9 @@
 
 #include <sourcemod>
 #include <sdktools>
+#include <left4dhooks>
 
-#define PLUGIN_VERSION	"v1.2.5"
+#define PLUGIN_VERSION	"v1.2.6"
 
 //Define the wait time after round before changing to the next map in each game mode
 #define WAIT_TIME_BEFORE_SWITCH_COOP			6.0
@@ -42,16 +43,14 @@ Handle g_hMenu_Vote[MAXPLAYERS + 1]	= {INVALID_HANDLE, ...};	//Handle for each p
 // KeyValues
 KeyValues g_hKvMaps;
 
-Handle hSDKC_IsMissionFinalMap = INVALID_HANDLE;
-
 void SetupMapKvStrings()
 {
 	char sBuffer[64];
-	g_hKvMaps = CreateKeyValues("acs_maps");
-	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), "configs/acs_maps.txt");
+	g_hKvMaps = CreateKeyValues("Cfgs");
+	BuildPath(Path_SM, sBuffer, sizeof(sBuffer), "configs/cfgs.txt");
 	if (!FileToKeyValues(g_hKvMaps, sBuffer))
 	{
-		SetFailState("Couldn't load configs/acs_maps.txt!");
+		SetFailState("Couldn't load configs/cfgs.txt!");
 	}
 
 	g_arrayCampaignFirstMap = new ArrayList(STRING_MAX_LENGTH);
@@ -67,14 +66,30 @@ bool GetMapsList(ArrayList arrayCampaignFirstMap, ArrayList arrayDisplayName)
 	{
 		do {
 			char strCampaignFirstMap[STRING_MAX_LENGTH];
+			char strType[STRING_MAX_LENGTH];
 			char strDisplayName[STRING_MAX_LENGTH];
 			g_hKvMaps.GetSectionName(strCampaignFirstMap, STRING_MAX_LENGTH);
-			g_hKvMaps.GetString("display_name", strDisplayName, STRING_MAX_LENGTH);
+			g_hKvMaps.GetString("type", strType, STRING_MAX_LENGTH);
+			g_hKvMaps.GetString("message", strDisplayName, STRING_MAX_LENGTH);
 
-			arrayCampaignFirstMap.PushString(strCampaignFirstMap);
-			arrayDisplayName.PushString(strDisplayName);
+			if (StrEqual(strType, "") && StrEqual(strDisplayName, "")) {
+				if (KvGotoFirstSubKey(g_hKvMaps)) {
+					do {
+						g_hKvMaps.GetSectionName(strCampaignFirstMap, STRING_MAX_LENGTH);
+						g_hKvMaps.GetString("type", strType, STRING_MAX_LENGTH);
+						g_hKvMaps.GetString("message", strDisplayName, STRING_MAX_LENGTH);
 
-			g_iCampaignCount++;
+						if (StrEqual(strType, "map")) {
+							// PrintToServer("g_iCampaignCount: %i, strCampaignFirstMap: %s, strDisplayName: %s, strType: %s", g_iCampaignCount, strCampaignFirstMap, strDisplayName, strType);
+							arrayCampaignFirstMap.PushString(strCampaignFirstMap);
+							arrayDisplayName.PushString(strDisplayName);
+							g_iCampaignCount++;
+						}
+					}
+					while (KvGotoNextKey(g_hKvMaps));
+				}
+			}
+			KvGoBack(g_hKvMaps);
 		} while (KvGotoNextKey(g_hKvMaps));
 	}
 	return false;
@@ -99,17 +114,6 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	Handle g_hDHooksConf = LoadGameConfigFile("left4dhooks.l4d2");
-	if(g_hDHooksConf == INVALID_HANDLE) {
-		SetFailState("Couldn't find \"gamedata/left4dhooks.l4d2.txt\". Please, check that it is installed correctly.");
-	}
-	StartPrepSDKCall(SDKCall_Player);
-	PrepSDKCall_SetFromConf(g_hDHooksConf, SDKConf_Signature, "CTerrorGameRules::IsMissionFinalMap");
-	PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_ByValue);
-	hSDKC_IsMissionFinalMap = EndPrepSDKCall();
-	if(hSDKC_IsMissionFinalMap == INVALID_HANDLE)
-		PrintToServer("Failed to find CTerrorGameRules::IsMissionFinalMap signature.");
-
 	//Get the strings for all of the maps that are in rotation
 	SetupMapKvStrings();
 
@@ -120,25 +124,8 @@ public void OnPluginStart()
 	HookEvent("player_disconnect", Event_PlayerDisconnect);
 
 	//Register custom console commands
-	RegConsoleCmd("mapvote", MapVote);
-	RegConsoleCmd("mapvotes", DisplayCurrentVotes);
-}
-
-public Action ACSTest(int iClient, int args)
-{
-	GetMapsList(g_arrayCampaignFirstMap, g_arrayDisplayName);
-	for (int i = 0; i < g_arrayCampaignFirstMap.Length; i++) {
-		char sBuffer[STRING_MAX_LENGTH];
-		g_arrayCampaignFirstMap.GetString(i, sBuffer, STRING_MAX_LENGTH);
-		PrintToServer("arrayCampaignFirstMap: %s", sBuffer);
-		g_arrayDisplayName.GetString(i, sBuffer, STRING_MAX_LENGTH);
-		PrintToServer("arrayDisplayName: %s", sBuffer);
-	}
-	return Plugin_Continue;
-}
-
-public bool L4D_IsMissionFinalMap(){
-  return view_as<bool>(hSDKC_IsMissionFinalMap == INVALID_HANDLE ? -1 : SDKCall(hSDKC_IsMissionFinalMap));
+	RegConsoleCmd("sm_mapvote", MapVote);
+	RegConsoleCmd("sm_mapvotes", DisplayCurrentVotes);
 }
 
 /*======================================================================================
@@ -159,7 +146,8 @@ public void OnMapStart()
 
 
 	//Display advertising for the next campaign or map
-	CreateTimer(g_fNextMapAdInterval, Timer_AdvertiseNextMap, _, TIMER_FLAG_NO_MAPCHANGE);
+	if (L4D_IsMissionFinalMap())
+		CreateTimer(g_fNextMapAdInterval, Timer_AdvertiseNextMap, _, TIMER_FLAG_NO_MAPCHANGE);
 
 	ResetAllVotes();				//Reset every player's vote
 }
@@ -315,7 +303,7 @@ void CheckMapForChange()
 
 		if(IsMapValid(strCampaignFirstMap) == true)
 		{
-			PrintToChatAll("\x03[ACS] \x05切换至地图 \x04%s", strDisplayName);
+			PrintToChatAll("\x03[ACS] \x05无人投票，切换至地图 \x04%s", strDisplayName);
 
 			if(g_iGameMode == GAMEMODE_VERSUS)
 				CreateTimer(WAIT_TIME_BEFORE_SWITCH_VERSUS, Timer_ChangeCampaign, iMapIndex);
@@ -331,7 +319,7 @@ void CheckMapForChange()
 
 public int RandomMap()
 {
-	int iCampaignIndex = GetRandomInt(1, 13);
+	int iCampaignIndex = GetRandomInt(0, 12);
 	if (iCampaignIndex == 1)
 		iCampaignIndex = 13;
 	return iCampaignIndex;
@@ -427,7 +415,7 @@ public Action DisplayCurrentVotes(int iClient, int args)
 		PrintToChat(iClient, "\x03[ACS] \x05当前票数最多: \x04%s.", strDisplayName);
 	}
 	else
-		PrintToChat(iClient, "\x03[ACS] \x05还没有人投票，输入 !mapvote 进行投票.");
+		PrintToChat(iClient, "\x03[ACS] \x05还没有人投票，输入 \x04!mapvote \x05进行投票.");
 
 	//Loop through all maps and display the ones that have votes
 	int[] iMapVotes = new int[g_iCampaignCount];
@@ -515,7 +503,7 @@ public int VoteMenuHandler(Handle hMenu, MenuAction maAction, int iClient, int i
 		SetTheCurrentVoteWinner();
 
 		//Display the appropriate message to the voter
-		if(iItemNum == 0)
+		if(iItemNum == -1)
 			PrintToChat(iClient, "\x03[ACS] \x05你还没有投票. 请输入: \x04!mapvote \x05进行投票");
 		else {
 			char strDisplayName[STRING_MAX_LENGTH];
@@ -569,7 +557,7 @@ void SetTheCurrentVoteWinner()
 	int iOldWinningMapIndex = g_iWinningMapIndex;
 
 	//Get the total number of maps for the current game mode
-	// iNumberOfMaps = NUMBER_OF_CAMPAIGNS;
+	iNumberOfMaps = g_iCampaignCount;
 
 	//Loop through all maps and get the highest voted map
 	// int iMapVotes[NUMBER_OF_CAMPAIGNS] = {0, ...};

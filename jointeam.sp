@@ -26,6 +26,8 @@ bool isCountDownEnd = false;
 int tankAttackConVarInt[3] = {0, ...};
 float tankAttackConVarFloat = 0.0;
 
+Handle sdkEndRound;
+
 public Plugin myinfo =
 {
 	name 			= "Jointeam",
@@ -59,6 +61,22 @@ public void OnPluginStart()
 	HookEvent("map_transition", Event_MapTransition);
 
 	LoadTranslations("smac.phrases");
+
+
+	Handle g_hGameConf = LoadGameConfigFile("left4dhooks.l4d2");
+	if(g_hGameConf == INVALID_HANDLE)
+	{
+		SetFailState("Couldn't find the offsets and signatures file. Please, check that it is installed correctly.");
+	}
+	StartPrepSDKCall(SDKCall_Server);
+	PrepSDKCall_SetFromConf(g_hGameConf, SDKConf_Signature, "CDirectorVersusMode::EndVersusModeRound");
+	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	sdkEndRound = EndPrepSDKCall();
+	if(sdkEndRound == INVALID_HANDLE)
+	{
+		SetFailState("Unable to find the \"CDirectorVersusMode::EndVersusModeRound\" signature, check the file version!");
+	}
 }
 
 public void OnMapStart()
@@ -103,6 +121,12 @@ public void OnClientDisconnect(int client)
 	/****** Doorlock ******/
 	isClientLoading[client] = false;
 	clientTimeout[client] = 0;
+
+	/****** JoinTeam ******/
+	// 中途跑路强制结束回合
+	if (isSurvivor(client) && gameStarted && getTotalSurvivors() == 1) {
+		EndRound(client);
+	}
 }
 
 public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
@@ -339,7 +363,13 @@ public void KickBots()
 	}
 }
 
- int getTotalSurvivors() // total survivors, including bots
+public void EndRound(int client)
+{
+	SDKCall(sdkEndRound, client, false);
+	L4D2_FullRestart();
+}
+
+int getTotalSurvivors() // total survivors, including bots
 {
 	int count = 0;
 	for (int i = 1; i <= MaxClients; i++)
