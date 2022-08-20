@@ -8,8 +8,8 @@
 Handle g_hVote = INVALID_HANDLE;
 Handle g_hVoteKick = INVALID_HANDLE;
 Handle g_hCfgsKV = INVALID_HANDLE;
-char g_sCfg[32];
-char g_sType[32];
+char g_sCfg[64];
+char g_sType[64];
 char kickplayername[MAX_NAME_LENGTH];
 
 public Plugin myinfo = 
