@@ -2,8 +2,8 @@
 
 #define BoostForward 60.0
 
-Handle hCvarTankBhop;
-Handle hCvarTankRock;
+ConVar hCvarTankBhop;
+ConVar hCvarTankRock;
 
 // Bibliography: 
 // TGMaster, Chanz - Infinite Jumping
@@ -63,14 +63,14 @@ public Action Tank_OnPlayerRunCmd( int tank, int& buttons, int& impulse, float v
 		}
 	}
 	
-	if( view_as<bool>( GetConVarBool(hCvarTankBhop) ) ) {
+	if (GetConVarBool(hCvarTankBhop)) {
 		int flags = GetEntityFlags(tank);
 		
 		// Get the player velocity:
 		float fVelocity[3];
 		GetEntPropVector(tank, Prop_Data, "m_vecVelocity", fVelocity);
 		float currentspeed = SquareRoot(Pow(fVelocity[0],2.0)+Pow(fVelocity[1],2.0));
-		//PrintCenterTextAll("Tank Speed: %.1f", currentspeed);
+		// PrintCenterTextAll("Tank Speed: %.1f", currentspeed);
 		
 		// Get Angle of Tank
 		float clientEyeAngles[3];
@@ -83,13 +83,13 @@ public Action Tank_OnPlayerRunCmd( int tank, int& buttons, int& impulse, float v
 		bool bHasSight = view_as<bool>( GetEntProp(tank, Prop_Send, "m_hasVisibleThreats") ); //Line of sight to survivors
 		
 		// Near survivors
-		if( bHasSight && iSurvivorsProximity < 130 && currentspeed > 220.0 ) {
+		if( bHasSight && iSurvivorsProximity < 130 && currentspeed > 210.0 ) {
 			buttons |= IN_FORWARD;
 			buttons |= IN_JUMP;
 			buttons |= IN_ATTACK;
 		}
 		
-		if( bHasSight && (500 > iSurvivorsProximity > 170) && currentspeed > 220.0 ) { // Random number to make bhop?
+		if( bHasSight && (500 > iSurvivorsProximity > 170) && currentspeed > 210.0 ) { // Random number to make bhop?
 			if (flags & FL_ONGROUND) {
 				buttons |= IN_DUCK;
 				buttons |= IN_JUMP;
