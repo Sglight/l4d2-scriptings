@@ -434,52 +434,52 @@ public void TZ_CallVote(int client, int target, int value)
 	}
 }
 
-public int TankDmgVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void TankDmgVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++) {
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
 			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
 				DisplayBuiltinVotePass(vote, "正在更改 Tank 伤害...");
 				SetConVarInt(FindConVar("vs_tank_damage"), tempTankDmg);
-				return 1;
+				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-	return 0;
+	return;
 }
 
-public int TankBhopVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void TankBhopVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++) {
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
 			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
 				DisplayBuiltinVotePass(vote, "正在更改 Tank 连跳...");
 				SetConVarInt(FindConVar("ai_tank_bhop"), tempTankBhop);
-				return 1;
+				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-	return 0;
+	return;
 }
 
-public int TankRockVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void TankRockVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++) {
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
 			if (item_info[i][BUILTINVOTEINFO_ITEM_VOTES] > (num_votes / 2)) {
 				DisplayBuiltinVotePass(vote, "正在更改 Tank 丢石头...");
 				SetConVarInt(FindConVar("ai_tank_rock"), tempTankRock);
-				return 1;
+				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-	return 0;
+	return;
 }
 
-public int PlayerInfectedVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void PlayerInfectedVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++) {
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
@@ -488,15 +488,15 @@ public int PlayerInfectedVoteResultHandler(Handle vote, int num_votes, int num_c
 				Format(sBuffer, sizeof(sBuffer), "正在更改特感玩家数量为 %d ...", tempPlayerInfected);
 				DisplayBuiltinVotePass(vote, sBuffer);
 				SetConVarInt(FindConVar("ast_maxinfected"), tempPlayerInfected);
-				return 1;
+				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-	return 0;
+	return;
 }
 
-public int PlayerTankVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void PlayerTankVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++) {
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
@@ -506,15 +506,15 @@ public int PlayerTankVoteResultHandler(Handle vote, int num_votes, int num_clien
 				Format(sBuffer, sizeof(sBuffer), "%s玩家扮演 Tank", sBuffer);
 				DisplayBuiltinVotePass(vote, sBuffer);
 				SetConVarInt(FindConVar("ast_allowhumantank"), tempPlayerTank);
-				return 1;
+				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-	return 0;
+	return;
 }
 
-public int M2HunterVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void M2HunterVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++) {
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
@@ -537,15 +537,15 @@ public int M2HunterVoteResultHandler(Handle vote, int num_votes, int num_clients
 				}
 
 				SetConVarString(FindConVar("weapon_allow_m2_hunter"), sBuffer);
-				return 1;
+				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-	return 0;
+	return;
 }
 
-public int MorePillsVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void MorePillsVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++) {
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
@@ -555,15 +555,15 @@ public int MorePillsVoteResultHandler(Handle vote, int num_votes, int num_client
 				Format(sBuffer, sizeof(sBuffer), "正在 %s 额外发药...", sBuffer);
 				DisplayBuiltinVotePass(vote, sBuffer);
 				SetConVarInt(FindConVar("ast_pills_enabled"), tempMorePills);
-				return 1;
+				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-	return 0;
+	return;
 }
 
-public int KillMapPillsVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+public void KillMapPillsVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
 	for (int i = 0; i < num_items; i++) {
 		if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES) {
@@ -573,28 +573,28 @@ public int KillMapPillsVoteResultHandler(Handle vote, int num_votes, int num_cli
 				Format(sBuffer, sizeof(sBuffer), "已设置为 %s 地图药", sBuffer);
 				DisplayBuiltinVotePass(vote, sBuffer);
 				SetConVarInt(FindConVar("ast_pills_map_kill"), tempKillMapPills);
-				return 1;
+				return;
 			}
 		}
 	}
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-	return 0;
+	return;
 }
 
-public int VoteHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
+public void VoteHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
 {
 	switch (action) {
 		case BuiltinVoteAction_End: {
 			g_hVote = INVALID_HANDLE;
 			CloseHandle(vote);
-			return 1;
+			return;
 		}
 		case BuiltinVoteAction_Cancel: {
 			DisplayBuiltinVoteFail( vote, view_as<BuiltinVoteFailReason>(param1) );
-			return 0;
+			return;
 		}
 	}
-	return 0;
+	return;
 }
 
 public Action Menu_SITimer(int client, int args)
