@@ -7,7 +7,7 @@
 6. [x] 近战刀牛伤害 325 -> 350
 7. [x] 插件锁定 cvar 
 8. [x] 关底 mvp 显示
-9. [ ] 声音重复
+9. [x] 声音重复（Community Update 之后把 bigreward 换成了 L4D1 的长版本，无解）
 10. [x] 更新 Sourcemod 至 1.11.0.6825，同 Zonemod
 11. [ ] 刷特卡
 12. [x] 终章换图
@@ -16,10 +16,11 @@
 15. [x] pill_passer GivePlayerItem
 16. [x] zonemod 2.7 weapon
 17. [x] 偶然刷包（编译器版本问题）
-18. [ ] Tank 默认不连跳？
+18. [x] 特感不连跳
 19. [x] vote configs 加上 type
 20. [x] 生还游戏中跑路
-21. [ ] challenge 投票失败
+21. [x] challenge 投票失败（builtinvotes extension）
+22. [x] Boss Percent 支持 C2 Remix
 
 
 # 2.5.6
