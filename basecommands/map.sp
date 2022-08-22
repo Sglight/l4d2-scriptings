@@ -116,7 +116,7 @@ public Action Command_Map(int client, int args)
 
 	DataPack dp;
 	CreateDataTimer(3.0, Timer_ChangeMap, dp);
-	dp.WriteString(map);
+	dp.WriteString(displayName);
 
 	return Plugin_Handled;
 }
