@@ -23,6 +23,8 @@
 22. [x] Boss Percent 支持 C2 Remix
 23. [x] sm_map 支持地图名缩写
 24. [ ] 脚本更换
+25. [ ] jointeam 支持 Hunter 插件
+26. [ ] 更换踢出 AI 生还的实现
 
 
 # 2.5.6
