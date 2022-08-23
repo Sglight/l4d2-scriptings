@@ -21,6 +21,8 @@
 20. [x] 生还游戏中跑路
 21. [x] challenge 投票失败（builtinvotes extension）
 22. [x] Boss Percent 支持 C2 Remix
+23. [x] sm_map 支持地图名缩写
+24. [ ] 脚本更换
 
 
 # 2.5.6
