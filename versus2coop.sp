@@ -7,7 +7,7 @@
  *
  * 战役 Tank 一拍多：https://github.com/Target5150/MoYu_Server_Stupid_Plugins/tree/master/The%20Last%20Stand/l4d_sweep_fist_patch
  * 战役 Tank 打人后无庆祝动作：https://forums.alliedmods.net/showthread.php?t=319029
- * 口水点油：
+ * 口水点油：forward Action L4D2_CInsectSwarm_CanHarm(int acid, int spitter, int entity)
  * fov for coop：
  */
 
