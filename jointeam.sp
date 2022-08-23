@@ -11,10 +11,12 @@
 #define TEAM_INFECTED 3
 #define NULL_VELOCITY view_as<float>({0.0, 0.0, 0.0})
 
-Handle hMaxSurvivors = INVALID_HANDLE;
-Handle hMaxInfected = INVALID_HANDLE;
-Handle hAllowHumanTank = INVALID_HANDLE;
-Handle hHumanTankHp = INVALID_HANDLE;
+ConVar
+	hMaxSurvivors, 
+	hMaxInfected, 
+	hAllowHumanTank, 
+	hHumanTankHp, 
+	hAllowBotSurvivors;
 
 bool gameStarted;
 
@@ -33,7 +35,7 @@ public Plugin myinfo =
 	name 			= "Jointeam",
 	author 			= "海洋空氣",
 	description 	= "加入生还者 + 等待玩家读图加载 + 出门发药 + 过关重置生还状态 + 自杀",
-	version 		= "1.4",
+	version 		= "1.5",
 	url 			= "https://steamcommunity.com/id/larkspur2017/"
 }
 
@@ -43,6 +45,7 @@ public void OnPluginStart()
 	hMaxInfected = CreateConVar("ast_maxinfected", "0");
 	hAllowHumanTank = CreateConVar("ast_allowhumantank", "0");
 	hHumanTankHp = CreateConVar("ast_humantankhp", "2750");
+	hAllowBotSurvivors = CreateConVar("ast_allowbotsurvivors", "0");
 
 	RegConsoleCmd("sm_join", JoinTeam_Cmd, "Moves you to the survivor team");
 	RegConsoleCmd("sm_joingame", JoinTeam_Cmd, "Moves you to the survivor team");
@@ -149,9 +152,11 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 	setGodMode(false);
 
 	/****** JoinTeam ******/
-	KickBots();
-	SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
-	SetConVarInt(FindConVar("survivor_limit"), getHumanSurvivors());
+	if (GetConVarBool(hAllowBotSurvivors)) {
+		KickBots();
+		// SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
+		SetConVarInt(FindConVar("survivor_limit"), getHumanSurvivors());
+	}
 
 	/****** StartingPills ******/
 	ResetInventory(false);
@@ -258,6 +263,27 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 	return Plugin_Continue;
 }
 
+// @remarks       called when bots or players are joining a team
+// @return				Plugin_Handled to block changing team, Plugin_Continue otherwise.
+public Action L4D_OnIsTeamFull(int team, bool &full)
+{
+	if (team == TEAM_SURVIVORS) {
+		if (gameStarted && !GetConVarBool(hAllowBotSurvivors)) {
+			return Plugin_Handled; // block
+			// full = true;
+			// return Plugin_Changed;
+		}
+	} else if (team == TEAM_INFECTED) {
+		int maxInfected = GetConVarInt(hMaxInfected);
+		if ( maxInfected <= 0 || getHumanInfected() >= maxInfected + 1) {
+			return Plugin_Handled;
+			// full = true;
+			// return Plugin_Changed;
+		}
+	}
+	return Plugin_Continue;
+}
+
 public Action L4D_OnEnterGhostStatePre(int client)
 {
 	int maxInfected = GetConVarInt(hMaxInfected);
@@ -334,11 +360,12 @@ public Action MoveToSpecTimer(Handle timer, int client) {
 	return Plugin_Continue;
 }
 
-public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
+public void L4D2_OnEndVersusModeRound_Post(bool countSurvivors)
 {
-	SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
-	SetConVarInt(FindConVar("survivor_limit"), 4);
-	return Plugin_Continue;
+	if (GetConVarBool(hAllowBotSurvivors)) {
+		// SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
+		SetConVarInt(FindConVar("survivor_limit"), 4);
+	}
 }
 
 public void setGodMode(bool boolean)

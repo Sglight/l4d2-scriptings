@@ -47,7 +47,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_die", Suicide_Cmd);
 	RegConsoleCmd("sm_stuck", Suicide_Cmd);
 	RegConsoleCmd("sm_suicide", Suicide_Cmd);
-	RegonsoleCmd("sm_zs", Suicide_Cmd);
+	RegConsoleCmd("sm_zs", Suicide_Cmd);
 
 	HookEvent("round_start", Event_RoundStart);
 	// HookEvent("mission_lost", Event_MissionLost);
