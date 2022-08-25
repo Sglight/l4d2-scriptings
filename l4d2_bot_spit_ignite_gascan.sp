@@ -9,7 +9,7 @@
 
 ConVar cvarSpitCanHarmGascan;
 
-Handle hGascanIgnitePre;
+Handle hGascanIgnite;
 int g_iTickCount = 0;
 
 public Plugin myinfo =
@@ -31,11 +31,11 @@ public void L4D2_CInsectSwarm_CanHarm_Post(int acid, int spitter, int entity)
   int weaponId = IdentifyWeapon(entity);
   if (weaponId == WEPID_GASCAN) {
     if (GetConVarBool(cvarSpitCanHarmGascan)) {
-      float gascan_spit_time = GetConVarFloat(FindConVar("gascan_spit_time"));
+      float time = GetConVarFloat(FindConVar("gascan_spit_time"));
 
       g_iTickCount++;
-      if (hGascanIgnitePre == INVALID_HANDLE) {
-        hGascanIgnitePre = CreateTimer(gascan_spit_time, Timer_GascanIgnite, entity);
+      if (hGascanIgnite == INVALID_HANDLE) {
+        hGascanIgnite = CreateTimer(time, Timer_GascanIgnite, entity);
       }
     }
   }
@@ -49,7 +49,7 @@ public Action Timer_GascanIgnite(Handle timer, int entity)
     // Ignite
     SetEntProp(entity, Prop_Data, "m_iHealth", 0);
   }
-  hGascanIgnitePre = INVALID_HANDLE;
+  CloseHandle(hGascanIgnite);
   g_iTickCount = 0;
   return Plugin_Continue;
 }

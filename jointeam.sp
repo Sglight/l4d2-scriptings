@@ -10,13 +10,15 @@
 #define TEAM_SURVIVORS 2
 #define TEAM_INFECTED 3
 #define NULL_VELOCITY view_as<float>({0.0, 0.0, 0.0})
+#define ZC_Tank 8
 
 ConVar
 	hMaxSurvivors, 
 	hMaxInfected, 
 	hAllowHumanTank, 
 	hHumanTankHp, 
-	hAllowBotSurvivors;
+	hAllowBotSurvivors,
+	hSMACWelcome;
 
 bool gameStarted;
 
@@ -35,7 +37,7 @@ public Plugin myinfo =
 	name 			= "Jointeam",
 	author 			= "海洋空氣",
 	description 	= "加入生还者 + 等待玩家读图加载 + 出门发药 + 过关重置生还状态 + 自杀",
-	version 		= "1.5",
+	version 		= "1.6",
 	url 			= "https://steamcommunity.com/id/larkspur2017/"
 }
 
@@ -46,6 +48,7 @@ public void OnPluginStart()
 	hAllowHumanTank = CreateConVar("ast_allowhumantank", "0");
 	hHumanTankHp = CreateConVar("ast_humantankhp", "2750");
 	hAllowBotSurvivors = CreateConVar("ast_allowbotsurvivors", "0");
+	hSMACWelcome = CreateConVar("ast_smacwelcome", "0");
 
 	RegConsoleCmd("sm_join", JoinTeam_Cmd, "Moves you to the survivor team");
 	RegConsoleCmd("sm_joingame", JoinTeam_Cmd, "Moves you to the survivor team");
@@ -62,6 +65,7 @@ public void OnPluginStart()
 
 	HookEvent("round_start", Event_RoundStart);
 	HookEvent("map_transition", Event_MapTransition);
+	HookEvent("player_death", Event_PlayerDeath);
 
 	LoadTranslations("smac.phrases");
 
@@ -116,7 +120,9 @@ public void OnClientPutInServer(int client)
 	}
 
 	// 假装有 SMAC
-	CreateTimer(10.0, Timer_WelcomeMsg, GetClientSerial(client), TIMER_FLAG_NO_MAPCHANGE);
+	if (GetConVarBool(hSMACWelcome)) {
+		CreateTimer(10.0, Timer_WelcomeMsg, GetClientSerial(client), TIMER_FLAG_NO_MAPCHANGE);
+	}
 }
 
 public void OnClientDisconnect(int client)
@@ -148,6 +154,11 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 		EmitSoundToClient(client, "ui/beep_error01.wav");
 		return Plugin_Handled;
 	}
+	return Plugin_Continue;
+}
+
+public void L4D_OnFirstSurvivorLeftSafeArea_Post(int client)
+{
 	gameStarted = true;
 	setGodMode(false);
 
@@ -161,7 +172,6 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 	/****** StartingPills ******/
 	ResetInventory(false);
 	giveStartingItem("weapon_pain_pills");
-	return Plugin_Continue;
 }
 
 ////////////////////////////////////////////////////
@@ -255,7 +265,8 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 	{
 		if (isClientValid(i) && GetClientTeam(i) == TEAM_SPECTATORS)
 		{
-			FakeClientCommand(i, "jointeam %d", TEAM_INFECTED);
+			// FakeClientCommand(i, "jointeam %d", TEAM_INFECTED);
+			reSpec(i);
 		}
 	}
 
@@ -337,6 +348,13 @@ void SetTankFrustration(int iTankClient, int iFrustration) {
     SetEntProp(iTankClient, Prop_Send, "m_frustration", 100-iFrustration);
 }
 
+public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	if (!isInfected(client) || L4D2_GetPlayerZombieClass(client) != ZC_Tank) return;
+	setBotTankAttackConVar();
+}
+
 public Action MoveToSurTimer(Handle timer, int client)
 {
 	if (!isClientValid(client)) return Plugin_Handled;
@@ -394,6 +412,8 @@ public void EndRound(int client)
 {
 	SDKCall(sdkEndRound, client, false);
 	L4D2_FullRestart();
+	Handle hFakeEvent = CreateEvent("round_end");
+	FireEvent(hFakeEvent);
 }
 
 int getTotalSurvivors() // total survivors, including bots
@@ -689,20 +709,20 @@ public Action Event_MapTransition(Handle event, char[] name, bool dontBroadcast)
 
 public void giveStartingItem(const char strItemName[32])
 {
-    int startingItem;
-    float clientOrigin[3];
+	int startingItem;
+	float clientOrigin[3];
 
-    for (int client = 1; client <= MaxClients; client++)
+	for (int client = 1; client <= MaxClients; client++)
 	{
-        if (IsClientInGame(client) && !IsFakeClient(client) && GetClientTeam(client) == 2)
+		if (IsClientInGame(client) && !IsFakeClient(client) && GetClientTeam(client) == 2)
 		{
-            startingItem = CreateEntityByName(strItemName);
-            GetClientAbsOrigin(client, clientOrigin);
-            TeleportEntity(startingItem, clientOrigin, NULL_VECTOR, NULL_VECTOR);
-            DispatchSpawn(startingItem);
-            EquipPlayerWeapon(client, startingItem);
-        }
-    }
+			startingItem = CreateEntityByName(strItemName);
+			GetClientAbsOrigin(client, clientOrigin);
+			TeleportEntity(startingItem, clientOrigin, NULL_VECTOR, NULL_VECTOR);
+			DispatchSpawn(startingItem);
+			EquipPlayerWeapon(client, startingItem);
+		}
+	}
 }
 
 public void ResetInventory(bool resetWeapon) {
