@@ -37,7 +37,7 @@ void ExecuteConfig()
 	char sCurrentConfig[PLATFORM_MAX_PATH];
 	hCurrentConfig.GetString(sCurrentConfig, sizeof(sCurrentConfig));
 
-	if (strcmp(sConfigBuffer, sCurrentConfig) == 0 || strlen(sConfigBuffer) == 0) return;
+	if (strlen(sCurrentConfig) != 0 || strlen(sConfigBuffer) == 0) return;
 
 	ServerCommand("sm_forcematch %s", sConfigBuffer);
 }
