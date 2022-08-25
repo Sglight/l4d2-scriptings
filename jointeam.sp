@@ -163,9 +163,9 @@ public void L4D_OnFirstSurvivorLeftSafeArea_Post(int client)
 	setGodMode(false);
 
 	/****** JoinTeam ******/
-	if (GetConVarBool(hAllowBotSurvivors)) {
+	if (!GetConVarBool(hAllowBotSurvivors)) {
 		KickBots();
-		// SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
+		SetConVarInt(FindConVar("director_no_survivor_bots"), 1);
 		SetConVarInt(FindConVar("survivor_limit"), getHumanSurvivors());
 	}
 
@@ -274,27 +274,6 @@ public Action Event_RoundStart(Handle event, const char[] name, bool dontBroadca
 	return Plugin_Continue;
 }
 
-// @remarks       called when bots or players are joining a team
-// @return				Plugin_Handled to block changing team, Plugin_Continue otherwise.
-public Action L4D_OnIsTeamFull(int team, bool &full)
-{
-	if (team == TEAM_SURVIVORS) {
-		if (gameStarted && !GetConVarBool(hAllowBotSurvivors)) {
-			return Plugin_Handled; // block
-			// full = true;
-			// return Plugin_Changed;
-		}
-	} else if (team == TEAM_INFECTED) {
-		int maxInfected = GetConVarInt(hMaxInfected);
-		if ( maxInfected <= 0 || getHumanInfected() >= maxInfected + 1) {
-			return Plugin_Handled;
-			// full = true;
-			// return Plugin_Changed;
-		}
-	}
-	return Plugin_Continue;
-}
-
 public Action L4D_OnEnterGhostStatePre(int client)
 {
 	int maxInfected = GetConVarInt(hMaxInfected);
@@ -380,8 +359,8 @@ public Action MoveToSpecTimer(Handle timer, int client) {
 
 public void L4D2_OnEndVersusModeRound_Post(bool countSurvivors)
 {
-	if (GetConVarBool(hAllowBotSurvivors)) {
-		// SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
+	if (!GetConVarBool(hAllowBotSurvivors)) {
+		SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
 		SetConVarInt(FindConVar("survivor_limit"), 4);
 	}
 }
