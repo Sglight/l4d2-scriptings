@@ -3,7 +3,7 @@
 #endif
 #define __reg_match_included
 
-#define RM_DEBUG				1
+#define RM_DEBUG				0
 #define RM_MODULE_NAME			"ReqMatch"
 
 #define MAPRESTARTTIME			3.0

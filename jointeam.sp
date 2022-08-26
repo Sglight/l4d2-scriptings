@@ -18,7 +18,8 @@ ConVar
 	hAllowHumanTank, 
 	hHumanTankHp, 
 	hAllowBotSurvivors,
-	hSMACWelcome;
+	hSMACWelcome,
+	hSaveWeapons;
 
 bool gameStarted;
 
@@ -37,18 +38,19 @@ public Plugin myinfo =
 	name 			= "Jointeam",
 	author 			= "海洋空氣",
 	description 	= "加入生还者 + 等待玩家读图加载 + 出门发药 + 过关重置生还状态 + 自杀",
-	version 		= "1.6",
+	version 		= "1.7",
 	url 			= "https://steamcommunity.com/id/larkspur2017/"
 }
 
 public void OnPluginStart()
 {
-	hMaxSurvivors = CreateConVar("ast_maxsurvivors", "4");
-	hMaxInfected = CreateConVar("ast_maxinfected", "0");
-	hAllowHumanTank = CreateConVar("ast_allowhumantank", "0");
-	hHumanTankHp = CreateConVar("ast_humantankhp", "2750");
-	hAllowBotSurvivors = CreateConVar("ast_allowbotsurvivors", "0");
-	hSMACWelcome = CreateConVar("ast_smacwelcome", "0");
+	hMaxSurvivors = CreateConVar("ast_maxsurvivors", "4", "最大生还者数量");
+	hMaxInfected = CreateConVar("ast_maxinfected", "0", "最大玩家特感数量");
+	hAllowHumanTank = CreateConVar("ast_allowhumantank", "0", "是否允许特感玩家扮演 Tank");
+	hHumanTankHp = CreateConVar("ast_humantankhp", "2750" , "玩家 Tank 血量上限");
+	hAllowBotSurvivors = CreateConVar("ast_allowbotsurvivors", "0", "是否允许生还者 bot 存在");
+	hSMACWelcome = CreateConVar("ast_smacwelcome", "0", "是否伪装 SMAC 欢迎信息");
+	hSaveWeapons = CreateConVar("ast_saveweapons", "0", "关底是否保留武器");
 
 	RegConsoleCmd("sm_join", JoinTeam_Cmd, "Moves you to the survivor team");
 	RegConsoleCmd("sm_joingame", JoinTeam_Cmd, "Moves you to the survivor team");
@@ -682,7 +684,8 @@ bool isCountDownStoppedOrRunning()
 
 public Action Event_MapTransition(Handle event, char[] name, bool dontBroadcast)
 {
-	ResetInventory(true);
+	bool bSaveWeapons = GetConVarBool(hSaveWeapons);
+	ResetInventory(!bSaveWeapons);
 	return Plugin_Continue;
 }
 
