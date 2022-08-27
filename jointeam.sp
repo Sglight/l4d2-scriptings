@@ -31,7 +31,7 @@ bool isCountDownEnd = false;
 int tankAttackConVarInt[3] = {0, ...};
 float tankAttackConVarFloat = 0.0;
 
-Handle sdkEndRound;
+// Handle sdkEndRound;
 
 public Plugin myinfo =
 {
@@ -72,20 +72,20 @@ public void OnPluginStart()
 	LoadTranslations("smac.phrases");
 
 
-	Handle g_hGameConf = LoadGameConfigFile("left4dhooks.l4d2");
-	if(g_hGameConf == INVALID_HANDLE)
-	{
-		SetFailState("Couldn't find the offsets and signatures file. Please, check that it is installed correctly.");
-	}
-	StartPrepSDKCall(SDKCall_Server);
-	PrepSDKCall_SetFromConf(g_hGameConf, SDKConf_Signature, "CDirectorVersusMode::EndVersusModeRound");
-	PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
-	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-	sdkEndRound = EndPrepSDKCall();
-	if(sdkEndRound == INVALID_HANDLE)
-	{
-		SetFailState("Unable to find the \"CDirectorVersusMode::EndVersusModeRound\" signature, check the file version!");
-	}
+	// Handle g_hGameConf = LoadGameConfigFile("left4dhooks.l4d2");
+	// if(g_hGameConf == INVALID_HANDLE)
+	// {
+	// 	SetFailState("Couldn't find the offsets and signatures file. Please, check that it is installed correctly.");
+	// }
+	// StartPrepSDKCall(SDKCall_Server);
+	// PrepSDKCall_SetFromConf(g_hGameConf, SDKConf_Signature, "CDirectorVersusMode::EndVersusModeRound");
+	// PrepSDKCall_AddParameter(SDKType_CBasePlayer, SDKPass_Pointer);
+	// PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
+	// sdkEndRound = EndPrepSDKCall();
+	// if(sdkEndRound == INVALID_HANDLE)
+	// {
+	// 	SetFailState("Unable to find the \"CDirectorVersusMode::EndVersusModeRound\" signature, check the file version!");
+	// }
 }
 
 public void OnMapStart()
@@ -186,6 +186,10 @@ public Action JoinTeam_Cmd(int client, int args)
 	int maxSurvivor = GetConVarInt(hMaxSurvivors);
 	if (client < 1 || IsFakeClient(client) || survivorCount >= maxSurvivor) return Plugin_Handled;
 	if (gameStarted) {
+		if (getTotalSurvivors() > getHumanSurvivors()) { // 生还者位置 > 玩家生还者数量，允许加入接管 AI
+			MoveToSurTimer(INVALID_HANDLE, client);
+			return Plugin_Continue;
+		}
 		PrintHintText(client, "玩家已出安全区域，暂时无法加入游戏。");
 		return Plugin_Handled;
 	}
@@ -250,8 +254,9 @@ public Action Spectate_Cmd(int client, int args)
 	}
 	else if (team == TEAM_SURVIVORS && gameStarted && getHumanSurvivors() == 1)
 	{
-		PrintToChat(client, "\x04[AstMod] \x03请结束回合再旁观.");
-		return Plugin_Handled;
+		// PrintToChat(client, "\x04[AstMod] \x03请结束回合再旁观.");
+		EndRound(client);
+		// return Plugin_Handled;
 	}
 	ChangeClientTeam(client, 1);
 	PrintToChatAll("\x04[AstMod] \x03%N \x01已旁观.", client);
@@ -365,6 +370,7 @@ public void L4D2_OnEndVersusModeRound_Post(bool countSurvivors)
 		SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
 		SetConVarInt(FindConVar("survivor_limit"), 4);
 	}
+	gameStarted = false;
 }
 
 public void setGodMode(bool boolean)
@@ -391,10 +397,25 @@ public void KickBots()
 
 public void EndRound(int client)
 {
-	SDKCall(sdkEndRound, client, false);
-	L4D2_FullRestart();
-	Handle hFakeEvent = CreateEvent("round_end");
-	FireEvent(hFakeEvent);
+	// SDKCall(sdkEndRound, client, false);
+	// L4D2_FullRestart();
+	// Handle hMissionFailEvent = CreateEvent("mission_lost");
+	// // Handle hRoundEndEvent = CreateEvent("round_end");
+	// FireEvent(hMissionFailEvent);
+	// // FireEvent(hRoundEndEvent);
+
+	SetConVarInt(FindConVar("director_no_survivor_bots"), 0);
+	CreateTimer(10.0, Timer_SlayBot);
+}
+
+public Action Timer_SlayBot(Handle timer)
+{
+	for (int i = 1; i <= MaxClients; i++) {
+		if (IsClientInGame(i) && GetClientTeam(i) == TEAM_SURVIVORS && IsFakeClient(i)) { // 是 AI 生还
+			ForcePlayerSuicide(i);
+		}
+	}
+	return Plugin_Continue;
 }
 
 int getTotalSurvivors() // total survivors, including bots
@@ -686,6 +707,7 @@ public Action Event_MapTransition(Handle event, char[] name, bool dontBroadcast)
 {
 	bool bSaveWeapons = GetConVarBool(hSaveWeapons);
 	ResetInventory(!bSaveWeapons);
+	gameStarted = false;
 	return Plugin_Continue;
 }
 
