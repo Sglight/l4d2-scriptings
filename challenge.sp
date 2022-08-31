@@ -1249,7 +1249,7 @@ public Action OnChangeTeam(Handle event, const char[] name, bool dontBroadcast)
 	int oldteam = GetEventInt(event, "oldteam");
 	if (client > 0 && IsClientInGame(client) && IsFakeClient(client) 
 	&& (newteam == TEAM_SURVIVORS || oldteam == TEAM_SURVIVORS)) {
-		ArrayList cvar;
+		ArrayList cvar = new ArrayList();
 		cvar.Push(tempTankBhop);
 		cvar.Push(tempTankRock);
 		
