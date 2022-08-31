@@ -221,7 +221,7 @@ public void TankKilled_Event(Event hEvent, const char[] eName, bool dontBroadcas
  
 public Action Tank_Cmd(int client, int args)
 {
-    if (!IsClientInGame(client)) 
+    if (!client || !IsClientInGame(client)) 
       return Plugin_Handled;
 
     int tankClientId;
