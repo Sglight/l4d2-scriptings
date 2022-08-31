@@ -63,7 +63,7 @@ public void OnMapStart()
 
 public Action L4D_OnFirstSurvivorLeftSafeArea(int client)
 {
-	PrintBossPercents();
+	PrintBossPercents(client);
 	return Plugin_Continue;
 }
 
@@ -101,18 +101,37 @@ public Action SaveBossFlows(Handle timer)
 	return Plugin_Continue;
 }
 
-stock void PrintBossPercents()
+stock void PrintBossPercents(int client)
 {
 	int boss_proximity = RoundToNearest(GetBossProximity() * 100.0);
-	if (g_fTankPercent)
-		PrintToChatAll("\x01<\x05Current\x01> \x04%d%%    \x01<\x05Tank\x01> \x04%d%%    \x01<\x05Witch\x01> \x04%d%", boss_proximity, g_fTankPercent, g_fWitchPercent);
-	else
-		PrintToChatAll("\x01<\x05Current\x01> \x04%d%%    \x01<\x05Tank\x01> \x04Static Tank    \x01<\x05Witch\x01> \x04%i%", boss_proximity, g_fTankPercent, g_fWitchPercent);
+	char message[512];
+	char buffer[256];
+	Format(message, sizeof(message), "\x01<\x05Current\x01> \x04%d%%%%    ", boss_proximity);
+
+	if (g_fTankPercent) {
+		Format(buffer, sizeof(buffer), "\x01<\x05Tank\x01> \x04%d%%%%    ", g_fTankPercent);
+	} else {
+		Format(buffer, sizeof(buffer), "\x01<\x05Tank\x01> \x04Static Tank    ");
+	}
+	StrCat(message, sizeof(message), buffer);
+
+	if (g_fWitchPercent) {
+		Format(buffer, sizeof(buffer), "\x01<\x05Witch\x01> \x04%d%%%%", g_fWitchPercent);
+	} else {
+		Format(buffer, sizeof(buffer), "\x01<\x05Witch\x01> \x04Static Witch");
+	}
+	StrCat(message, sizeof(message), buffer);
+	
+	if (client) {
+		PrintToChatAll(message);
+	} else {
+		PrintToServer(message);
+	}
 }
 
 public Action BossCmd(int client, int args)
 {
-	PrintBossPercents();
+	PrintBossPercents(client);
 	return Plugin_Continue;
 }
 
@@ -280,5 +299,5 @@ public void DKRWorkaround(Event event, const char[] name, bool dontBroadcast)
 		//}
 	}
 
-	PrintBossPercents();
+	PrintBossPercents(1);
 }
