@@ -42,15 +42,15 @@ char SI_Names[][] =
 	"Not SI"
 };
 
-int tempTankDmg;
-int tempSITimer;
-int tempTankBhop;
-int tempTankRock;
-int tempPlayerInfected;
-int tempPlayerTank;
-int tempM2HunterFlag;
-int tempMorePills;
-int tempKillMapPills;
+int tempTankDmg = -1;
+int tempSITimer = -1;
+int tempTankBhop = -1;
+int tempTankRock = -1;
+int tempPlayerInfected = -1;
+int tempPlayerTank = -1;
+int tempM2HunterFlag = -1;
+int tempMorePills = -1;
+int tempKillMapPills = -1;
 
 bool bIsPouncing[MAXPLAYERS + 1];		  // if a hunter player is currently pouncing
 bool bIsUsingAbility[MAXPLAYERS + 1];
@@ -81,6 +81,7 @@ public void OnPluginStart()
 	HookEvent("ability_use", OnAbilityUse, EventHookMode_Post);
 	HookEvent("player_shoved", OnPlayerShoved, EventHookMode_Post);
 	HookEvent("player_hurt", OnPlayerHurt, EventHookMode_Post);
+	HookEvent("player_team", OnChangeTeam, EventHookMode_Post);
 	HookEvent("tongue_release", OnTongueRelease);
 	HookEvent("tongue_broke_bent", OnTongueRelease);
 	HookEvent("tongue_pull_stopped", OnTonguePullStopped);
@@ -175,7 +176,7 @@ public Action drawPanel(int client)
 
 	char sWeaponSMG[64] = "weapon_smg,weapon_smg_silenced";
 	char sWeaponSG[64] = "weapon_pumpshotgun,shotgun_chrome";
-	char sWeaponSniper[64] = "weapon_sniper_scout";
+	char sWeaponSniper[64] = "weapon_sniper_scout, weapon_sniper_awp";
 	// 0 完全禁止，1 允许机枪，2 允许喷子，4 允许狙击
 	tempM2HunterFlag = 0;
 	if (StrContains(sM2HunterWeapon, sWeaponSMG) >= 0) {
@@ -460,6 +461,7 @@ public void TankBhopVoteResultHandler(Handle vote, int num_votes, int num_client
 			}
 		}
 	}
+	tempTankBhop = GetConVarInt(FindConVar("ai_tank_bhop"));
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
 	return;
 }
@@ -475,6 +477,7 @@ public void TankRockVoteResultHandler(Handle vote, int num_votes, int num_client
 			}
 		}
 	}
+	tempTankRock = GetConVarInt(FindConVar("ai_tank_rock"));
 	DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
 	return;
 }
@@ -1235,6 +1238,34 @@ public Action Event_ChargerPummelStart(Handle event, const char[] name, bool don
 {
 	int charger = GetClientOfUserId(GetEventInt(event, "userid"));
 	bIsUsingAbility[charger] = false;
+	return Plugin_Continue;
+}
+
+// 延迟设置 Tank 连跳和饼状态，覆盖 cfg 设置
+public Action OnChangeTeam(Handle event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	int newteam = GetEventInt(event, "team");
+	int oldteam = GetEventInt(event, "oldteam");
+	if (client > 0 && IsClientInGame(client) && IsFakeClient(client) 
+	&& (newteam == TEAM_SURVIVORS || oldteam == TEAM_SURVIVORS)) {
+		ArrayList cvar;
+		cvar.Push(tempTankBhop);
+		cvar.Push(tempTankRock);
+		
+		CreateTimer(1.0, Timer_SetTankConVar, cvar);
+	}
+	return Plugin_Continue;
+}
+
+public Action Timer_SetTankConVar(Handle timer, ArrayList cvar)
+{
+	if (cvar.Get(0) != -1) {
+		SetConVarInt(FindConVar("ai_tank_bhop"), tempTankBhop);
+	}
+	if (cvar.Get(1) != -1) {
+		SetConVarInt(FindConVar("ai_tank_rock"), tempTankRock);
+	}
 	return Plugin_Continue;
 }
 
