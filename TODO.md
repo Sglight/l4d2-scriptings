@@ -1,3 +1,9 @@
+# 2.7.x
+1. [ ] 使用钵钵鸡写的 versus_coop_mode 来代替以前的实现方式，https://github.com/umlka/l4d2/blob/main/versus_coop_mode/versus_coop_mode.sp
+2. [ ] 整合 AstMod + Hunter Config
+3. [ ] 自动发药改为默认设置
+
+
 # 2.6.x
 1. [x] 生还与特感人数平衡时，阻止玩家进入服务器自动加入生还
 2. [x] 人挤人
@@ -27,6 +33,7 @@
 26. [ ] ~~更换踢出 AI 生还的实现~~
 27. [x] 口水点油
 28. [x] confogl_autoloader 修改
+29. [ ] script_reloader 工作异常
 
 
 # 2.5.6

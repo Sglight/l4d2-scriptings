@@ -1,9 +1,29 @@
-#define PLUGIN_VERSION		"1.7"
+/*
+*	VScript File Replacer
+*	Copyright (C) 2023 Silvers
+*
+*	This program is free software: you can redistribute it and/or modify
+*	it under the terms of the GNU General Public License as published by
+*	the Free Software Foundation, either version 3 of the License, or
+*	(at your option) any later version.
+*
+*	This program is distributed in the hope that it will be useful,
+*	but WITHOUT ANY WARRANTY; without even the implied warranty of
+*	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*	GNU General Public License for more details.
+*
+*	You should have received a copy of the GNU General Public License
+*	along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+
+
+#define PLUGIN_VERSION		"1.16"
 
 /*======================================================================================
 	Plugin Info:
 
-*	Name	:	[L4D2 & CS:GO] VScript File Replacer
+*	Name	:	[L4D2 & CS:GO & NMRiH] VScript File Replacer
 *	Author	:	SilverShot
 *	Descrp	:	Replaces any VScript file with a custom one. Modify lines or the whole file.
 *	Link	:	https://forums.alliedmods.net/showthread.php?t=318024
@@ -11,6 +31,42 @@
 
 ========================================================================================
 	Change Log:
+
+1.16 (10-Mar-2023)
+	- Changed command "sm_vs_dump" to display the number of scripts dumped.
+	- Fixed error when no VScript files or directories exist. Thanks to "Sreaper" for reporting.
+
+1.15 (20-Dec-2022)
+	- Added support for Team Fortress 2.
+	- GameData file and plugin updated.
+
+1.14 (15-Oct-2022)
+	- Added an include file for other plugins to require this plugin.
+	- Added registering the plugin library as "vscript_replacer" for plugins to detect.
+
+1.13 (15-Jul-2022)
+	- Increased buffer size. Thanks to "Psyk0tik" for reporting.
+
+1.12 (03-Jun-2022)
+	- Added support for "NMRiH" game. Thanks to "Dysphie" for the signatures.
+	- GameData file and plugin updated.
+
+1.11 (07-Oct-2021)
+	- Fixed compile errors on SourcecMod version 1.11. Thanks to "Hajitek Majitek" for reporting.
+	- Thanks to "asherkin" for helping fix.
+
+1.10a (10-Apr-2021)
+	- Minor change to "vscript_replacer.cfg" for demonstrating regex in map names. Thanks to "Tonblader" for reporting.
+
+1.10 (04-Mar-2021)
+	- Added ConVar "vscript_replacer_debug" to enable debugging with options for verbose debugging and printing to chat or server.
+	- ConVar config is saved as "vscript_replacer.cfg" filename in your servers standard "cfg/sourcemods" folder.
+
+1.9 (30-Sep-2020)
+	- Increased MAX_BUFFER size to support largest known VScript file sizes.
+
+1.8 (20-Jul-2020)
+	- Fixed overrides not working. Not sure why this went undetected for so long.
 
 1.7 (10-May-2020)
 	- Various changes to tidy up code.
@@ -67,10 +123,10 @@
 
 // To read/write entire files with char[] buffer via SDKCall for ICE enc/dec (removed before release).
 // Without this server receives: "[SM] Exception reported: Instruction contained invalid parameter".
-// The largest Valve VScript file I've seen was below 70 KB. The largest I've seen from a 3rd party map was ~180 KB.
+// The largest Valve VScript file I've seen was ~280 KB.
 // If you require more please notify me, increase and recompile.
-// This is 200 KB (200 * 1024)
-#define MAX_BUFFER 204800
+// This is 400 KB (400 * 1024) - only used when saving/decrypting/encrypting files and cleared after.
+#define MAX_BUFFER 409600
 #pragma dynamic MAX_BUFFER
 
 #include <sourcemod>
@@ -89,6 +145,7 @@ ArrayList gOverrideScripts;		// List of scripts to override generated from above
 ArrayList gOverrideValues;		// List of values to replace in the scripts
 EngineVersion gEngine;
 bool g_bLoadNewMap, g_bListen;
+ConVar g_hCvarDebug;
 
 // ICE vars
 bool g_IceKey;
@@ -103,7 +160,7 @@ const int ICE_blocks = 8;
 // ====================================================================================================
 public Plugin myinfo =
 {
-	name = "[L4D2 & CS:GO] VScript File Replacer",
+	name = "[L4D2 & CS:GO & NMRiH] VScript File Replacer",
 	author = "SilverShot",
 	description = "Replaces any VScript file with a custom one. Modify lines or the whole file.",
 	version = PLUGIN_VERSION,
@@ -113,11 +170,24 @@ public Plugin myinfo =
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	gEngine = GetEngineVersion();
-	if( gEngine != Engine_Left4Dead2 && gEngine != Engine_CSGO )
+	if( gEngine != Engine_Left4Dead2 && gEngine != Engine_CSGO && gEngine != Engine_TF2 && gEngine != Engine_SDK2013 )
 	{
 		strcopy(error, err_max, "Your game is unsupported by this plugin.");
 		return APLRes_SilentFailure;
 	}
+
+	if( gEngine == Engine_SDK2013 )
+	{
+		char sFolder[PLATFORM_MAX_PATH];
+		GetGameFolderName(sFolder, sizeof(sFolder));
+		if( strcmp(sFolder, "nmrih") )
+		{
+			strcopy(error, err_max, "Your game is unsupported by this plugin.");
+			return APLRes_SilentFailure;
+		}
+	}
+
+	RegPluginLibrary("vscript_replacer");
 
 	return APLRes_Success;
 }
@@ -166,11 +236,13 @@ public void OnPluginStart()
 	// Forward
 	g_hForwardOnVScript = CreateGlobalForward("OnVScriptExecuted", ET_Event, Param_String, Param_String, Param_Cell);
 
+	// Cvars
+	g_hCvarDebug = CreateConVar(	"vscript_replacer_debug",		"0",				"0=Off. 1=Print to server. 2=Print to chat. 4=Verbose logging. Add numbers together.", FCVAR_NOTIFY);
+	CreateConVar(					"vscript_replacer_version",		PLUGIN_VERSION,		"VScript File Replacer plugin version.", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	AutoExecConfig(true, "vscript_replacer");
+
 	// Load config
 	ResetPlugin();
-
-	// Cvars
-	CreateConVar("vscript_replacer_version", PLUGIN_VERSION, "VScript File Replacer plugin version.", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 
 
 
@@ -201,7 +273,7 @@ public void OnMapEnd()
 // ====================================================================================================
 //					COMMANDS
 // ====================================================================================================
-public Action CmdDump(int client, int args)
+Action CmdDump(int client, int args)
 {
 	float time = GetEngineTime();
 
@@ -210,6 +282,7 @@ public Action CmdDump(int client, int args)
 	RecursiveSearchDirs(aVScriptList, "scripts/vscripts");
 
 	// Loop files and save
+	int total;
 	bool ICE;
 	char sPath[PLATFORM_MAX_PATH];
 
@@ -240,15 +313,16 @@ public Action CmdDump(int client, int args)
 		}
 		else continue;
 
+		total++;
 		SaveFile(null, "", sPath, ICE, true);
 	}
 
 	delete aVScriptList;
-	ReplyToCommand(client, "Dumped VScripts to servers /scripts/vscripts/vscripts_dump/ folder. Took %f seconds.", GetEngineTime() - time);
+	ReplyToCommand(client, "Dumped %d VScripts to servers /scripts/vscripts/vscripts_dump/ folder. Took %f seconds.", total, GetEngineTime() - time);
 	return Plugin_Handled;
 }
 
-public Action CmdEncrypt(int client, int args)
+Action CmdEncrypt(int client, int args)
 {
 	if( args != 1 )
 	{
@@ -279,7 +353,7 @@ public Action CmdEncrypt(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action CmdExec(int client, int args)
+Action CmdExec(int client, int args)
 {
 	if( args != 1 )
 	{
@@ -287,6 +361,8 @@ public Action CmdExec(int client, int args)
 		return Plugin_Handled;
 	}
 
+	// Games inbuilt method to execute VScripts. In L4D2 "script_execute" causes a memory leak, so using an entity instead.
+	// Using an entity would probably prevent the script executing during hibernation, not sure if command would work then either though.
 	// char sFile[PLATFORM_MAX_PATH];
 	// GetCmdArg(1, sFile, sizeof(sFile));
 	// ServerCommand("script_execute %s", sFile);
@@ -305,7 +381,7 @@ public Action CmdExec(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action CmdFile(int client, int args)
+Action CmdFile(int client, int args)
 {
 	if( args != 1 )
 	{
@@ -342,12 +418,8 @@ public Action CmdFile(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action CmdList(int client, int args)
+Action CmdList(int client, int args)
 {
-	// ArrayList aHand;
-	// int size;
-	// char key[MAX_STRING_LENGTH];
-	// char value[MAX_STRING_LENGTH];
 	char section[PLATFORM_MAX_PATH];
 	char custom[PLATFORM_MAX_PATH];
 
@@ -365,11 +437,14 @@ public Action CmdList(int client, int args)
 			ReplyToCommand(client, "%d) \"%s\"", x+1, section);
 
 		/*
-		// Print script find-replace values. Uncomment variable initializations above and section below to enable. Also remove the cleanup of gOverrideValues in ResetPlugin.
+		// Print script find-replace values. Uncomment section below to enable. Also remove the cleanup of gOverrideValues in ResetPlugin.
 		// Works: but spammy with string replacements, also gOverrideValues is not required so keeping that data for this is simply wasted resources.
 		// Also requires you to remove the "Array no longer required" section from ResetPlugin to enable.
-		aHand = gOverrideValues.Get(x);
-		size = aHand.Length;
+		char key[MAX_STRING_LENGTH];
+		char value[MAX_STRING_LENGTH];
+
+		ArrayList aHand = gOverrideValues.Get(x);
+		int size = aHand.Length;
 		for( int i = 0; i < size; i+=2 )
 		{
 			aHand.GetString(i, key, sizeof(key));
@@ -385,7 +460,7 @@ public Action CmdList(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action CmdReload(int client, int args)
+Action CmdReload(int client, int args)
 {
 	float time = GetEngineTime();
 	ResetPlugin();
@@ -393,10 +468,10 @@ public Action CmdReload(int client, int args)
 	return Plugin_Handled;
 }
 
-public Action CmdListen(int client, int args)
+Action CmdListen(int client, int args)
 {
 	g_bListen = !g_bListen;
-	
+
 	if( client )
 	{
 		if( g_bListen )
@@ -412,7 +487,7 @@ public Action CmdListen(int client, int args)
 // ====================================================================================================
 //					DETOUR
 // ====================================================================================================
-public MRESReturn VScriptServerCompileScript(Handle hReturn, Handle hParams)
+MRESReturn VScriptServerCompileScript(Handle hReturn, Handle hParams)
 {
 	// Load new map data
 	if( g_bLoadNewMap ) ResetPlugin();
@@ -426,18 +501,28 @@ public MRESReturn VScriptServerCompileScript(Handle hReturn, Handle hParams)
 
 	DHookGetParamString(hParams, 1, pszScriptName, sizeof(pszScriptName));
 	StrToLowerCase(pszScriptName, pszScriptName, sizeof(pszScriptName));
+	ReplaceString(pszScriptName, sizeof(pszScriptName), ".nut", "", false);
 
 	// Match overrides
 	int index = gOverrideScripts.FindString(pszScriptName);
 	if( index != -1 )
 	{
-		gOverrideCustom.GetString(pszScriptName, pszScriptOverride, sizeof(pszScriptOverride));
+		if( gOverrideCustom.GetString(pszScriptName, pszScriptOverride, sizeof(pszScriptOverride)) )
+			Format(pszScriptOverride, sizeof(pszScriptOverride), "vscripts_override/%s", pszScriptOverride);
+		else
+			Format(pszScriptOverride, sizeof(pszScriptOverride), "vscripts_override/%s", pszScriptName);
 
-		if( g_bListen ) PrintToServer("--- VSCRIPT: Overriding script: <%s> <%s>", pszScriptName, pszScriptOverride);
+		if( g_bListen )
+		{
+			PrintToServer("--- VSCRIPT: Overriding script: <%s> <%s>", pszScriptName, pszScriptOverride);
 
-		Format(pszScriptOverride, sizeof(pszScriptOverride), "vscripts_override/%s", pszScriptOverride);
+			if( g_hCvarDebug.IntValue & 2 )
+				PrintToChatAll("--- VSCRIPT: Overriding script: <%s> <%s>", pszScriptName, pszScriptOverride);
+		}
+
 		strcopy(pszScriptFwd, sizeof(pszScriptFwd), pszScriptOverride);
 
+		// Forward override VScript
 		Action aResult = Plugin_Continue;
 		Call_StartForward(g_hForwardOnVScript);
 		Call_PushString(pszScriptName);
@@ -449,14 +534,26 @@ public MRESReturn VScriptServerCompileScript(Handle hReturn, Handle hParams)
 		{
 			case Plugin_Handled:
 			{
-				if( g_bListen ) PrintToServer("--- VSCRIPT: FWD blocked override script: <%s> <%s>", pszScriptName, pszScriptOverride);
+				if( g_bListen )
+				{
+					PrintToServer("--- VSCRIPT: FWD blocked override script: <%s> <%s>", pszScriptName, pszScriptOverride);
+					if( g_hCvarDebug.IntValue & 2 )
+						PrintToChatAll("--- VSCRIPT: FWD blocked override script: <%s> <%s>", pszScriptName, pszScriptOverride);
+				}
+
 				DHookSetReturn(hReturn, 0);
 				return MRES_Supercede;
 			}
 
 			case Plugin_Changed:
 			{
-				if( g_bListen ) PrintToServer("--- VSCRIPT: FWD changed override script: <%s> <%s> to <%s>", pszScriptName, pszScriptOverride, pszScriptFwd);
+				if( g_bListen )
+				{
+					PrintToServer("--- VSCRIPT: FWD changed override script: <%s> <%s> to <%s>", pszScriptName, pszScriptOverride, pszScriptFwd);
+					if( g_hCvarDebug.IntValue & 2 )
+					PrintToChatAll("--- VSCRIPT: FWD changed override script: <%s> <%s> to <%s>", pszScriptName, pszScriptOverride, pszScriptFwd);
+				}
+
 				strcopy(pszScriptOverride, sizeof(pszScriptOverride), pszScriptFwd);
 			}
 		}
@@ -464,6 +561,7 @@ public MRESReturn VScriptServerCompileScript(Handle hReturn, Handle hParams)
 		DHookSetParamString(hParams, 1, pszScriptOverride);
 		return MRES_ChangedHandled;
 	} else {
+		// Forward VScript
 		Action aResult = Plugin_Continue;
 		Call_StartForward(g_hForwardOnVScript);
 		Call_PushString(pszScriptName);
@@ -475,14 +573,26 @@ public MRESReturn VScriptServerCompileScript(Handle hReturn, Handle hParams)
 		{
 			case Plugin_Handled:
 			{
-				if( g_bListen ) PrintToServer("--- VSCRIPT: FWD blocked script: <%s>", pszScriptName);
+				if( g_bListen )
+				{
+					PrintToServer("--- VSCRIPT: FWD blocked script: <%s>", pszScriptName);
+					if( g_hCvarDebug.IntValue & 2 )
+						PrintToChatAll("--- VSCRIPT: FWD blocked script: <%s>", pszScriptName);
+				}
+
 				DHookSetReturn(hReturn, 0);
 				return MRES_Supercede;
 			}
 
 			case Plugin_Changed:
 			{
-				if( g_bListen ) PrintToServer("--- VSCRIPT: FWD changed script: <%s> to <%s>", pszScriptName, pszScriptOverride);
+				if( g_bListen )
+				{
+					PrintToServer("--- VSCRIPT: FWD changed script: <%s> to <%s>", pszScriptName, pszScriptOverride);
+					if( g_hCvarDebug.IntValue & 2 )
+						PrintToChatAll("--- VSCRIPT: FWD changed script: <%s> to <%s>", pszScriptName, pszScriptOverride);
+				}
+
 				DHookSetParamString(hParams, 1, pszScriptOverride);
 				return MRES_ChangedHandled;
 			}
@@ -490,7 +600,12 @@ public MRESReturn VScriptServerCompileScript(Handle hReturn, Handle hParams)
 	}
 
 	// Listen
-	if( g_bListen ) PrintToServer("--- VSCRIPT: Exec: <%s>", pszScriptName);
+	if( g_bListen )
+	{
+		PrintToServer("--- VSCRIPT: Exec: <%s>", pszScriptName);
+		if( g_hCvarDebug.IntValue & 2 )
+			PrintToChatAll("--- VSCRIPT: Exec: <%s>", pszScriptName);
+	}
 
 	return MRES_Ignored;
 }
@@ -598,6 +713,19 @@ void SaveOverrides()
 		// Script filename
 		gOverrideConfig.GetString(x, sFile, sizeof(sFile));
 
+		// Debug
+		if( g_hCvarDebug.IntValue & 4 )
+		{
+			if( g_hCvarDebug.IntValue & 1 )
+			{
+				PrintToServer("--- VSCRIPT: Replacer File: %s.", sFile);
+			}
+			if( g_hCvarDebug.IntValue & 2 )
+			{
+				PrintToChatAll("--- VSCRIPT: Replacer File: %s.", sFile);
+			}
+		}
+
 		// Check for "override" key in each scripts values from config.
 		aHand = gOverrideValues.Get(x);
 
@@ -613,6 +741,19 @@ void SaveOverrides()
 				aHand.GetString(index + 1, sPath, sizeof(sPath));
 				StrToLowerCase(sPath, sPath, sizeof(sPath));
 				gOverrideCustom.SetString(sFile, sPath);
+
+				// Debug
+				if( g_hCvarDebug.IntValue & 4 )
+				{
+					if( g_hCvarDebug.IntValue & 1 )
+					{
+						PrintToServer("--- VSCRIPT: Replacer Path: %s.", sPath);
+					}
+					if( g_hCvarDebug.IntValue & 2 )
+					{
+						PrintToChatAll("--- VSCRIPT: Replacer Path: %s.", sPath);
+					}
+				}
 
 				// Save to vscripts/vscripts_override folder
 				strcopy(sTemp, sizeof(sTemp), sFile);
@@ -639,7 +780,7 @@ void SaveOverrides()
 			// Regex match file
 			if( index != -1 )
 			{
-				// Only generate full vscript list once in loop
+				// Only generate full VScript list once in loop
 				if( aVScriptList == null )
 				{
 					aVScriptList = new ArrayList(ByteCountToCells(PLATFORM_MAX_PATH));
@@ -652,7 +793,7 @@ void SaveOverrides()
 				for( int i = 0; i < aVScriptList.Length; i++ )
 				{
 					aVScriptList.GetString(i, sPath, sizeof(sPath)); // Re-using sPath
-					if( SimpleRegexMatch(sPath, sFile) > 0 ) 
+					if( SimpleRegexMatch(sPath, sFile) > 0 )
 					{
 						// Remove extension
 						int pos = FindCharInString(sPath, '.', true);
@@ -819,7 +960,9 @@ void SaveFile(ArrayList aHand, const char[] sFile, const char[] filename, bool I
 
 	// Saving to specific folders
 	if( dump )
+	{
 		ReplaceString(sPath, sizeof(sPath), "scripts/vscripts/", "scripts/vscripts/vscripts_dump/");
+	}
 	else
 	{
 		if( ReplaceString(sPath, sizeof(sPath), "scripts/vscripts/vscripts_custom/", "scripts/vscripts/vscripts_override/") == 0 )
@@ -856,7 +999,8 @@ void RecursiveSearchDirs(ArrayList aVScriptList, const char[] sDir)
 	DirectoryListing hDir;
 	FileType type;
 
-	hDir = OpenDirectory(sDir, true);
+	hDir = OpenDirectory(sDir, true, NULL_STRING);
+	if( !hDir ) return;
 
 	// Loop through files
 	while( hDir.GetNext(sPath, sizeof(sPath), type) )
@@ -989,9 +1133,22 @@ bool ParseConfigFile(const char[] file)
 	return (result == SMCError_Okay);
 }
 
-public SMCResult Config_NewSection(Handle parser, const char[] section, bool quotes)
+SMCResult Config_NewSection(Handle parser, const char[] section, bool quotes)
 {
 	g_iSectionLevel++;
+
+	// Debug
+	if( g_hCvarDebug.IntValue & 4 )
+	{
+		if( g_hCvarDebug.IntValue & 1 )
+		{
+			PrintToServer("--- VSCRIPT: Section: <%s>", section);
+		}
+		if( g_hCvarDebug.IntValue & 2 )
+		{
+			PrintToChatAll("--- VSCRIPT: Section: <%s>", section);
+		}
+	}
 
 	static char sMap[PLATFORM_MAX_PATH];
 	sMap[0] = 0;
@@ -1002,6 +1159,19 @@ public SMCResult Config_NewSection(Handle parser, const char[] section, bool quo
 		g_bAllowSection = false;
 
 		GetCurrentMap(sMap, sizeof(sMap));
+
+		// Debug
+		if( g_hCvarDebug.IntValue & 4 )
+		{
+			if( g_hCvarDebug.IntValue & 1 )
+			{
+				PrintToServer("--- VSCRIPT: sMap: <%s>", sMap);
+			}
+			if( g_hCvarDebug.IntValue & 2 )
+			{
+				PrintToChatAll("--- VSCRIPT: sMap: <%s>", sMap);
+			}
+		}
 
 		// Match
 		if( SimpleRegexMatch(sMap, section) > 0 )
@@ -1033,8 +1203,23 @@ public SMCResult Config_NewSection(Handle parser, const char[] section, bool quo
 	return SMCParse_Continue;
 }
 
-public SMCResult Config_KeyValue(Handle parser, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
+SMCResult Config_KeyValue(Handle parser, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
+	// Debug
+	if( g_hCvarDebug.IntValue & 4 )
+	{
+		if( g_hCvarDebug.IntValue & 1 )
+		{
+			PrintToServer("--- VSCRIPT: key: <%s>", key);
+			PrintToServer("--- VSCRIPT: value: <%s>", value);
+		}
+		if( g_hCvarDebug.IntValue & 2 )
+		{
+			PrintToChatAll("--- VSCRIPT: key: <%s>", key);
+			PrintToChatAll("--- VSCRIPT: value: <%s>", value);
+		}
+	}
+
 	if( g_bAllowSection )
 	{
 		if( g_iSectionLevel == 3 )
@@ -1059,13 +1244,13 @@ public SMCResult Config_KeyValue(Handle parser, const char[] key, const char[] v
 	return SMCParse_Continue;
 }
 
-public SMCResult Config_EndSection(Handle parser)
+SMCResult Config_EndSection(Handle parser)
 {
 	g_iSectionLevel--;
 	return SMCParse_Continue;
 }
 
-public void Config_End(Handle parser, bool halted, bool failed)
+void Config_End(Handle parser, bool halted, bool failed)
 {
 	if( failed )
 		SetFailState("Error: Cannot load the VScripts Override config.");
@@ -1291,7 +1476,7 @@ void ICE_IceKeySet(char[] key)
 	int i, kb[4];
 
 	for( i = 0; i < 4; i++ )
-		kb[3 - i] = ((key[i*2] & 0xFF) << 8) | (key[i*2 + 1] & 0xFF);
+		kb[3 - i] = ((view_as<int>(key[i*2]) & 0xFF) << 8) | (view_as<int>(key[i*2 + 1]) & 0xFF);
 
 	ICE_scheduleBuild (kb, 0, 0);
 }
@@ -1317,7 +1502,7 @@ int ICE_roundFunc(int p, int subkey[3])
 }
 
 // Encrypt a block of 8 bytes of data.
-void ICE_encrypt(char plaintext[9], int ciphertext[9])
+void ICE_encrypt(char[] plaintext, int ciphertext[9])
 {
 	int i, l, r;
 
@@ -1344,7 +1529,7 @@ void ICE_encrypt(char plaintext[9], int ciphertext[9])
 }
 
 // Decrypt a block of 8 bytes of data.
-void ICE_decrypt(char ciphertext[9], int plaintext[9])
+void ICE_decrypt(char[] ciphertext, int plaintext[9])
 {
 	int i, l, r;
 

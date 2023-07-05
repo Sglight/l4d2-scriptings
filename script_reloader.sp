@@ -1,7 +1,3 @@
-/**
- * 实现原理不明，也不知道有没有别的方法，总之能用就行了，也算是一个核心插件吧。
- */
-
 #pragma semicolon 1
 #pragma newdecls required
 
@@ -15,21 +11,20 @@ public void OnPluginStart()
 
 public Action Cmd_Reload(int client, int args)
 {
-	CheatCommand("script_reload_code", "versus.nut");
-	CheatCommand("script_reload_code", "coop.nut");
-}
-
-public void CheatCommand(char[] strCommand, char[] strParam1)
-{
-	for (int client = 1; client <= MaxClients; ++client)
+	int entity = CreateEntityByName("logic_script");
+	if( entity != -1 )
 	{
-		if (IsClientInGame(client))
-		{
-			int flags = GetCommandFlags(strCommand);
-			SetCommandFlags(strCommand, flags & ~FCVAR_CHEAT);
-			FakeClientCommand(client, "%s %s", strCommand, strParam1);
-			SetCommandFlags(strCommand, flags);
-			return;
+		char sFile[PLATFORM_MAX_PATH];
+		if( args != 1 ) {
+			sFile = "versus.nut"; // 暂时用于测试，后续不支持无参数指令
+		} else {
+			GetCmdArg(1, sFile, sizeof(sFile));
 		}
+		DispatchSpawn(entity);
+		SetVariantString(sFile);
+		AcceptEntityInput(entity, "RunScriptFile");
+		RemoveEdict(entity);
 	}
+
+	return Plugin_Handled;
 }
